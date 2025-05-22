@@ -1,16 +1,7 @@
-
 "use client";
 
-import Link from "next/link";
-import {
-  PanelLeft,
-  Search,
-  Settings,
-  User as UserIcon,
-  LogOut,
-  Moon,
-  Sun,
-} from "lucide-react";
+import { Logo } from "@/components/shared/logo";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,14 +10,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/auth-context";
-import { Logo } from "@/components/shared/logo";
+import {
+  LogOut,
+  Moon,
+  PanelLeft,
+  Settings,
+  Sun,
+  User as UserIcon,
+} from "lucide-react";
 import { useTheme } from "next-themes"; // Assuming next-themes is or will be installed
+import Link from "next/link";
 import { SidebarNav } from "./sidebar-nav"; // We'll create this next
-import React from "react";
 
 // Helper for theme toggle, assuming next-themes
 function ThemeToggle() {
@@ -45,7 +41,6 @@ function ThemeToggle() {
   );
 }
 
-
 export function DashboardHeader() {
   const { user, logout } = useAuth();
   // const pathname = usePathname();
@@ -60,12 +55,15 @@ export function DashboardHeader() {
             <span className="sr-only">Toggle navigation menu</span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="flex flex-col p-0 bg-sidebar text-sidebar-foreground">
+        <SheetContent
+          side="left"
+          className="flex flex-col p-0 bg-sidebar text-sidebar-foreground"
+        >
           <div className="p-4 border-b border-sidebar-border">
             <Logo className="text-sidebar-foreground" />
           </div>
           <nav className="flex-1 overflow-y-auto p-4">
-             <SidebarNav />
+            <SidebarNav />
           </nav>
         </SheetContent>
       </Sheet>
@@ -81,7 +79,6 @@ export function DashboardHeader() {
           </React.Fragment>
         ))}
       </div> */}
-
 
       <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
         <form className="ml-auto flex-1 sm:flex-initial">
@@ -114,7 +111,9 @@ export function DashboardHeader() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/dashboard/settings"> {/* Placeholder for settings */}
+              <Link href="/dashboard/settings">
+                {" "}
+                {/* Placeholder for settings */}
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
               </Link>

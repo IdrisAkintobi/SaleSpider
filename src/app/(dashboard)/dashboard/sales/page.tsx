@@ -1,17 +1,29 @@
-
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
 import { PageHeader } from "@/components/shared/page-header";
-import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DUMMY_SALES, DUMMY_USERS, getAllSales, getSalesByCashierId } from "@/lib/data";
-import type { Sale, User } from "@/lib/types";
-import { useAuth } from "@/contexts/auth-context";
-import { DollarSign, CalendarDays, UserCircle, Filter } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useAuth } from "@/contexts/auth-context";
+import { DUMMY_USERS, getAllSales, getSalesByCashierId } from "@/lib/data";
+import type { Sale, User } from "@/lib/types";
+import { CalendarDays, Filter, UserCircle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 export default function SalesPage() {
   const { user, role } = useAuth();
@@ -35,8 +47,8 @@ export default function SalesPage() {
     if (filterDateRange !== "all") {
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      
-      dateFilteredSales = sales.filter(sale => {
+
+      dateFilteredSales = sales.filter((sale) => {
         const saleDate = new Date(sale.timestamp);
         if (filterDateRange === "today") {
           return saleDate >= today;
@@ -54,20 +66,30 @@ export default function SalesPage() {
         return true;
       });
     }
-    
-    return dateFilteredSales.filter(sale => {
-      const matchesSearch = sale.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            sale.cashierName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            sale.items.some(item => item.productName.toLowerCase().includes(searchTerm.toLowerCase()));
-      const matchesCashier = role === "Manager" 
-        ? (filterCashier === "all" || sale.cashierId === filterCashier) 
-        : true; // Cashiers only see their own sales, so this filter is implicitly handled
 
-      return matchesSearch && matchesCashier;
-    }).sort((a,b) => b.timestamp - a.timestamp);
+    return dateFilteredSales
+      .filter((sale) => {
+        const matchesSearch =
+          sale.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          sale.cashierName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          sale.items.some((item) =>
+            item.productName.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+        const matchesCashier =
+          role === "Manager"
+            ? filterCashier === "all" || sale.cashierId === filterCashier
+            : true; // Cashiers only see their own sales, so this filter is implicitly handled
+
+        return matchesSearch && matchesCashier;
+      })
+      .sort((a, b) => b.timestamp - a.timestamp);
   }, [sales, searchTerm, filterCashier, filterDateRange, role]);
 
-  const cashiers = useMemo(() => DUMMY_USERS.filter(u => u.role === "Cashier" && u.status === "Active"), []);
+  const cashiers = useMemo(
+    () =>
+      DUMMY_USERS.filter((u) => u.role === "Cashier" && u.status === "Active"),
+    []
+  );
 
   return (
     <>
@@ -77,50 +99,54 @@ export default function SalesPage() {
       />
       <Card className="mb-6 shadow">
         <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <Input
-                placeholder="Search by Order ID, Cashier, Product..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                icon={<Filter className="h-4 w-4 text-muted-foreground" />}
+              placeholder="Search by Order ID, Cashier, Product..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              icon={<Filter className="h-4 w-4 text-muted-foreground" />}
             />
             {role === "Manager" && (
-                <Select value={filterCashier} onValueChange={setFilterCashier}>
+              <Select value={filterCashier} onValueChange={setFilterCashier}>
                 <SelectTrigger className="w-full">
-                    <div className="flex items-center gap-2">
-                        <UserCircle className="h-4 w-4 text-muted-foreground" />
-                        <SelectValue placeholder="Filter by Cashier" />
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <UserCircle className="h-4 w-4 text-muted-foreground" />
+                    <SelectValue placeholder="Filter by Cashier" />
+                  </div>
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="all">All Cashiers</SelectItem>
-                    {cashiers.map(c => <SelectItem key={c.staffAddr} value={c.staffAddr}>{c.name}</SelectItem>)}
+                  <SelectItem value="all">All Cashiers</SelectItem>
+                  {cashiers.map((c) => (
+                    <SelectItem key={c.staffAddr} value={c.staffAddr}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
-                </Select>
+              </Select>
             )}
             <Select value={filterDateRange} onValueChange={setFilterDateRange}>
-                <SelectTrigger className="w-full">
-                    <div className="flex items-center gap-2">
-                        <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                        <SelectValue placeholder="Filter by Date" />
-                    </div>
-                </SelectTrigger>
-                <SelectContent>
+              <SelectTrigger className="w-full">
+                <div className="flex items-center gap-2">
+                  <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                  <SelectValue placeholder="Filter by Date" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
                 <SelectItem value="all">All Time</SelectItem>
                 <SelectItem value="today">Today</SelectItem>
                 <SelectItem value="week">This Week</SelectItem>
                 <SelectItem value="month">This Month</SelectItem>
-                </SelectContent>
+              </SelectContent>
             </Select>
-            </div>
+          </div>
         </CardContent>
       </Card>
-      
+
       <Card className="shadow-lg">
         <CardContent className="p-0">
-        <Table>
+          <Table>
             <TableHeader>
-            <TableRow>
+              <TableRow>
                 <TableHead>Order ID</TableHead>
                 {role === "Manager" && <TableHead>Cashier</TableHead>}
                 <TableHead>Items</TableHead>
@@ -128,28 +154,52 @@ export default function SalesPage() {
                 <TableHead>Date</TableHead>
                 <TableHead>Payment Mode</TableHead>
                 <TableHead>Status</TableHead>
-            </TableRow>
+              </TableRow>
             </TableHeader>
             <TableBody>
-            {filteredSales.length > 0 ? filteredSales.map(sale => (
-                <TableRow key={sale.id}>
-                <TableCell className="font-medium">{sale.id.substring(0, 8)}...</TableCell>
-                {role === "Manager" && <TableCell>{sale.cashierName}</TableCell>}
-                <TableCell>{sale.items.length} ({sale.items.reduce((acc, item) => acc + item.quantity, 0)} units)</TableCell>
-                <TableCell>${sale.totalAmount.toFixed(2)}</TableCell>
-                <TableCell>{new Date(sale.timestamp).toLocaleString()}</TableCell>
-                <TableCell><Badge variant="outline">{sale.paymentMode}</Badge></TableCell>
-                <TableCell><Badge variant="default" className="bg-green-500 hover:bg-green-600 text-white">Completed</Badge></TableCell>
-                </TableRow>
-            )) : (
+              {filteredSales.length > 0 ? (
+                filteredSales.map((sale) => (
+                  <TableRow key={sale.id}>
+                    <TableCell className="font-medium">
+                      {sale.id.substring(0, 8)}...
+                    </TableCell>
+                    {role === "Manager" && (
+                      <TableCell>{sale.cashierName}</TableCell>
+                    )}
+                    <TableCell>
+                      {sale.items.length} (
+                      {sale.items.reduce((acc, item) => acc + item.quantity, 0)}{" "}
+                      units)
+                    </TableCell>
+                    <TableCell>${sale.totalAmount.toFixed(2)}</TableCell>
+                    <TableCell>
+                      {new Date(sale.timestamp).toLocaleString()}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{sale.paymentMode}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="default"
+                        className="bg-green-500 hover:bg-green-600 text-white"
+                      >
+                        Completed
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
                 <TableRow>
-                <TableCell colSpan={role === "Manager" ? 7 : 6} className="h-24 text-center">
+                  <TableCell
+                    colSpan={role === "Manager" ? 7 : 6}
+                    className="h-24 text-center"
+                  >
                     No sales found matching your criteria.
-                </TableCell>
+                  </TableCell>
                 </TableRow>
-            )}
+              )}
             </TableBody>
-        </Table>
+          </Table>
         </CardContent>
       </Card>
     </>
