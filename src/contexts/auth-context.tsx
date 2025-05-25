@@ -54,11 +54,8 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
       setIsLoading(true);
       // Mock authentication
       const foundUser = findUserByUsername(username);
-      // In a real app, passwordAttempt would be hashed and compared, or sent to an API.
-      // For this mock, we'll assume a hardcoded password or direct match if we had one in DUMMY_USERS.
-      // For simplicity, let's assume any password works if the username is found and active.
       if (foundUser && foundUser.status === "Active") {
-        // This is a mock password check. In a real scenario, never store/compare plain text passwords.
+        // This is a mock password check. In a real scenario.
         // For SaleSpider, all users have 'password123' for simplicity.
         if (passwordAttempt === "Password123") {
           setUser(foundUser);

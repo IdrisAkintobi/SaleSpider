@@ -1,11 +1,9 @@
+export type Role = "Manager" | "Cashier";
 
-export type Role = 'Manager' | 'Cashier';
-
-export type UserStatus = 'Active' | 'Inactive';
+export type UserStatus = "Active" | "Inactive";
 
 export interface User {
   id: string; // Corresponds to staffID or a unique identifier
-  staffAddr: string; // Ethereum address, e.g., "0x123..."
   name: string;
   username: string; // For mock login
   role: Role;
@@ -30,11 +28,11 @@ export interface SaleItem {
   price: number; // Price at the time of sale
 }
 
-export type PaymentMode = 'Cash' | 'Card' | 'Crypto' | 'Other';
+export type PaymentMode = "Cash" | "Card" | "Crypto" | "Other";
 
 export interface Sale {
   id: string; // Corresponds to saleId
-  cashierId: string; // staffAddr of the cashier
+  cashierId: string; // id of the cashier
   cashierName: string;
   items: SaleItem[];
   totalAmount: number;

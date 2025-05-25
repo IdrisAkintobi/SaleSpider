@@ -30,14 +30,14 @@ export default function SalesPage() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>(DUMMY_USERS); // For manager filter
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterCashier, setFilterCashier] = useState<string>("all"); // staffAddr or "all"
+  const [filterCashier, setFilterCashier] = useState<string>("all"); // id or "all"
   const [filterDateRange, setFilterDateRange] = useState<string>("all"); // "today", "week", "month", "all"
 
   useEffect(() => {
     if (role === "Manager") {
       setSales(getAllSales());
     } else if (user) {
-      setSales(getSalesByCashierId(user.staffAddr));
+      setSales(getSalesByCashierId(user.id));
     }
   }, [role, user]);
 
@@ -117,7 +117,7 @@ export default function SalesPage() {
                 <SelectContent>
                   <SelectItem value="all">All Cashiers</SelectItem>
                   {cashiers.map((c) => (
-                    <SelectItem key={c.staffAddr} value={c.staffAddr}>
+                    <SelectItem key={c.id} value={c.id}>
                       {c.name}
                     </SelectItem>
                   ))}

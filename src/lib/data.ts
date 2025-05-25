@@ -4,23 +4,20 @@ import type { Product, Sale, User, UserStatus } from "./types";
 export const DUMMY_USERS: User[] = [
   {
     id: "manager_001",
-    staffAddr: "0xManager001AddressNonCommutativeEthereum", // Example Ethereum-like address
-    name: "Alice Wonderland",
+    name: "Idris Akintobi",
     username: "idrisakintobi",
     role: "Manager",
     status: "Active",
   },
   {
     id: "user_cashier_001",
-    staffAddr: "0xCashier001AddressUniqueAndDistinctVal",
-    name: "Bob The Builder",
+    name: "John Walker",
     username: "cashier1",
     role: "Cashier",
     status: "Active",
   },
   {
     id: "user_cashier_002",
-    staffAddr: "0xCashier002AddressAnotherExampleForYou",
     name: "Charlie Brown",
     username: "cashier2",
     role: "Cashier",
@@ -28,7 +25,6 @@ export const DUMMY_USERS: User[] = [
   },
   {
     id: "user_cashier_003",
-    staffAddr: "0xCashier003AddressInactiveExampleHere",
     name: "Diana Prince",
     username: "cashier3",
     role: "Cashier",
@@ -89,7 +85,7 @@ export const DUMMY_PRODUCTS: Product[] = [
 export const DUMMY_SALES: Sale[] = [
   {
     id: "sale_001",
-    cashierId: DUMMY_USERS[1].staffAddr, // Bob The Builder
+    cashierId: DUMMY_USERS[1].id, // John Walker
     cashierName: DUMMY_USERS[1].name,
     items: [
       {
@@ -111,7 +107,7 @@ export const DUMMY_SALES: Sale[] = [
   },
   {
     id: "sale_002",
-    cashierId: DUMMY_USERS[2].staffAddr, // Charlie Brown
+    cashierId: DUMMY_USERS[2].id, // Charlie Brown
     cashierName: DUMMY_USERS[2].name,
     items: [
       {
@@ -127,7 +123,7 @@ export const DUMMY_SALES: Sale[] = [
   },
   {
     id: "sale_003",
-    cashierId: DUMMY_USERS[1].staffAddr, // Bob The Builder
+    cashierId: DUMMY_USERS[1].id, // John Walker
     cashierName: DUMMY_USERS[1].name,
     items: [
       {
@@ -144,7 +140,7 @@ export const DUMMY_SALES: Sale[] = [
   // Add more sales for weekly/daily performance
   {
     id: "sale_004",
-    cashierId: DUMMY_USERS[1].staffAddr,
+    cashierId: DUMMY_USERS[1].id,
     cashierName: DUMMY_USERS[1].name,
     items: [
       {
@@ -160,7 +156,7 @@ export const DUMMY_SALES: Sale[] = [
   },
   {
     id: "sale_005",
-    cashierId: DUMMY_USERS[2].staffAddr,
+    cashierId: DUMMY_USERS[2].id,
     cashierName: DUMMY_USERS[2].name,
     items: [
       {
@@ -184,13 +180,8 @@ export const findUserByUsername = (username: string): User | undefined =>
 
 export const getAllUsers = (): User[] => DUMMY_USERS;
 
-export const updateUserStatus = (
-  staffAddr: string,
-  status: UserStatus
-): boolean => {
-  const userIndex = DUMMY_USERS.findIndex(
-    (user) => user.staffAddr === staffAddr
-  );
+export const updateUserStatus = (id: string, status: UserStatus): boolean => {
+  const userIndex = DUMMY_USERS.findIndex((user) => user.id === id);
   if (userIndex !== -1) {
     DUMMY_USERS[userIndex].status = status;
     return true;
@@ -227,7 +218,7 @@ export const updateProductStock = (
 ): boolean => {
   const productIndex = DUMMY_PRODUCTS.findIndex((p) => p.id === id);
   if (productIndex !== -1) {
-    DUMMY_PRODUCTS[productIndex].quantity = newQuantity;
+    DUMMY_PRODUCTS[productIndex].quantity += newQuantity;
     return true;
   }
   return false;

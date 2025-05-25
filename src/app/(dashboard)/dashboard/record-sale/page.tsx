@@ -157,7 +157,7 @@ export default function RecordSalePage() {
     }
 
     const saleToRecord = {
-      cashierId: user.staffAddr,
+      cashierId: user.id,
       cashierName: user.name,
       items: cart.map(({ stock, ...item }) => item),
       totalAmount: cartTotal,
