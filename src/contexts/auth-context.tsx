@@ -1,6 +1,5 @@
 "use client";
 
-import { findUserByUsername } from "@/lib/data"; // Assuming DUMMY_USERS is exported for mock auth
 import type { Role, User } from "@/lib/types";
 import { usePathname, useRouter } from "next/navigation";
 import type { PropsWithChildren } from "react";
@@ -14,83 +13,65 @@ import React, {
 
 interface AuthContextType {
   user: User | null;
-  role: Role | null;
-  isLoading: boolean;
   login: (username: string, passwordAttempt: string) => Promise<boolean>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const AUTH_STORAGE_KEY = "salespider_auth_user";
-
 export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
 
-  useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem(AUTH_STORAGE_KEY);
-      if (storedUser) {
-        const parsedUser: User = JSON.parse(storedUser);
-        // Basic validation, in real app, you'd verify token with backend
-        if (parsedUser && parsedUser.username && parsedUser.role) {
-          setUser(parsedUser);
-        } else {
-          localStorage.removeItem(AUTH_STORAGE_KEY);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to load user from localStorage", error);
-      localStorage.removeItem(AUTH_STORAGE_KEY);
-    }
-    setIsLoading(false);
-  }, []);
-
   const login = useCallback(
     async (username: string, passwordAttempt: string): Promise<boolean> => {
-      setIsLoading(true);
-      // Mock authentication
-      const foundUser = findUserByUsername(username);
-      if (foundUser && foundUser.status === "Active") {
-        // This is a mock password check. In a real scenario.
-        // For SaleSpider, all users have 'password123' for simplicity.
-        if (passwordAttempt === "Password123") {
-          setUser(foundUser);
-          localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(foundUser));
-          setIsLoading(false);
+
+      try {
+        const response = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ username, password: passwordAttempt }),
+        });
+
+        if (response.ok) {
+          const userData = await response.json(); // API now returns user info directly
+          setUser(userData);
           router.push("/dashboard/overview");
           return true;
+        } else {
+          // Handle login failure (e.g., display error message)
+          console.error("Login failed");
         }
+      } catch (error) {
+        console.error("Login API error:", error);
       }
-      setIsLoading(false);
       return false;
     },
     [router]
   );
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     setUser(null);
-    localStorage.removeItem(AUTH_STORAGE_KEY);
+    await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
   }, [router]);
 
   useEffect(() => {
     if (
-      !isLoading &&
       !user &&
       !pathname.startsWith("/login") &&
       pathname !== "/"
     ) {
       router.push("/login");
     }
-  }, [user, isLoading, router, pathname]);
+  }, [user, router, pathname]);
 
   return (
     <AuthContext.Provider
-      value={{ user, role: user?.role || null, isLoading, login, logout }}
+      value={{ user, login, logout }}
     >
       {children}
     </AuthContext.Provider>

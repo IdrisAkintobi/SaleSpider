@@ -1,20 +1,21 @@
-export type Role = "Manager" | "Cashier";
+export type Role = "Store Owner" |"Manager" | "Cashier";
 
 export type UserStatus = "Active" | "Inactive";
 
 export interface User {
-  id: string; // Corresponds to staffID or a unique identifier
+  id: string;
   name: string;
-  username: string; // For mock login
+  username: string;
   role: Role;
   status: UserStatus;
-  // passwordHash is omitted for mock implementation; direct password check in mock data
+  passwordHash?: string;
+  token: string;
 }
 
 export interface Product {
-  id: string; // Corresponds to productID
+  id: string;
   name: string;
-  price: number; // Stored as BigInt in schema, number for UI simplicity
+  price: number;
   quantity: number; // Current stock
   lowStockMargin: number; // Threshold for low stock warnings
   imageUrl?: string; // Optional image URL
@@ -28,7 +29,7 @@ export interface SaleItem {
   price: number; // Price at the time of sale
 }
 
-export type PaymentMode = "Cash" | "Card" | "Crypto" | "Other";
+export type PaymentMode = "Cash" | "Card" | "Bank Transfer" | "Crypto" | "Other";
 
 export interface Sale {
   id: string; // Corresponds to saleId
