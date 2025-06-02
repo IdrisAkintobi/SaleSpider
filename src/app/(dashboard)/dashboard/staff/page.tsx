@@ -46,7 +46,7 @@ interface StaffPerformance extends User {
 }
 
 export default function StaffPage() {
-  const { user: currentUser, role } = useAuth();
+  const { user: currentUser, userIsManager, userIsCashier } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -57,7 +57,7 @@ export default function StaffPage() {
   );
 
   useEffect(() => {
-    if (role === "Manager") {
+    if (userIsManager) {
       const users = getAllUsers();
       const sales = getAllSales();
 
@@ -75,7 +75,7 @@ export default function StaffPage() {
       });
       setStaffList(performanceData);
     }
-  }, [role]);
+  }, [currentUser]);
 
   const handleStatusChange = (
     staffMember: StaffPerformance,
@@ -108,7 +108,7 @@ export default function StaffPage() {
     [staffList, searchTerm]
   );
 
-  if (role !== "Manager") {
+  if (userIsCashier) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center">
         <Users className="w-16 h-16 text-muted-foreground mb-4" />
@@ -162,11 +162,7 @@ export default function StaffPage() {
                     <TableCell className="font-medium">{staff.name}</TableCell>
                     <TableCell>{staff.username}</TableCell>
                     <TableCell>
-                      <Badge
-                        variant={
-                          staff.role === "Manager" ? "default" : "secondary"
-                        }
-                      >
+                      <Badge variant={userIsManager ? "default" : "secondary"}>
                         {staff.role}
                       </Badge>
                     </TableCell>

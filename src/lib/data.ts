@@ -3,31 +3,38 @@ import type { Product, Sale, User, UserStatus } from "./types";
 // Mock Users
 export const DUMMY_USERS: User[] = [
   {
+    id: "admin_001",
+    name: "Super Admin",
+    username: "super_admin",
+    role: "SUPER_ADMIN",
+    status: "Active",
+  },
+  {
     id: "manager_001",
     name: "Idris Akintobi",
     username: "idrisakintobi",
-    role: "Manager",
+    role: "MANAGER",
     status: "Active",
   },
   {
     id: "user_cashier_001",
     name: "John Walker",
     username: "cashier1",
-    role: "Cashier",
+    role: "CASHIER",
     status: "Active",
   },
   {
     id: "user_cashier_002",
     name: "Charlie Brown",
     username: "cashier2",
-    role: "Cashier",
+    role: "CASHIER",
     status: "Active",
   },
   {
     id: "user_cashier_003",
     name: "Diana Prince",
     username: "cashier3",
-    role: "Cashier",
+    role: "CASHIER",
     status: "Inactive",
   },
 ];
@@ -203,7 +210,7 @@ export const addProduct = (
     id: `prod_new_${Date.now()}_${Math.random().toString(16).slice(2)}`,
     dateAdded: Date.now(),
     imageUrl:
-      product.imageUrl ||
+      product.imageUrl ??
       `https://placehold.co/300x300.png?text=${encodeURIComponent(
         product.name
       )}`,

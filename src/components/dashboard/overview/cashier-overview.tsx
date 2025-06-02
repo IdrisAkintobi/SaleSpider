@@ -35,7 +35,7 @@ export function CashierOverview() {
   useEffect(() => {
     if (user) {
       const sales = getSalesByCashierId(user.id);
-      setMySales(sales.sort((a, b) => b.timestamp - a.timestamp)); // Sort recent first
+      setMySales(sales.toSorted((a, b) => b.timestamp - a.timestamp));
 
       const totalValue = sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
       setTotalMySalesValue(totalValue);

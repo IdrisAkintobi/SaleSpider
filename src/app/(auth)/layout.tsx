@@ -1,6 +1,5 @@
-
-import type { PropsWithChildren } from "react";
 import { Logo } from "@/components/shared/logo";
+import { type PropsWithChildren } from "react";
 
 export default function AuthLayout({ children }: PropsWithChildren) {
   return (
@@ -8,9 +7,7 @@ export default function AuthLayout({ children }: PropsWithChildren) {
       <div className="absolute top-8 left-8">
         <Logo />
       </div>
-      <main className="w-full max-w-md">
-        {children}
-      </main>
+      <main className="w-full max-w-md">{children}</main>
     </div>
   );
 }

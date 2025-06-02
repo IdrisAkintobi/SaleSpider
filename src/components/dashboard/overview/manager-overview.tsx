@@ -56,7 +56,7 @@ export function ManagerOverview() {
     setTotalSales(currentTotalSales);
     setTotalOrders(sales.length);
     setActiveStaff(
-      users.filter((u) => u.status === "Active" && u.role === "Cashier").length
+      users.filter((u) => u.status === "Active" && u.role === "CASHIER").length
     );
     setLowStockItems(
       products.filter((p) => p.quantity <= p.lowStockMargin).length
@@ -123,7 +123,9 @@ export function ManagerOverview() {
       { name: "This Week", sales: parseFloat(thisWeekSales.toFixed(2)) },
     ]);
 
-    setRecentSales(sales.sort((a, b) => b.timestamp - a.timestamp).slice(0, 5));
+    setRecentSales(
+      sales.toSorted((a, b) => b.timestamp - a.timestamp).slice(0, 5)
+    );
   }, []);
 
   return (

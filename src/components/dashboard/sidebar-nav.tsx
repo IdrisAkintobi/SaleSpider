@@ -27,49 +27,51 @@ const navItems: NavItem[] = [
     href: "/dashboard/overview",
     label: "Overview",
     icon: LayoutDashboard,
-    roles: ["Manager", "Cashier"],
+    roles: ["SUPER_ADMIN", "MANAGER", "CASHIER"],
   },
   {
     href: "/dashboard/inventory",
     label: "Inventory",
     icon: Package,
-    roles: ["Manager", "Cashier"],
+    roles: ["SUPER_ADMIN", "MANAGER", "CASHIER"],
   },
   {
     href: "/dashboard/sales",
     label: "Sales History",
     icon: ShoppingCart,
-    roles: ["Manager", "Cashier"],
+    roles: ["SUPER_ADMIN", "MANAGER", "CASHIER"],
   },
   {
     href: "/dashboard/record-sale",
     label: "Record Sale",
     icon: DollarSign,
-    roles: ["Cashier"],
+    roles: ["CASHIER"],
   },
   {
     href: "/dashboard/staff",
     label: "Staff Management",
     icon: Users,
-    roles: ["Manager"],
+    roles: ["SUPER_ADMIN", "MANAGER"],
   },
   {
     href: "/dashboard/ai-recommendations",
     label: "AI Insights",
     icon: Bot,
-    roles: ["Manager"],
+    roles: ["SUPER_ADMIN", "MANAGER"],
   },
   // { href: "/dashboard/reports", label: "Reports", icon: ScrollText, roles: ["Manager"] }, // Example for future
-  // { href: "/dashboard/settings", label: "Settings", icon: Settings, roles: ["Manager", "Cashier"] }, // Example for future
+  // { href: "/dashboard/settings", label: "Settings", icon: Settings, roles: ["MANAGER", "CASHIER"] }, // Example for future
 ];
 
 export function SidebarNav() {
   const pathname = usePathname();
-  const { role } = useAuth();
+  const { user } = useAuth();
 
-  if (!role) return null;
+  if (!user) return null;
 
-  const filteredNavItems = navItems.filter((item) => item.roles.includes(role));
+  const filteredNavItems = navItems.filter((item) =>
+    item.roles.includes(user.role)
+  );
 
   return (
     <nav className="grid items-start gap-2 text-sm font-medium">

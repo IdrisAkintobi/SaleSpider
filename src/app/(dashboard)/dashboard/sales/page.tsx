@@ -21,25 +21,24 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "@/contexts/auth-context";
 import { DUMMY_USERS, getAllSales, getSalesByCashierId } from "@/lib/data";
-import type { Sale, User } from "@/lib/types";
+import type { Sale } from "@/lib/types";
 import { CalendarDays, Filter, UserCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 export default function SalesPage() {
-  const { user, role } = useAuth();
+  const { user, userIsManager, userIsCashier } = useAuth();
   const [sales, setSales] = useState<Sale[]>([]);
-  const [allUsers, setAllUsers] = useState<User[]>(DUMMY_USERS); // For manager filter
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCashier, setFilterCashier] = useState<string>("all"); // id or "all"
   const [filterDateRange, setFilterDateRange] = useState<string>("all"); // "today", "week", "month", "all"
 
   useEffect(() => {
-    if (role === "Manager") {
+    if (userIsManager) {
       setSales(getAllSales());
-    } else if (user) {
-      setSales(getSalesByCashierId(user.id));
+    } else if (userIsCashier) {
+      setSales(getSalesByCashierId(user!.id));
     }
-  }, [role, user]);
+  }, [user]);
 
   const filteredSales = useMemo(() => {
     let dateFilteredSales = sales;
@@ -75,26 +74,24 @@ export default function SalesPage() {
           sale.items.some((item) =>
             item.productName.toLowerCase().includes(searchTerm.toLowerCase())
           );
-        const matchesCashier =
-          role === "Manager"
-            ? filterCashier === "all" || sale.cashierId === filterCashier
-            : true; // Cashiers only see their own sales, so this filter is implicitly handled
+        const matchesCashier = userIsManager
+          ? filterCashier === "all" || sale.cashierId === filterCashier
+          : true; // Cashiers only see their own sales, so this filter is implicitly handled
 
         return matchesSearch && matchesCashier;
       })
       .sort((a, b) => b.timestamp - a.timestamp);
-  }, [sales, searchTerm, filterCashier, filterDateRange, role]);
+  }, [sales, searchTerm, filterCashier, filterDateRange]);
 
   const cashiers = useMemo(
-    () =>
-      DUMMY_USERS.filter((u) => u.role === "Cashier" && u.status === "Active"),
+    () => DUMMY_USERS.filter((u) => userIsCashier && u.status === "Active"),
     []
   );
 
   return (
     <>
       <PageHeader
-        title={role === "Manager" ? "Sales History" : "My Sales History"}
+        title={userIsManager ? "Sales History" : "My Sales History"}
         description="Review all recorded sales transactions."
       />
       <Card className="mb-6 shadow">
@@ -106,7 +103,7 @@ export default function SalesPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
               icon={<Filter className="h-4 w-4 text-muted-foreground" />}
             />
-            {role === "Manager" && (
+            {userIsManager && (
               <Select value={filterCashier} onValueChange={setFilterCashier}>
                 <SelectTrigger className="w-full">
                   <div className="flex items-center gap-2">
@@ -148,7 +145,7 @@ export default function SalesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Order ID</TableHead>
-                {role === "Manager" && <TableHead>Cashier</TableHead>}
+                {userIsManager && <TableHead>Cashier</TableHead>}
                 <TableHead>Items</TableHead>
                 <TableHead>Total Amount</TableHead>
                 <TableHead>Date</TableHead>
@@ -163,9 +160,7 @@ export default function SalesPage() {
                     <TableCell className="font-medium">
                       {sale.id.substring(0, 8)}...
                     </TableCell>
-                    {role === "Manager" && (
-                      <TableCell>{sale.cashierName}</TableCell>
-                    )}
+                    {userIsManager && <TableCell>{sale.cashierName}</TableCell>}
                     <TableCell>
                       {sale.items.length} (
                       {sale.items.reduce((acc, item) => acc + item.quantity, 0)}{" "}
@@ -191,7 +186,7 @@ export default function SalesPage() {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={role === "Manager" ? 7 : 6}
+                    colSpan={userIsManager ? 7 : 6}
                     className="h-24 text-center"
                   >
                     No sales found matching your criteria.

@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { jwtVerify } from 'jose';
+import { jwtVerify } from "jose";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET);
 
@@ -8,7 +8,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // List of routes that do not require authentication
-  const publicPaths = ['/login', '/register'];
+  const publicPaths = ["/login", "/register"];
 
   // Check if the current path is a public path
   if (publicPaths.includes(pathname)) {
@@ -16,11 +16,11 @@ export async function middleware(request: NextRequest) {
   }
 
   // Get the JWT from the cookie
-  const token = request.cookies.get('token')?.value;
+  const token = request.cookies.get("token")?.value;
 
   // If no token, redirect to login
   if (!token) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   try {
@@ -30,10 +30,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   } catch (error) {
     // If verification fails, redirect to login
-    return NextResponse.redirect(new URL('/login', request.url));
+    console.log("An error occurred verifying token", (error as Error).message);
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 }
 
 export const config = {
-  matcher: '/dashboard/:path*', // Apply middleware to all routes under /dashboard
+  matcher: "/dashboard/:path*", // Apply middleware to all routes under /dashboard
 };

@@ -1,15 +1,22 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import * as argon2 from 'argon2';
-import { SignJWT } from 'jose';
+import { PrismaClient } from "@prisma/client";
+import * as argon2 from "argon2";
+import { SignJWT } from "jose";
+import { NextRequest, NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
+const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+const tokenExpiry = process.env.TOKEN_EXPIRY || "24h";
+const alg = "HS256";
+
 export async function POST(req: NextRequest) {
   try {
-    const { email, password } = await req.json();
+    const { username: email, password } = await req.json();
 
     if (!email || !password) {
-      return NextResponse.json({ message: 'Email and password are required' }, { status: 400 });
+      return NextResponse.json(
+        { message: "Email and password are required" },
+        { status: 400 }
+      );
     }
 
     const user = await prisma.user.findUnique({
@@ -19,32 +26,53 @@ export async function POST(req: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
+      return NextResponse.json(
+        { message: "Invalid credentials" },
+        { status: 401 }
+      );
     }
 
     // Use argon2.verify for password comparison
     const passwordMatch = await argon2.verify(user.password, password);
 
     if (!passwordMatch) {
-      return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
+      return NextResponse.json(
+        { message: "Invalid credentials" },
+        { status: 401 }
+      );
     }
 
-    // Generate JWT
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    const alg = 'HS256';
+    const userData = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    };
 
-    const token = await new SignJWT({ userId: user.id, email: user.email })
- .setProtectedHeader({ alg })
-      .setExpirationTime('24h') // Token expires in 24 hours
+    // Generate JWT
+    const token = await new SignJWT(userData)
+      .setProtectedHeader({ alg })
+      .setExpirationTime(tokenExpiry) // Token expires in 24 hours
       .sign(secret);
 
-    const response = NextResponse.json({ message: 'Login successful', user: { id: user.id, email: user.email, role: user.role } });
+    const response = NextResponse.json({
+      message: "Login successful",
+      user: userData,
+    });
     // Set JWT as an HTTP-only cookie
-    response.cookies.set('auth_token', token, { httpOnly: true, path: '/', secure: process.env.NODE_ENV === 'production' });
+    response.cookies.set("auth_token", token, {
+      httpOnly: true,
+      sameSite: true,
+      path: "/",
+      secure: process.env.NODE_ENV === "production",
+    });
 
     return response;
   } catch (error) {
-    console.error('Login error:', error);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    console.error("Login error:", error);
+    return NextResponse.json(
+      { message: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
