@@ -1,11 +1,12 @@
-import { PrismaClient, Role } from '@prisma/client';
-import * as argon2 from 'argon2';
+import { PrismaClient, Role } from "@prisma/client";
+import * as argon2 from "argon2";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'admin@example.com';
-  const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD || 'password'; // Consider a stronger default or require env var
+  const superAdminEmail =
+    process.env.SUPER_ADMIN_EMAIL ?? "admin@salespider.com";
+  const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD ?? "Password123#";
 
   // Check if super admin already exists
   const existingSuperAdmin = await prisma.user.findUnique({
@@ -15,7 +16,7 @@ async function main() {
   });
 
   if (existingSuperAdmin) {
-    console.log('Super admin user already exists.');
+    console.log("Super admin user already exists.");
     return;
   }
 
@@ -25,6 +26,8 @@ async function main() {
   // Create the super admin user
   const superAdmin = await prisma.user.create({
     data: {
+      id: "super_admin",
+      name: "Super Admin",
       email: superAdminEmail,
       password: hashedSuperAdminPassword,
       role: Role.SUPER_ADMIN,

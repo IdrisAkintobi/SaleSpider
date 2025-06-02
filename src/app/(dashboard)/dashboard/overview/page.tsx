@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { useAuth } from "@/contexts/auth-context";
 
 export default function OverviewPage() {
-  const { user, role } = useAuth();
+  const { user, userIsManager } = useAuth();
 
   if (!user) {
     return null;
@@ -17,12 +17,12 @@ export default function OverviewPage() {
       <PageHeader
         title={`Welcome, ${user.name}!`}
         description={
-          role === "Manager"
+          userIsManager
             ? "Here's an overview of your store's performance."
             : "Here's a summary of your sales activity."
         }
       />
-      {role === "Manager" ? <ManagerOverview /> : <CashierOverview />}
+      {userIsManager ? <ManagerOverview /> : <CashierOverview />}
     </>
   );
 }

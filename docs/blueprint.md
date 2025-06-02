@@ -1,4 +1,4 @@
-# **App Name**: LedgerLink
+# **App Name**: Salespider
 
 ## Core Features:
 

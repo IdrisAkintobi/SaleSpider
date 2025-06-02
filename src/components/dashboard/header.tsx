@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import { useTheme } from "next-themes"; // Assuming next-themes is or will be installed
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Fragment } from "react";
 import { SidebarNav } from "./sidebar-nav"; // We'll create this next
 
 // Helper for theme toggle, assuming next-themes
@@ -43,8 +45,8 @@ function ThemeToggle() {
 
 export function DashboardHeader() {
   const { user, logout } = useAuth();
-  // const pathname = usePathname();
-  // const breadcrumbs = generateBreadcrumbs(pathname); // Placeholder for breadcrumb logic
+  const pathname = usePathname();
+  const breadcrumbs = generateBreadcrumbs(pathname); // Placeholder for breadcrumb logic
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-4 md:px-6">
@@ -68,17 +70,24 @@ export function DashboardHeader() {
         </SheetContent>
       </Sheet>
 
-      {/* Breadcrumbs could go here if needed */}
-      {/* <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
+      {/* Breadcrumbs */}
+      <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
         {breadcrumbs.map((crumb, index) => (
-          <React.Fragment key={crumb.href}>
+          <Fragment key={crumb.href + crumb.label}>
             {index > 0 && <span>/</span>}
-            <Link href={crumb.href} className={index === breadcrumbs.length -1 ? "font-medium text-foreground" : "hover:text-foreground"}>
+            <Link
+              href={crumb.href}
+              className={
+                index === breadcrumbs.length - 1
+                  ? "font-medium text-foreground"
+                  : "hover:text-foreground"
+              }
+            >
               {crumb.label}
             </Link>
-          </React.Fragment>
+          </Fragment>
         ))}
-      </div> */}
+      </div>
 
       <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
         <form className="ml-auto flex-1 sm:flex-initial">
@@ -113,7 +122,6 @@ export function DashboardHeader() {
             <DropdownMenuItem asChild>
               <Link href="/dashboard/settings">
                 {" "}
-                {/* Placeholder for settings */}
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
               </Link>
@@ -131,14 +139,17 @@ export function DashboardHeader() {
 }
 
 // Example breadcrumb generation (can be more sophisticated)
-// function generateBreadcrumbs(pathname: string) {
-//   const paths = pathname.split('/').filter(p => p);
-//   const crumbs = [{ href: "/dashboard/overview", label: "Dashboard" }];
-//   let currentPath = "/dashboard";
-//   paths.slice(1).forEach(part => {
-//     if (part === "dashboard") return;
-//     currentPath += `/${part}`;
-//     crumbs.push({ href: currentPath, label: part.charAt(0).toUpperCase() + part.slice(1).replace(/-/g, ' ') });
-//   });
-//   return crumbs;
-// }
+function generateBreadcrumbs(pathname: string) {
+  const paths = pathname.split("/").filter((p) => p);
+  const crumbs = [{ href: "/dashboard/overview", label: "Dashboard" }];
+  let currentPath = "/dashboard";
+  paths.slice(1).forEach((part) => {
+    if (part === "dashboard") return;
+    currentPath += `/${part}`;
+    crumbs.push({
+      href: currentPath,
+      label: part.charAt(0).toUpperCase() + part.slice(1).replace(/-/g, " "),
+    });
+  });
+  return crumbs;
+}

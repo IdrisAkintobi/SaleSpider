@@ -59,7 +59,7 @@ const stockUpdateSchema = z.object({
 type StockUpdateFormData = z.infer<typeof stockUpdateSchema>;
 
 export default function InventoryPage() {
-  const { role } = useAuth();
+  const { userIsManager } = useAuth();
   const { toast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -129,7 +129,7 @@ export default function InventoryPage() {
         title="Inventory Management"
         description="View, add, and manage your product stock."
         actions={
-          role === "Manager" && (
+          userIsManager && (
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
@@ -250,7 +250,7 @@ export default function InventoryPage() {
                 <TableHead>Stock</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Date Added</TableHead>
-                {role === "Manager" && (
+                {userIsManager && (
                   <TableHead className="text-right">Actions</TableHead>
                 )}
               </TableRow>
@@ -297,7 +297,7 @@ export default function InventoryPage() {
                     <TableCell>
                       {new Date(product.dateAdded).toLocaleDateString()}
                     </TableCell>
-                    {role === "Manager" && (
+                    {userIsManager && (
                       <TableCell className="text-right">
                         <Button
                           variant="outline"
@@ -313,7 +313,7 @@ export default function InventoryPage() {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={role === "Manager" ? 7 : 6}
+                    colSpan={userIsManager ? 7 : 6}
                     className="h-24 text-center"
                   >
                     No products found.

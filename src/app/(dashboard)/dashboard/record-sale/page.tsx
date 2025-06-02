@@ -39,7 +39,7 @@ interface CartItem extends SaleItem {
 }
 
 export default function RecordSalePage() {
-  const { user, role } = useAuth();
+  const { user, userIsManager } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -139,7 +139,7 @@ export default function RecordSalePage() {
   }, [cart]);
 
   const handleRecordSale = () => {
-    if (!user || role !== "Cashier") {
+    if (userIsManager) {
       toast({
         title: "Unauthorized",
         description: "You are not authorized to record sales.",
@@ -157,8 +157,8 @@ export default function RecordSalePage() {
     }
 
     const saleToRecord = {
-      cashierId: user.id,
-      cashierName: user.name,
+      cashierId: user!.id,
+      cashierName: user!.name,
       items: cart.map(({ stock, ...item }) => item),
       totalAmount: cartTotal,
       paymentMode,
@@ -183,7 +183,7 @@ export default function RecordSalePage() {
     router.push("/dashboard/sales"); // Navigate to sales history or overview
   };
 
-  if (role !== "Cashier") {
+  if (userIsManager) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center">
         <ShoppingCart className="w-16 h-16 text-muted-foreground mb-4" />

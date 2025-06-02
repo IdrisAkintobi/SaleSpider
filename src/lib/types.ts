@@ -1,4 +1,4 @@
-export type Role = "Store Owner" |"Manager" | "Cashier";
+export type Role = "SUPER_ADMIN" | "MANAGER" | "CASHIER";
 
 export type UserStatus = "Active" | "Inactive";
 
@@ -9,7 +9,7 @@ export interface User {
   role: Role;
   status: UserStatus;
   passwordHash?: string;
-  token: string;
+  token?: string;
 }
 
 export interface Product {
@@ -29,7 +29,12 @@ export interface SaleItem {
   price: number; // Price at the time of sale
 }
 
-export type PaymentMode = "Cash" | "Card" | "Bank Transfer" | "Crypto" | "Other";
+export type PaymentMode =
+  | "Cash"
+  | "Card"
+  | "Bank Transfer"
+  | "Crypto"
+  | "Other";
 
 export interface Sale {
   id: string; // Corresponds to saleId

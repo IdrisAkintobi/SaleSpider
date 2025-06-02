@@ -1,5 +1,4 @@
-
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
 interface PageHeaderProps {
   title: string;
@@ -7,14 +6,22 @@ interface PageHeaderProps {
   actions?: ReactNode;
 }
 
-export function PageHeader({ title, description, actions }: PageHeaderProps) {
+export function PageHeader({
+  title,
+  description,
+  actions,
+}: Readonly<PageHeaderProps>) {
   return (
     <div className="mb-6 md:mb-8 border-b pb-4">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground">{title}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+            {title}
+          </h1>
           {description && (
-            <p className="mt-1 text-sm md:text-base text-muted-foreground">{description}</p>
+            <p className="mt-1 text-sm md:text-base text-muted-foreground">
+              {description}
+            </p>
           )}
         </div>
         {actions && <div className="mt-4 md:mt-0 flex-shrink-0">{actions}</div>}
