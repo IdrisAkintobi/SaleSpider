@@ -22,8 +22,7 @@ const nextConfig: NextConfig = {
     "local-origin.dev",
     "*.local-origin.dev",
     "localhost",
-    "127.0.0.1",
-    "192.168.0.107",
+    ...(process.env.DEV_ORIGINS ? process.env.DEV_ORIGINS.split(",") : []),
   ],
 };
 
