@@ -2,6 +2,8 @@
     "IDX.aI.enableInlineCompletion": true,
     "IDX.aI.enableCodebaseIndexing": true,
     "cSpell.words": [
+        "cuid",
+        "GTIN",
         "salespider"
     ]
 }

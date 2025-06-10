@@ -20,6 +20,7 @@ export interface Product {
   lowStockMargin: number; // Threshold for low stock warnings
   imageUrl?: string; // Optional image URL
   dateAdded: number; // Timestamp
+  gtin?: string; // Optional GTIN (Global Trade Item Number)
 }
 
 export interface SaleItem {

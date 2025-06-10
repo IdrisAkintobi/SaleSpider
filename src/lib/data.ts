@@ -49,6 +49,7 @@ export const DUMMY_PRODUCTS: Product[] = [
     lowStockMargin: 20,
     imageUrl: "https://placehold.co/300x300.png?text=Mouse",
     dateAdded: new Date("2023-01-15T09:30:00Z").getTime(),
+    gtin: "123456789012",
   },
   {
     id: "prod_electronics_002",
@@ -58,6 +59,7 @@ export const DUMMY_PRODUCTS: Product[] = [
     lowStockMargin: 10,
     imageUrl: "https://placehold.co/300x300.png?text=Keyboard",
     dateAdded: new Date("2023-01-20T11:00:00Z").getTime(),
+    gtin: "123456789013",
   },
   {
     id: "prod_office_001",
