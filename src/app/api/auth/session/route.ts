@@ -1,6 +1,8 @@
 // app/api/auth/session/route.ts
 import { jwtVerify } from "jose";
+import { JWTExpired } from "jose/errors";
 import { NextRequest, NextResponse } from "next/server";
+import { clearAuthToken } from "../lib/cookie-handler";
 
 export async function GET(req: NextRequest) {
   try {
@@ -20,7 +22,10 @@ export async function GET(req: NextRequest) {
     // Return user info if token is valid
     return NextResponse.json({ user }, { status: 200 });
   } catch (error) {
-    console.error("Session API error:", error);
+    if (!(error instanceof JWTExpired)) {
+      console.error("Session API error:", (error as Error).message);
+    }
+    await clearAuthToken();
     return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
   }
 }

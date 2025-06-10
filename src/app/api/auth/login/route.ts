@@ -6,7 +6,7 @@ import { authTokenKey, setCookie } from "../lib/cookie-handler";
 
 const prisma = new PrismaClient();
 const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-const tokenExpiry = process.env.TOKEN_EXPIRY || "24h";
+const tokenExpiry = process.env.TOKEN_EXPIRY ?? "24h";
 const alg = "HS256";
 
 export async function POST(req: NextRequest) {

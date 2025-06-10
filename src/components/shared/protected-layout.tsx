@@ -1,5 +1,6 @@
 import { clearAuthToken } from "@/app/api/auth/lib/cookie-handler";
 import { jwtVerify } from "jose";
+import { JWTExpired } from "jose/errors";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -18,8 +19,13 @@ export async function ProtectedLayout({
   try {
     await jwtVerify(token, secret);
   } catch (error) {
-    console.log("An error occurred verifying token", (error as Error).message);
-    await clearAuthToken().catch(() => {});
+    if (!(error instanceof JWTExpired)) {
+      console.error(
+        "An error occurred verifying token",
+        (error as Error).message
+      );
+    }
+    await clearAuthToken();
     redirect("/login");
   }
 

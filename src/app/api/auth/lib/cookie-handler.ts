@@ -25,5 +25,5 @@ export function setCookie(res: NextResponse, name: string, value: string) {
 }
 
 export async function clearAuthToken() {
-  await clearCookie(authTokenKey);
+  await clearCookie(authTokenKey).catch(() => {});
 }
