@@ -15,8 +15,8 @@ datasource db {
 }
 
 model User {
-  id       String @id @default(uuid())
-  email    String @unique
+  id       String   @id          @default(cuid()) 
+  email    String   @unique
   name     String
   password String
   role     Role
@@ -26,4 +26,15 @@ enum Role {
   SUPER_ADMIN
   MANAGER
   CASHIER
+}
+
+model Product {
+  id             String   @id          @default(cuid()) // Unique identifier, default is cuid for auto-generation
+  name           String   @unique
+  price          Float
+  quantity       Int
+  lowStockMargin Int
+  imageUrl       String
+  dateAdded      DateTime
+  gtin           String?  @unique // Optional field for GTIN (Global Trade Item Number)
 }

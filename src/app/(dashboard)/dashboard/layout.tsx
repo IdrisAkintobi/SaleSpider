@@ -13,15 +13,15 @@ export default async function DashboardLayout({ children }: PropsWithChildren) {
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
           <aside className="hidden border-r bg-sidebar text-sidebar-foreground md:block">
-            <div className="flex h-full max-h-screen flex-col gap-2">
+            <div className="flex flex-col h-full">
               <div className="flex h-16 items-center border-b border-sidebar-border px-4 lg:px-6">
                 <Logo className="text-sidebar-foreground" />
               </div>
               <div className="flex-1 overflow-y-auto py-4">
                 <SidebarNav />
               </div>
-              {/* Optional Sidebar Footer Content */}
-              <div className="mt-auto p-4 border-t border-sidebar-border">
+              {/* Sidebar Footer Content - Sticky */}
+              <div className="sticky bottom-0 p-4 border-t border-sidebar-border bg-sidebar">
                 <p className="text-xs text-sidebar-foreground/70">
                   © {new Date().getFullYear()} Salespider
                 </p>

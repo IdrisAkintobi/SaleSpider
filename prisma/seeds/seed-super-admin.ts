@@ -1,15 +1,13 @@
 import { PrismaClient, Role } from "@prisma/client";
 import * as argon2 from "argon2";
 
-const prisma = new PrismaClient();
-
-async function main() {
+export async function seedSuperAdmin(client: PrismaClient) {
   const superAdminEmail =
     process.env.SUPER_ADMIN_EMAIL ?? "admin@salespider.com";
   const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD ?? "Password123#";
 
   // Check if super admin already exists
-  const existingSuperAdmin = await prisma.user.findUnique({
+  const existingSuperAdmin = await client.user.findUnique({
     where: {
       email: superAdminEmail,
     },
@@ -24,7 +22,7 @@ async function main() {
   const hashedSuperAdminPassword = await argon2.hash(superAdminPassword);
 
   // Create the super admin user
-  const superAdmin = await prisma.user.create({
+  const superAdmin = await client.user.create({
     data: {
       id: "super_admin",
       name: "Super Admin",
@@ -36,12 +34,3 @@ async function main() {
 
   console.log(`Super admin user created with email: ${superAdmin.email}`);
 }
-
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
