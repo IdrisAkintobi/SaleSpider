@@ -95,19 +95,6 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
     fetchUser();
   }, []);
 
-  useEffect(() => {
-    if (
-      !isLoading &&
-      !user &&
-      !pathname.startsWith("/login") &&
-      pathname !== "/"
-    ) {
-      router.push("/login");
-    } else if ((pathname.startsWith("/login") || pathname === "/") && user) {
-      router.push("/dashboard/overview");
-    }
-  }, [user, router, pathname, isLoading]);
-
   const userIsManager = useMemo(() => isManager(user), [user]);
   const userIsCashier = useMemo(() => isCashier(user), [user]);
 

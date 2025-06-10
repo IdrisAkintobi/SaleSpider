@@ -2,10 +2,11 @@ import { PrismaClient } from "@prisma/client";
 import * as argon2 from "argon2";
 import { SignJWT } from "jose";
 import { NextRequest, NextResponse } from "next/server";
+import { authTokenKey, setCookie } from "../lib/cookie-handler";
 
 const prisma = new PrismaClient();
 const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-const tokenExpiry = process.env.TOKEN_EXPIRY || "24h";
+const tokenExpiry = process.env.TOKEN_EXPIRY ?? "24h";
 const alg = "HS256";
 
 export async function POST(req: NextRequest) {
@@ -59,13 +60,9 @@ export async function POST(req: NextRequest) {
       message: "Login successful",
       user: userData,
     });
+
     // Set JWT as an HTTP-only cookie
-    response.cookies.set("auth_token", token, {
-      httpOnly: true,
-      sameSite: true,
-      path: "/",
-      secure: process.env.NODE_ENV === "production",
-    });
+    setCookie(response, authTokenKey, token);
 
     return response;
   } catch (error) {
