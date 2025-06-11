@@ -1,8 +1,10 @@
 import { jwtVerify } from "jose";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { PrismaClient } from '@prisma/client';
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+const prisma = new PrismaClient();
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -24,10 +26,28 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    // Verify the token
-    await jwtVerify(token, secret);
+    // Verify the token and decode the payload
+    const { payload } = await jwtVerify(token, secret);
+
+    // Assuming the payload contains the user ID (e.g., as 'sub')
+    const userId = payload.sub;
+
+    if (!userId) {
+      throw new Error("Invalid token payload: user ID not found");
+    }
+
+    // Fetch the user from the database
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
     // If verification is successful, proceed to the requested route
-    return NextResponse.next();
+    const response = NextResponse.next();
+    response.headers.set('X-User-Id', user.id);
+    return response;
   } catch (error) {
     // If verification fails, redirect to login
     console.log("An error occurred verifying token", (error as Error).message);
@@ -36,5 +56,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: "/dashboard/:path*", // Apply middleware to all routes under /dashboard
+  matcher: "/((?!api/auth|login|register).*)", // Apply middleware to all routes except specific auth routes
 };

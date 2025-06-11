@@ -25,8 +25,8 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
-import { addProduct, getAllProducts, updateProductStock } from "@/lib/data";
 import type { Product } from "@/lib/types";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AlertTriangle,
@@ -36,9 +36,10 @@ import {
   PlusCircle,
 } from "lucide-react";
 import Image from "next/image";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import * as z from "zod";
+import useDebounce from '@/hooks/use-debounce';
 
 const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
@@ -49,6 +50,7 @@ const productSchema = z.object({
     .int()
     .min(0, "Low stock margin cannot be negative"),
   imageUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  gtin: z.string().optional(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -58,18 +60,38 @@ const stockUpdateSchema = z.object({
 });
 type StockUpdateFormData = z.infer<typeof stockUpdateSchema>;
 
+// Define the expected API response structure
+interface ProductsResponse {
+  products: Product[];
+  totalCount: number;
+}
+
 export default function InventoryPage() {
   const { userIsManager } = useAuth();
   const { toast } = useToast();
-  const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 500); // Debounce with a 500ms delay
+  const [page, setPage] = useState(0); // Start with page 0 for easier calculation with skip/take
+  const [pageSize] = useState(10); // Assuming a fixed page size for now
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  useEffect(() => {
-    setProducts(getAllProducts());
-  }, []);
+  const { data, isLoading, isError } = useQuery<ProductsResponse>({
+    queryKey: ["products", page, pageSize, debouncedSearchTerm],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/products?page=${page + 1}&pageSize=${pageSize}${
+          searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : ""
+        }`
+      );
+      if (!res.ok) throw new Error("Failed to fetch products");
+      return res.json();
+    },
+  });
+
+  const products = data?.products || [];
+  const totalPages = data ? Math.ceil(data.totalCount / pageSize) : 0;
 
   const {
     register,
@@ -85,15 +107,42 @@ export default function InventoryPage() {
     resolver: zodResolver(stockUpdateSchema),
   });
 
+  const queryClient = useQueryClient();
+
+  const addProductMutation = useMutation({
+    mutationFn: async (newProductData: ProductFormData) => {
+      const res = await fetch("/api/products", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newProductData),
+      });
+      if (!res.ok) {
+        throw new Error("Failed to add product");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ 
+        title: "Product Added", 
+        description: "New product added successfully." 
+      });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      reset();
+      setIsAddDialogOpen(false);
+    },
+    onError: (error) => {
+      toast({ 
+        title: "Error adding product", 
+        description: error.message, 
+        variant: "destructive" 
+      });
+    },
+  });
+
   const handleAddProduct: SubmitHandler<ProductFormData> = (data) => {
-    addProduct(data);
-    setProducts(getAllProducts()); // Refresh products list
-    toast({
-      title: "Product Added",
-      description: `${data.name} has been added to inventory.`,
-    });
-    reset();
-    setIsAddDialogOpen(false);
+    addProductMutation.mutate(data);
   };
 
   const handleOpenUpdateDialog = (product: Product) => {
@@ -102,26 +151,46 @@ export default function InventoryPage() {
     setIsUpdateDialogOpen(true);
   };
 
-  const handleUpdateStock: SubmitHandler<StockUpdateFormData> = (data) => {
-    if (selectedProduct) {
-      updateProductStock(selectedProduct.id, data.quantity);
-      setProducts(getAllProducts()); // Refresh products list
-      toast({
-        title: "Stock Updated",
-        description: `Stock for ${selectedProduct.name} updated to ${data.quantity}.`,
+  const updateStockMutation = useMutation({
+    mutationFn: async ({ id, quantity }: { id: string; quantity: number }) => {
+      const res = await fetch(`/api/products/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ quantity }),
       });
+      if (!res.ok) {
+        throw new Error("Failed to update stock");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ 
+        title: "Stock Updated", 
+        description: "Product stock updated successfully." 
+      });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
       setIsUpdateDialogOpen(false);
       setSelectedProduct(null);
+    },
+    onError: (error) => {
+      toast({ 
+        title: "Error updating stock", 
+        description: error.message, 
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const handleUpdateStock: SubmitHandler<StockUpdateFormData> = (data) => {
+    if (selectedProduct) {
+      updateStockMutation.mutate({ id: selectedProduct.id, quantity: data.quantity });
     }
   };
 
-  const filteredProducts = useMemo(
-    () =>
-      products.filter((product) =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase())
-      ),
-    [products, searchTerm]
-  );
+  if (isLoading) return <div>Loading products...</div>;
+  if (isError) return <div>Error loading products.</div>;
 
   return (
     <>
@@ -162,7 +231,7 @@ export default function InventoryPage() {
                           step="0.01"
                           {...field}
                           onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value))
+                            field.onChange(parseFloat(e.target.value) || 0)
                           }
                         />
                       )}
@@ -181,7 +250,7 @@ export default function InventoryPage() {
                           type="number"
                           {...field}
                           onChange={(e) =>
-                            field.onChange(parseInt(e.target.value, 10))
+                            field.onChange(parseInt(e.target.value, 10) || 0)
                           }
                         />
                       )}
@@ -200,7 +269,7 @@ export default function InventoryPage() {
                           type="number"
                           {...field}
                           onChange={(e) =>
-                            field.onChange(parseInt(e.target.value, 10))
+                            field.onChange(parseInt(e.target.value, 10) || 0)
                           }
                         />
                       )}
@@ -216,13 +285,21 @@ export default function InventoryPage() {
                       placeholder="https://placehold.co/300x300.png"
                     />
                   </FormField>
+                  <FormField
+                    label="GTIN (Optional)"
+                    error={errors.gtin?.message}
+                  >
+                    <Input id="gtin" {...register("gtin")} />
+                  </FormField>
                   <DialogFooter>
                     <DialogClose asChild>
                       <Button type="button" variant="outline">
                         Cancel
                       </Button>
                     </DialogClose>
-                    <Button type="submit">Add Product</Button>
+                    <Button type="submit" disabled={addProductMutation.isPending}>
+                      {addProductMutation.isPending ? "Adding..." : "Add Product"}
+                    </Button>
                   </DialogFooter>
                 </form>
               </DialogContent>
@@ -230,21 +307,48 @@ export default function InventoryPage() {
           )
         }
       />
+      
       <div className="mb-4">
-        <Input
-          placeholder="Search products..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm"
-          icon={<PackageSearch className="h-4 w-4 text-muted-foreground" />}
-        />
+        <div className="relative max-w-sm">
+          <PackageSearch className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search products..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-8"
+          />
+        </div>
       </div>
+
+      {/* Pagination Controls */}
+      <div className="flex justify-end items-center space-x-2 mb-4">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setPage((prev) => Math.max(0, prev - 1))}
+          disabled={page === 0}
+        >
+          Previous
+        </Button>
+        <span className="text-sm text-muted-foreground">
+          Page {page + 1} of {totalPages || 1}
+        </span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setPage((prev) => prev + 1)}
+          disabled={page + 1 >= totalPages}
+        >
+          Next
+        </Button>
+      </div>
+
       <Card className="shadow-lg">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[80px]">Image</TableHead>
+                <TableHead>Image</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Price</TableHead>
                 <TableHead>Stock</TableHead>
@@ -256,8 +360,8 @@ export default function InventoryPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredProducts.length > 0 ? (
-                filteredProducts.map((product) => (
+              {products.length > 0 ? (
+                products.map((product) => (
                   <TableRow key={product.id}>
                     <TableCell>
                       <Image
@@ -351,7 +455,7 @@ export default function InventoryPage() {
                       type="number"
                       {...field}
                       onChange={(e) =>
-                        field.onChange(parseInt(e.target.value, 10))
+                        field.onChange(parseInt(e.target.value, 10) || 0)
                       }
                     />
                   )}
@@ -363,7 +467,9 @@ export default function InventoryPage() {
                     Cancel
                   </Button>
                 </DialogClose>
-                <Button type="submit">Update Stock</Button>
+                <Button type="submit" disabled={updateStockMutation.isPending}>
+                  {updateStockMutation.isPending ? "Updating..." : "Update Stock"}
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>
