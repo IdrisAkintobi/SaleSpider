@@ -20,6 +20,9 @@ model User {
   name     String
   password String
   role     Role
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 }
 
 enum Role {
@@ -31,10 +34,36 @@ enum Role {
 model Product {
   id             String   @id          @default(cuid()) // Unique identifier, default is cuid for auto-generation
   name           String   @unique
+  description    String
+  category       ProductCategory
   price          Float
   quantity       Int
   lowStockMargin Int
-  imageUrl       String
-  dateAdded      DateTime
+  imageUrl       String?
   gtin           String?  @unique // Optional field for GTIN (Global Trade Item Number)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+enum ProductCategory {
+  FOOD_AND_BEVERAGES
+  HOUSEHOLD_ITEMS
+  HEALTH_AND_BEAUTY
+  CLOTHING_AND_APPAREL
+  ELECTRONICS
+  TOYS_AND_GAMES
+  OFFICE_SUPPLIES
+  PET_SUPPLIES
+  AUTOMOTIVE
+  BOOKS_AND_STATIONERY
+  SEASONAL_AND_SPECIAL_OCCASIONS
+  BABY_PRODUCTS
+  SPORTS_AND_OUTDOORS
+  MEDIA
+  OFFICE_AND_SCHOOL_SUPPLIES
+  GARDENING_AND_TOOLS
+  JEWELRY_AND_WATCHES
+  HEALTH_AND_FITNESS
+  OTHERS
 }

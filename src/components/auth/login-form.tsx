@@ -11,10 +11,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/auth-context";
-import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, LogIn } from "lucide-react";
-import { useState } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import * as z from "zod";
 
@@ -26,9 +24,7 @@ const loginSchema = z.object({
 type LoginFormInputs = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
-  const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
-  const { toast } = useToast();
+  const { isLoading, login } = useAuth();
 
   const {
     register,
@@ -39,17 +35,7 @@ export function LoginForm() {
   });
 
   const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
-    setIsLoading(true);
-    const success = await login(data.username, data.password);
-    if (!success) {
-      toast({
-        title: "Login Failed",
-        description: "Invalid username or password, or account is inactive.",
-        variant: "destructive",
-      });
-    }
-    // On success, AuthProvider handles redirection
-    setIsLoading(false);
+    await login(data.username, data.password);
   };
 
   return (

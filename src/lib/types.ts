@@ -1,4 +1,4 @@
-export type Role = "SUPER_ADMIN" | "MANAGER" | "CASHIER";
+import { ProductCategory, Role } from "@prisma/client";
 
 export type UserStatus = "Active" | "Inactive";
 
@@ -15,11 +15,13 @@ export interface User {
 export interface Product {
   id: string;
   name: string;
+  description: string;
+  category: ProductCategory;
   price: number;
   quantity: number; // Current stock
   lowStockMargin: number; // Threshold for low stock warnings
   imageUrl?: string; // Optional image URL
-  dateAdded: number; // Timestamp
+  createdAt?: Date; // Timestamp
   gtin?: string; // Optional GTIN (Global Trade Item Number)
 }
 

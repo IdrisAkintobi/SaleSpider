@@ -5,6 +5,7 @@ import { ProtectedLayout } from "@/components/shared/protected-layout";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "next-themes"; // Required for ThemeToggle in DashboardHeader
 import type { PropsWithChildren } from "react";
+import { Providers } from "./providers";
 
 export default async function DashboardLayout({ children }: PropsWithChildren) {
   // ThemeProvider is needed here if DashboardHeader uses useTheme
@@ -31,7 +32,7 @@ export default async function DashboardLayout({ children }: PropsWithChildren) {
           <div className="flex flex-col">
             <DashboardHeader />
             <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-background">
-              {children}
+              <Providers>{children}</Providers>
             </main>
           </div>
         </div>
