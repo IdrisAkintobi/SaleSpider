@@ -19,16 +19,16 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 
+export type SortField = "name" | "price" | "quantity" | "createdAt";
+export type SortOrder = "asc" | "desc";
 interface ProductTableProps {
   products: Product[];
   userIsManager: boolean;
   onUpdateStock: (product: Product) => void;
   onUpdateProduct: (product: Product) => void;
-  sortField?: "name" | "price" | "quantity" | "status" | "createdAt";
-  sortOrder?: "asc" | "desc";
-  onSort?: (
-    field: "name" | "price" | "quantity" | "status" | "createdAt"
-  ) => void;
+  sortField?: SortField;
+  sortOrder?: SortOrder;
+  onSort?: (field: SortField) => void;
 }
 
 export function ProductTable({

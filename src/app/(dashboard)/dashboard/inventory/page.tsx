@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import { AddProductDialog } from "./add-product-dialog";
 import { PaginationControls } from "./pagination-controls";
-import { ProductTable } from "./product-table";
+import { ProductTable, type SortField, type SortOrder } from "./product-table";
 import { ProductTableSkeleton } from "./product-table-skeleton";
 import { SearchInput } from "./search-input";
 import { UpdateProductDialog } from "./update-product-dialog";
@@ -32,10 +32,8 @@ export default function InventoryPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedProductForEdit, setSelectedProductForEdit] =
     useState<Product | null>(null);
-  const [sortField, setSortField] = useState<
-    "name" | "price" | "quantity" | "status" | "createdAt"
-  >("name");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [sortField, setSortField] = useState<SortField>("name");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
 
   const { data, isLoading, isError, isFetching } = useQuery<ProductsResponse>({
     queryKey: [
@@ -65,7 +63,7 @@ export default function InventoryPage() {
   const totalPages = data ? Math.ceil(data.totalCount / pageSize) : 0;
 
   const handleSort = useCallback(
-    (field: "name" | "price" | "quantity" | "status" | "createdAt") => {
+    (field: SortField) => {
       if (sortField === field) {
         setSortOrder(sortOrder === "asc" ? "desc" : "asc");
       } else {
