@@ -44,7 +44,7 @@ export function UpdateProductDialog({
   isOpen,
   onOpenChange,
   product,
-}: UpdateProductDialogProps) {
+}: Readonly<UpdateProductDialogProps>) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -54,7 +54,6 @@ export function UpdateProductDialog({
     reset,
     control,
     formState: { errors },
-    watch,
   } = useForm<UpdateProductFormData>({
     resolver: zodResolver(updateProductSchema),
   });
@@ -69,8 +68,8 @@ export function UpdateProductDialog({
         price: product.price,
         category: product.category,
         lowStockMargin: product.lowStockMargin,
-        imageUrl: product.imageUrl || "",
-        gtin: product.gtin || "",
+        imageUrl: product.imageUrl ?? "",
+        gtin: product.gtin ?? "",
       };
 
       reset(originalValuesRef.current);
@@ -82,7 +81,7 @@ export function UpdateProductDialog({
       const { id, ...data } = updateData;
 
       // Filter out unchanged fields
-      const originalValues = originalValuesRef.current || {};
+      const originalValues = originalValuesRef.current ?? {};
       const updatedData = Object.keys(data).reduce((acc, key) => {
         const objKey = key as keyof UpdateProductFormData;
         if (data[objKey] !== originalValues[objKey]) {
@@ -248,11 +247,11 @@ function FormField({
   label,
   error,
   children,
-}: {
+}: Readonly<{
   label: string;
   error?: string;
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <div className="grid grid-cols-4 items-center gap-4">
       <Label

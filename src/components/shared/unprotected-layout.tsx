@@ -1,8 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-
 export async function UnProtectedLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {

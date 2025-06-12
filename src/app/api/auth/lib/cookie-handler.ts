@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 export const authTokenKey = "auth_token";
@@ -10,9 +9,9 @@ const defaultCookieProperties = {
   secure: process.env.NODE_ENV === "production",
 };
 
-export async function clearCookie(name: string) {
+export async function clearCookie(res: NextResponse, name: string) {
   // Clear the cookie by setting its expiration to a past date
-  (await cookies()).set(name, "", {
+  res.cookies.set(name, "", {
     expires: new Date(0),
     ...defaultCookieProperties,
   });
@@ -24,6 +23,6 @@ export function setCookie(res: NextResponse, name: string, value: string) {
   });
 }
 
-export async function clearAuthToken() {
-  await clearCookie(authTokenKey).catch(() => {});
+export async function clearAuthToken(res: NextResponse) {
+  await clearCookie(res, authTokenKey).catch(() => {});
 }

@@ -33,8 +33,6 @@ const productSchema = z.object({
   imageUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   gtin: z.string().optional(),
 });
-// Get defaults by parsing an empty object
-const defaultValues = productSchema.safeParse({});
 
 type ProductFormData = z.infer<typeof productSchema>;
 
@@ -46,7 +44,7 @@ interface AddProductDialogProps {
 export function AddProductDialog({
   isOpen,
   onOpenChange,
-}: AddProductDialogProps) {
+}: Readonly<AddProductDialogProps>) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -238,11 +236,11 @@ function FormField({
   label,
   error,
   children,
-}: {
+}: Readonly<{
   label: string;
   error?: string;
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <div className="grid grid-cols-4 items-center gap-4">
       <Label

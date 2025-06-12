@@ -36,7 +36,7 @@ export function UpdateStockDialog({
   isOpen,
   onOpenChange,
   product,
-}: UpdateStockDialogProps) {
+}: Readonly<UpdateStockDialogProps>) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
