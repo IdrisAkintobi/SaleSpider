@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { FormInput } from "@/components/ui/custom-form-input";
 import {
   Dialog,
   DialogClose,
@@ -8,14 +9,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import type { Product } from "@/lib/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
+import { SubmitHandler, useForm } from "react-hook-form";
 import * as z from "zod";
 
 const DEFAULT_RESTOCK_QUANTITY = 12;
@@ -104,32 +103,16 @@ export function UpdateStockDialog({
           onSubmit={stockForm.handleSubmit(handleUpdateStock)}
           className="grid gap-4 py-4"
         >
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="updateQuantity" className="text-right">
-              New Quantity
-            </Label>
-            <div className="col-span-3">
-              <Controller
-                name="quantity"
-                control={stockForm.control}
-                render={({ field }) => (
-                  <Input
-                    id="updateQuantity"
-                    type="number"
-                    {...field}
-                    onChange={(e) =>
-                      field.onChange(parseInt(e.target.value, 10) || 0)
-                    }
-                  />
-                )}
-              />
-              {stockForm.formState.errors.quantity && (
-                <p className="text-sm text-destructive mt-1">
-                  {stockForm.formState.errors.quantity.message}
-                </p>
-              )}
-            </div>
-          </div>
+          <FormInput
+            label="New Quantity"
+            name="quantity"
+            control={stockForm.control}
+            error={stockForm.formState.errors.quantity?.message}
+            onChange={(value) =>
+              stockForm.setValue("quantity", parseInt(value, 10) || 0)
+            }
+            type="number"
+          />
           <DialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="outline">

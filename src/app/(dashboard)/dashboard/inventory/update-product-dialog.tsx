@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { FormInput } from "@/components/ui/custom-form-input";
 import {
   Dialog,
   DialogClose,
@@ -8,15 +9,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import type { Product } from "@/lib/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ProductCategory } from "@prisma/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React, { useRef } from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
+import { SubmitHandler, useForm } from "react-hook-form";
 import * as z from "zod";
 
 const updateProductSchema = z.object({
@@ -143,87 +142,52 @@ export function UpdateProductDialog({
           onSubmit={handleSubmit(handleUpdateProduct)}
           className="grid gap-4 py-4"
         >
-          <FormField label="Product Name" error={errors.name?.message}>
-            <Input id="name" {...register("name")} />
-          </FormField>
-          <FormField
+          <FormInput
+            label="Product Name"
+            name="name"
+            register={register}
+            error={errors.name?.message}
+          />
+          <FormInput
             label="Product Description"
+            name="description"
+            register={register}
             error={errors.description?.message}
-          >
-            <Input id="description" {...register("description")} />
-          </FormField>
-          <FormField label="Product Category" error={errors.category?.message}>
-            <Controller
-              name="category"
-              control={control}
-              render={({ field }) => (
-                <select
-                  id="category"
-                  {...field}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Select a category</option>
-                  {Object.values(ProductCategory).map((category) => (
-                    <option key={category} value={category}>
-                      {category
-                        .replace(/_/g, " ")
-                        .toLowerCase()
-                        .replace(/\b\w/g, (l) => l.toUpperCase())}
-                    </option>
-                  ))}
-                </select>
-              )}
-            />
-          </FormField>
-          <FormField label="Price ($)" error={errors.price?.message}>
-            <Controller
-              name="price"
-              control={control}
-              render={({ field }) => (
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  {...field}
-                  onChange={(e) =>
-                    field.onChange(parseFloat(e.target.value) || 0)
-                  }
-                />
-              )}
-            />
-          </FormField>
-          <FormField
+          />
+          <FormInput
+            label="Product Category"
+            name="category"
+            control={control}
+            error={errors.category?.message}
+          />
+          <FormInput
+            label="Price ($)"
+            name="price"
+            type="number"
+            control={control}
+            error={errors.price?.message}
+          />
+          <FormInput
             label="Low Stock Margin"
+            name="lowStockMargin"
+            type="number"
+            control={control}
             error={errors.lowStockMargin?.message}
-          >
-            <Controller
-              name="lowStockMargin"
-              control={control}
-              render={({ field }) => (
-                <Input
-                  id="lowStockMargin"
-                  type="number"
-                  {...field}
-                  onChange={(e) =>
-                    field.onChange(parseInt(e.target.value, 10) || 0)
-                  }
-                />
-              )}
-            />
-          </FormField>
-          <FormField
+          />
+          <FormInput
             label="Image URL (Optional)"
+            name="imageUrl"
+            register={register}
+            placeholder="https://placehold.co/300x300.png"
             error={errors.imageUrl?.message}
-          >
-            <Input
-              id="imageUrl"
-              {...register("imageUrl")}
-              placeholder="https://placehold.co/300x300.png"
-            />
-          </FormField>
-          <FormField label="GTIN (Optional)" error={errors.gtin?.message}>
-            <Input id="gtin" {...register("gtin")} />
-          </FormField>
+          />
+          <FormInput
+            label="GTIN (Optional)"
+            name="gtin"
+            register={register}
+            error={errors.gtin?.message}
+          />
+
           <DialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="outline">
@@ -239,31 +203,5 @@ export function UpdateProductDialog({
         </form>
       </DialogContent>
     </Dialog>
-  );
-}
-
-// Helper component for form fields to reduce repetition
-function FormField({
-  label,
-  error,
-  children,
-}: Readonly<{
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}>) {
-  return (
-    <div className="grid grid-cols-4 items-center gap-4">
-      <Label
-        htmlFor={children && (children as React.ReactElement).props.id}
-        className="text-right"
-      >
-        {label}
-      </Label>
-      <div className="col-span-3">
-        {children}
-        {error && <p className="text-sm text-destructive mt-1">{error}</p>}
-      </div>
-    </div>
   );
 }
