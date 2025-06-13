@@ -10,7 +10,7 @@ export function PaginationControls({
   currentPage,
   totalPages,
   onPageChange,
-}: PaginationControlsProps) {
+}: Readonly<PaginationControlsProps>) {
   return (
     <div className="flex justify-end items-center space-x-2 mb-4">
       <Button

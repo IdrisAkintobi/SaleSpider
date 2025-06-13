@@ -39,7 +39,7 @@ export function ProductTable({
   sortField,
   sortOrder,
   onSort,
-}: ProductTableProps) {
+}: Readonly<ProductTableProps>) {
   return (
     <Card className="shadow-lg">
       <CardContent className="p-0">
@@ -104,7 +104,7 @@ export function ProductTable({
                   <TableCell>
                     <Image
                       src={
-                        product.imageUrl ||
+                        product.imageUrl ??
                         "https://placehold.co/64x64.png?text=N/A"
                       }
                       alt={product.name}

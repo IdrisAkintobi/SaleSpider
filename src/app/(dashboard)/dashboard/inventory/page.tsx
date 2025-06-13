@@ -59,7 +59,7 @@ export default function InventoryPage() {
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  const products = data?.products || [];
+  const products = data?.products ?? [];
   const totalPages = data ? Math.ceil(data.totalCount / pageSize) : 0;
 
   const handleSort = useCallback(

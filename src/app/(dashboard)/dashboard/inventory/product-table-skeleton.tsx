@@ -17,7 +17,7 @@ interface ProductTableSkeletonProps {
 export function ProductTableSkeleton({
   userIsManager,
   rows = 5,
-}: ProductTableSkeletonProps) {
+}: Readonly<ProductTableSkeletonProps>) {
   return (
     <Card className="shadow-lg">
       <CardContent className="p-0">

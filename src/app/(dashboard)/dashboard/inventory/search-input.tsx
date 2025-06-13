@@ -8,7 +8,11 @@ interface SearchInputProps {
   isLoading?: boolean;
 }
 
-export function SearchInput({ value, onChange, isLoading }: SearchInputProps) {
+export function SearchInput({
+  value,
+  onChange,
+  isLoading,
+}: Readonly<SearchInputProps>) {
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
