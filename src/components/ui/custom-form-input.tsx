@@ -1,3 +1,4 @@
+import { ChangeEvent } from "react";
 import { Controller } from "react-hook-form";
 import { FormField } from "./custom-form-field";
 import { Input } from "./input";
@@ -6,10 +7,11 @@ interface FormInputProps {
   label: string;
   name: string;
   type?: "text" | "number" | "url";
-  control?: any; // `control` prop for Controller usage
-  register?: any; // `register` prop for simple input fields
+  control?: any;
+  register?: any;
   error?: string;
   placeholder?: string;
+  step?: string | number;
   onChange?: (value: any) => void;
 }
 
@@ -21,6 +23,7 @@ export const FormInput = ({
   register,
   error,
   placeholder,
+  step,
   onChange,
 }: FormInputProps) => {
   return (
@@ -33,10 +36,14 @@ export const FormInput = ({
             <Input
               id={name}
               type={type}
+              step={step} // Pass step to Input
               placeholder={placeholder}
               {...field}
               onChange={
-                onChange ? (e) => onChange(e.target.value) : field.onChange
+                onChange
+                  ? (e: ChangeEvent<HTMLInputElement>) =>
+                      onChange(e.target.value)
+                  : field.onChange
               }
             />
           )}
@@ -46,6 +53,7 @@ export const FormInput = ({
           id={name}
           {...register(name)}
           type={type}
+          step={step} // Pass step to Input
           placeholder={placeholder}
         />
       )}

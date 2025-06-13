@@ -9,12 +9,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
+import { useProductMutation } from "@/hooks/use-product-mutation";
 import type { Product } from "@/lib/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ProductCategory } from "@prisma/client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import React, { useRef } from "react";
+import { useEffect } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import * as z from "zod";
 
@@ -44,12 +43,10 @@ export function UpdateProductDialog({
   onOpenChange,
   product,
 }: Readonly<UpdateProductDialogProps>) {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
   const {
     register,
     handleSubmit,
+    setValue,
     reset,
     control,
     formState: { errors },
@@ -57,11 +54,10 @@ export function UpdateProductDialog({
     resolver: zodResolver(updateProductSchema),
   });
 
-  const originalValuesRef = useRef<Partial<Product> | null>(null);
-
-  React.useEffect(() => {
+  // Reset form when product changes
+  useEffect(() => {
     if (product) {
-      originalValuesRef.current = {
+      reset({
         name: product.name,
         description: product.description,
         price: product.price,
@@ -69,60 +65,33 @@ export function UpdateProductDialog({
         lowStockMargin: product.lowStockMargin,
         imageUrl: product.imageUrl ?? "",
         gtin: product.gtin ?? "",
-      };
-
-      reset(originalValuesRef.current);
+      });
     }
   }, [product, reset]);
 
-  const updateProductMutation = useMutation({
-    mutationFn: async (updateData: UpdateProductFormData & { id: string }) => {
-      const { id, ...data } = updateData;
+  const updateProductMutation = useProductMutation(
+    "Product Updated",
+    "Product details updated successfully.",
+    "Error updating product",
+    onOpenChange
+  );
 
-      // Filter out unchanged fields
-      const originalValues = originalValuesRef.current ?? {};
-      const updatedData = Object.keys(data).reduce((acc, key) => {
+  const handleProductUpdate: SubmitHandler<UpdateProductFormData> = (
+    updateData
+  ) => {
+    if (product) {
+      // Filter out unchanged fields (this logic stays in the component)
+      const updatedData = Object.keys(updateData).reduce((acc, key) => {
         const objKey = key as keyof UpdateProductFormData;
-        if (data[objKey] !== originalValues[objKey]) {
-          acc[objKey] = data[objKey];
+        if (updateData[objKey] !== product[objKey]) {
+          acc[objKey] = updateData[objKey];
         }
         return acc;
       }, {} as Record<string, any>);
 
-      const res = await fetch(`/api/products/${id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedData),
-      });
-      if (!res.ok) {
-        throw new Error("Failed to update product");
-      }
-      return res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Product Updated",
-        description: "Product details updated successfully.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      onOpenChange(false);
-    },
-    onError: (error) => {
-      toast({
-        title: "Error updating product",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleUpdateProduct: SubmitHandler<UpdateProductFormData> = (data) => {
-    if (product) {
       updateProductMutation.mutate({
-        ...data,
         id: product.id,
+        data: updatedData,
       });
     }
   };
@@ -139,7 +108,7 @@ export function UpdateProductDialog({
           </DialogDescription>
         </DialogHeader>
         <form
-          onSubmit={handleSubmit(handleUpdateProduct)}
+          onSubmit={handleSubmit(handleProductUpdate)}
           className="grid gap-4 py-4"
         >
           <FormInput
@@ -164,7 +133,9 @@ export function UpdateProductDialog({
             label="Price ($)"
             name="price"
             type="number"
+            step="0.01"
             control={control}
+            onChange={(value) => setValue("price", parseFloat(value) || 0)}
             error={errors.price?.message}
           />
           <FormInput

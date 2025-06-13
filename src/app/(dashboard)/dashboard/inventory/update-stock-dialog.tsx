@@ -9,11 +9,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
+import { useProductMutation } from "@/hooks/use-product-mutation";
 import type { Product } from "@/lib/types";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import React from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import * as z from "zod";
 
@@ -36,56 +34,24 @@ export function UpdateStockDialog({
   onOpenChange,
   product,
 }: Readonly<UpdateStockDialogProps>) {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
   const stockForm = useForm<StockUpdateFormData>({
     resolver: zodResolver(stockUpdateSchema),
     defaultValues: { quantity: DEFAULT_RESTOCK_QUANTITY },
   });
 
-  React.useEffect(() => {
-    if (product) {
-      stockForm.reset({ quantity: product.quantity });
-    }
-  }, [product, stockForm]);
+  const updateStockMutation = useProductMutation(
+    "Stock Updated",
+    "Product stock updated successfully.",
+    "Error updating stock",
+    onOpenChange
+  );
 
-  const updateStockMutation = useMutation({
-    mutationFn: async ({ id, quantity }: { id: string; quantity: number }) => {
-      const res = await fetch(`/api/products/${id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ quantity }),
-      });
-      if (!res.ok) {
-        throw new Error("Failed to update stock");
-      }
-      return res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Stock Updated",
-        description: "Product stock updated successfully.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      onOpenChange(false);
-    },
-    onError: (error) => {
-      toast({
-        title: "Error updating stock",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleUpdateStock: SubmitHandler<StockUpdateFormData> = (data) => {
+  // Usage in component
+  const handleStockUpdate: SubmitHandler<StockUpdateFormData> = (data) => {
     if (product) {
       updateStockMutation.mutate({
         id: product.id,
-        quantity: data.quantity,
+        data,
       });
     }
   };
@@ -100,7 +66,7 @@ export function UpdateStockDialog({
           <DialogDescription>Enter the new stock quantity.</DialogDescription>
         </DialogHeader>
         <form
-          onSubmit={stockForm.handleSubmit(handleUpdateStock)}
+          onSubmit={stockForm.handleSubmit(handleStockUpdate)}
           className="grid gap-4 py-4"
         >
           <FormInput
