@@ -10,24 +10,22 @@ export async function GET(req: NextRequest) {
     const cookieStore = req.cookies;
     const authToken = cookieStore.get("auth_token")?.value;
 
-    if (!authToken) {
-      return NextResponse.json(
-        { message: "Not authenticated" },
-        { status: 401 }
-      );
+    if (authToken) {
+      const user = await validateAuthToken(authToken);
+      // Return user info if token is valid
+      return NextResponse.json({ user }, { status: 200 });
     }
-
-    const user = await validateAuthToken(authToken);
-
-    // Return user info if token is valid
-    return NextResponse.json({ user }, { status: 200 });
   } catch (error) {
     if (!(error instanceof JWTExpired)) {
       console.error("Session API error:", (error as Error).message);
     }
-    await clearAuthToken();
-    return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
   }
+  const response = NextResponse.json(
+    { message: "Not authenticated" },
+    { status: 401 }
+  );
+  await clearAuthToken(response);
+  return response;
 }
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET);

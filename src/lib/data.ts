@@ -48,45 +48,46 @@ export const DUMMY_PRODUCTS: Product[] = [
     quantity: 150,
     lowStockMargin: 20,
     imageUrl: "https://placehold.co/300x300.png?text=Mouse",
-    dateAdded: new Date("2023-01-15T09:30:00Z").getTime(),
     gtin: "123456789012",
+    category: "ELECTRONICS",
+    description:
+      "A high-precision wireless mouse with ergonomic design and long battery life.", // Added description
   },
   {
     id: "prod_electronics_002",
-    name: "Mechanical Keyboard",
-    price: 75.0,
-    quantity: 80,
-    lowStockMargin: 10,
-    imageUrl: "https://placehold.co/300x300.png?text=Keyboard",
-    dateAdded: new Date("2023-01-20T11:00:00Z").getTime(),
-    gtin: "123456789013",
-  },
-  {
-    id: "prod_office_001",
-    name: "Ergonomic Chair",
-    price: 250.5,
-    quantity: 30,
-    lowStockMargin: 5,
-    imageUrl: "https://placehold.co/300x300.png?text=Chair",
-    dateAdded: new Date("2023-02-10T14:15:00Z").getTime(),
-  },
-  {
-    id: "prod_books_001",
-    name: "The Art of Programming",
+    name: "Bluetooth Headphones",
     price: 45.99,
-    quantity: 120,
+    quantity: 100,
     lowStockMargin: 15,
-    imageUrl: "https://placehold.co/300x300.png?text=Book",
-    dateAdded: new Date("2023-03-01T16:45:00Z").getTime(),
+    imageUrl: "https://placehold.co/300x300.png?text=Headphones",
+    gtin: "987654321098",
+    category: "ELECTRONICS",
+    description:
+      "Noise-canceling Bluetooth headphones with high-quality sound and comfortable fit.", // Added description
   },
   {
     id: "prod_electronics_003",
-    name: "USB-C Hub",
+    name: "Wireless Keyboard",
     price: 39.99,
-    quantity: 5, // Example of low stock
-    lowStockMargin: 10,
-    imageUrl: "https://placehold.co/300x300.png?text=Hub",
-    dateAdded: new Date("2023-03-05T10:00:00Z").getTime(),
+    quantity: 200,
+    lowStockMargin: 30,
+    imageUrl: "https://placehold.co/300x300.png?text=Keyboard",
+    gtin: "112233445566",
+    category: "ELECTRONICS",
+    description:
+      "Compact wireless keyboard with responsive keys and a sleek design for easy typing.", // Added description
+  },
+  {
+    id: "prod_electronics_004",
+    name: "Gaming Laptop",
+    price: 999.99,
+    quantity: 50,
+    lowStockMargin: 5,
+    imageUrl: "https://placehold.co/300x300.png?text=Laptop",
+    gtin: "667788990011",
+    category: "ELECTRONICS",
+    description:
+      "High-performance gaming laptop with powerful GPU, fast processor, and large storage capacity.", // Added description
   },
 ];
 
@@ -205,12 +206,12 @@ export const getProductById = (id: string): Product | undefined =>
   DUMMY_PRODUCTS.find((p) => p.id === id);
 
 export const addProduct = (
-  product: Omit<Product, "id" | "dateAdded">
+  product: Omit<Product, "id" | "createdAt">
 ): Product => {
   const newProduct: Product = {
     ...product,
     id: `prod_new_${Date.now()}_${Math.random().toString(16).slice(2)}`,
-    dateAdded: Date.now(),
+    createdAt: new Date(),
     imageUrl:
       product.imageUrl ??
       `https://placehold.co/300x300.png?text=${encodeURIComponent(

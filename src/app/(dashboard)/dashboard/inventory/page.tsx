@@ -1,127 +1,110 @@
 "use client";
 import { PageHeader } from "@/components/shared/page-header";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { useAuth } from "@/contexts/auth-context";
-import { useToast } from "@/hooks/use-toast";
-import { addProduct, getAllProducts, updateProductStock } from "@/lib/data";
+import useDebounce from "@/hooks/use-debounce";
 import type { Product } from "@/lib/types";
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Edit3,
-  PackageSearch,
-  PlusCircle,
-} from "lucide-react";
-import Image from "next/image";
-import React, { useEffect, useMemo, useState } from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import * as z from "zod";
+import { useQuery } from "@tanstack/react-query";
+import { useCallback, useState } from "react";
+import { AddProductDialog } from "./add-product-dialog";
+import { PaginationControls } from "./pagination-controls";
+import { ProductTable, type SortField, type SortOrder } from "./product-table";
+import { ProductTableSkeleton } from "./product-table-skeleton";
+import { SearchInput } from "./search-input";
+import { UpdateProductDialog } from "./update-product-dialog";
+import { UpdateStockDialog } from "./update-stock-dialog";
 
-const productSchema = z.object({
-  name: z.string().min(1, "Product name is required"),
-  price: z.number().min(0.01, "Price must be positive"),
-  quantity: z.number().int().min(0, "Quantity cannot be negative"),
-  lowStockMargin: z
-    .number()
-    .int()
-    .min(0, "Low stock margin cannot be negative"),
-  imageUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-});
-
-type ProductFormData = z.infer<typeof productSchema>;
-
-const stockUpdateSchema = z.object({
-  quantity: z.number().int().min(0, "Quantity cannot be negative"),
-});
-type StockUpdateFormData = z.infer<typeof stockUpdateSchema>;
+// Define the expected API response structure
+interface ProductsResponse {
+  products: Product[];
+  totalCount: number;
+}
 
 export default function InventoryPage() {
   const { userIsManager } = useAuth();
-  const { toast } = useToast();
-  const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  const [page, setPage] = useState(0);
+  const [pageSize] = useState(10);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+  const [isUpdateProductDialogOpen, setIsUpdateProductDialogOpen] =
+    useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProductForEdit, setSelectedProductForEdit] =
+    useState<Product | null>(null);
+  const [sortField, setSortField] = useState<SortField>("name");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
 
-  useEffect(() => {
-    setProducts(getAllProducts());
+  const { data, isLoading, isError, isFetching } = useQuery<ProductsResponse>({
+    queryKey: [
+      "products",
+      page,
+      pageSize,
+      debouncedSearchTerm,
+      sortField,
+      sortOrder,
+    ],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/products?page=${page + 1}&pageSize=${pageSize}${
+          debouncedSearchTerm
+            ? `&search=${encodeURIComponent(debouncedSearchTerm)}`
+            : ""
+        }&sortField=${sortField}&sortOrder=${sortOrder}`
+      );
+      if (!res.ok) throw new Error("Failed to fetch products");
+      return res.json();
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
+
+  const products = data?.products ?? [];
+  const totalPages = data ? Math.ceil(data.totalCount / pageSize) : 0;
+
+  const handleSort = useCallback(
+    (field: SortField) => {
+      if (sortField === field) {
+        setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+      } else {
+        setSortField(field);
+        setSortOrder("asc");
+      }
+      setPage(0); // Reset to first page when changing sort
+    },
+    [sortField, sortOrder]
+  );
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchTerm(value);
+    setPage(0); // Reset to first page when searching
   }, []);
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    control,
-    formState: { errors },
-  } = useForm<ProductFormData>({
-    resolver: zodResolver(productSchema),
-  });
+  const handlePageChange = useCallback((newPage: number) => {
+    setPage(newPage);
+  }, []);
 
-  const stockForm = useForm<StockUpdateFormData>({
-    resolver: zodResolver(stockUpdateSchema),
-  });
-
-  const handleAddProduct: SubmitHandler<ProductFormData> = (data) => {
-    addProduct(data);
-    setProducts(getAllProducts()); // Refresh products list
-    toast({
-      title: "Product Added",
-      description: `${data.name} has been added to inventory.`,
-    });
-    reset();
-    setIsAddDialogOpen(false);
-  };
-
-  const handleOpenUpdateDialog = (product: Product) => {
+  const handleOpenUpdateDialog = useCallback((product: Product) => {
     setSelectedProduct(product);
-    stockForm.reset({ quantity: product.quantity });
     setIsUpdateDialogOpen(true);
-  };
+  }, []);
 
-  const handleUpdateStock: SubmitHandler<StockUpdateFormData> = (data) => {
-    if (selectedProduct) {
-      updateProductStock(selectedProduct.id, data.quantity);
-      setProducts(getAllProducts()); // Refresh products list
-      toast({
-        title: "Stock Updated",
-        description: `Stock for ${selectedProduct.name} updated to ${data.quantity}.`,
-      });
-      setIsUpdateDialogOpen(false);
-      setSelectedProduct(null);
-    }
-  };
+  const handleCloseUpdateDialog = useCallback(() => {
+    setIsUpdateDialogOpen(false);
+    setSelectedProduct(null);
+  }, []);
 
-  const filteredProducts = useMemo(
-    () =>
-      products.filter((product) =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase())
-      ),
-    [products, searchTerm]
-  );
+  const handleOpenUpdateProductDialog = useCallback((product: Product) => {
+    setSelectedProductForEdit(product);
+    setIsUpdateProductDialogOpen(true);
+  }, []);
+
+  const handleCloseUpdateProductDialog = useCallback(() => {
+    setIsUpdateProductDialogOpen(false);
+    setSelectedProductForEdit(null);
+  }, []);
+
+  if (isError) return <div>Error loading products.</div>;
 
   return (
     <>
@@ -130,271 +113,51 @@ export default function InventoryPage() {
         description="View, add, and manage your product stock."
         actions={
           userIsManager && (
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <PlusCircle className="mr-2 h-4 w-4" /> Add Product
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Add New Product</DialogTitle>
-                  <DialogDescription>
-                    Fill in the details for the new product.
-                  </DialogDescription>
-                </DialogHeader>
-                <form
-                  onSubmit={handleSubmit(handleAddProduct)}
-                  className="grid gap-4 py-4"
-                >
-                  {/* Form Fields: Name, Price, Quantity, Low Stock Margin, Image URL */}
-                  <FormField label="Product Name" error={errors.name?.message}>
-                    <Input id="name" {...register("name")} />
-                  </FormField>
-                  <FormField label="Price ($)" error={errors.price?.message}>
-                    <Controller
-                      name="price"
-                      control={control}
-                      render={({ field }) => (
-                        <Input
-                          id="price"
-                          type="number"
-                          step="0.01"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value))
-                          }
-                        />
-                      )}
-                    />
-                  </FormField>
-                  <FormField
-                    label="Initial Quantity"
-                    error={errors.quantity?.message}
-                  >
-                    <Controller
-                      name="quantity"
-                      control={control}
-                      render={({ field }) => (
-                        <Input
-                          id="quantity"
-                          type="number"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(parseInt(e.target.value, 10))
-                          }
-                        />
-                      )}
-                    />
-                  </FormField>
-                  <FormField
-                    label="Low Stock Margin"
-                    error={errors.lowStockMargin?.message}
-                  >
-                    <Controller
-                      name="lowStockMargin"
-                      control={control}
-                      render={({ field }) => (
-                        <Input
-                          id="lowStockMargin"
-                          type="number"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(parseInt(e.target.value, 10))
-                          }
-                        />
-                      )}
-                    />
-                  </FormField>
-                  <FormField
-                    label="Image URL (Optional)"
-                    error={errors.imageUrl?.message}
-                  >
-                    <Input
-                      id="imageUrl"
-                      {...register("imageUrl")}
-                      placeholder="https://placehold.co/300x300.png"
-                    />
-                  </FormField>
-                  <DialogFooter>
-                    <DialogClose asChild>
-                      <Button type="button" variant="outline">
-                        Cancel
-                      </Button>
-                    </DialogClose>
-                    <Button type="submit">Add Product</Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
+            <AddProductDialog
+              isOpen={isAddDialogOpen}
+              onOpenChange={setIsAddDialogOpen}
+            />
           )
         }
       />
-      <div className="mb-4">
-        <Input
-          placeholder="Search products..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm"
-          icon={<PackageSearch className="h-4 w-4 text-muted-foreground" />}
+
+      <SearchInput
+        value={searchTerm}
+        onChange={handleSearchChange}
+        isLoading={isFetching}
+      />
+
+      <PaginationControls
+        currentPage={page}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+      />
+
+      {isLoading ? (
+        <ProductTableSkeleton userIsManager={userIsManager} />
+      ) : (
+        <ProductTable
+          products={products}
+          userIsManager={userIsManager}
+          onUpdateStock={handleOpenUpdateDialog}
+          onUpdateProduct={handleOpenUpdateProductDialog}
+          sortField={sortField}
+          sortOrder={sortOrder}
+          onSort={handleSort}
         />
-      </div>
-      <Card className="shadow-lg">
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[80px]">Image</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Stock</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Date Added</TableHead>
-                {userIsManager && (
-                  <TableHead className="text-right">Actions</TableHead>
-                )}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredProducts.length > 0 ? (
-                filteredProducts.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell>
-                      <Image
-                        src={
-                          product.imageUrl ||
-                          "https://placehold.co/64x64.png?text=N/A"
-                        }
-                        alt={product.name}
-                        width={48}
-                        height={48}
-                        className="rounded-md object-cover"
-                        data-ai-hint="product item"
-                      />
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {product.name}
-                    </TableCell>
-                    <TableCell>${product.price.toFixed(2)}</TableCell>
-                    <TableCell>{product.quantity}</TableCell>
-                    <TableCell>
-                      {product.quantity <= product.lowStockMargin ? (
-                        <Badge
-                          variant="destructive"
-                          className="items-center gap-1"
-                        >
-                          <AlertTriangle className="h-3 w-3" /> Low Stock
-                        </Badge>
-                      ) : (
-                        <Badge
-                          variant="default"
-                          className="bg-green-500 hover:bg-green-600 items-center gap-1 text-white"
-                        >
-                          <CheckCircle2 className="h-3 w-3" /> In Stock
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(product.dateAdded).toLocaleDateString()}
-                    </TableCell>
-                    {userIsManager && (
-                      <TableCell className="text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleOpenUpdateDialog(product)}
-                        >
-                          <Edit3 className="mr-2 h-3 w-3" /> Update Stock
-                        </Button>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={userIsManager ? 7 : 6}
-                    className="h-24 text-center"
-                  >
-                    No products found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {selectedProduct && (
-        <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Update Stock for {selectedProduct.name}</DialogTitle>
-              <DialogDescription>
-                Enter the new stock quantity.
-              </DialogDescription>
-            </DialogHeader>
-            <form
-              onSubmit={stockForm.handleSubmit(handleUpdateStock)}
-              className="grid gap-4 py-4"
-            >
-              <FormField
-                label="New Quantity"
-                error={stockForm.formState.errors.quantity?.message}
-              >
-                <Controller
-                  name="quantity"
-                  control={stockForm.control}
-                  render={({ field }) => (
-                    <Input
-                      id="updateQuantity"
-                      type="number"
-                      {...field}
-                      onChange={(e) =>
-                        field.onChange(parseInt(e.target.value, 10))
-                      }
-                    />
-                  )}
-                />
-              </FormField>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button type="button" variant="outline">
-                    Cancel
-                  </Button>
-                </DialogClose>
-                <Button type="submit">Update Stock</Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
       )}
-    </>
-  );
-}
 
-// Helper component for form fields to reduce repetition
-function FormField({
-  label,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="grid grid-cols-4 items-center gap-4">
-      <Label
-        htmlFor={children && (children as React.ReactElement).props.id}
-        className="text-right"
-      >
-        {label}
-      </Label>
-      <div className="col-span-3">
-        {children}
-        {error && <p className="text-sm text-destructive mt-1">{error}</p>}
-      </div>
-    </div>
+      <UpdateStockDialog
+        isOpen={isUpdateDialogOpen}
+        onOpenChange={handleCloseUpdateDialog}
+        product={selectedProduct}
+      />
+
+      <UpdateProductDialog
+        isOpen={isUpdateProductDialogOpen}
+        onOpenChange={handleCloseUpdateProductDialog}
+        product={selectedProductForEdit}
+      />
+    </>
   );
 }

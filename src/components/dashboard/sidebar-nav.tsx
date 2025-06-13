@@ -1,8 +1,8 @@
 "use client";
 
 import { useAuth } from "@/contexts/auth-context";
-import type { Role } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { Role } from "@prisma/client";
 import type { LucideIcon } from "lucide-react";
 import {
   Bot,
