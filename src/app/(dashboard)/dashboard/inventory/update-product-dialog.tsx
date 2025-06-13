@@ -126,7 +126,9 @@ export function UpdateProductDialog({
           <FormInput
             label="Product Category"
             name="category"
+            type="select"
             control={control}
+            options={Object.values(ProductCategory)}
             error={errors.category?.message}
           />
           <FormInput

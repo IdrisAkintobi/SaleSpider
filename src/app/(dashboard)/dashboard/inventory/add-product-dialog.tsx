@@ -49,6 +49,7 @@ export function AddProductDialog({
   const {
     register,
     handleSubmit,
+    setValue,
     reset,
     control,
     formState: { errors },
@@ -58,6 +59,7 @@ export function AddProductDialog({
       price: 0.01,
       quantity: 12,
       lowStockMargin: 0,
+      category: ProductCategory.OTHERS,
     },
   });
 
@@ -130,24 +132,27 @@ export function AddProductDialog({
           <FormInput
             label="Product Category"
             name="category"
+            type="select"
             control={control}
+            options={Object.values(ProductCategory)}
             error={errors.category?.message}
           />
           <FormInput
             label="Price ($)"
             name="price"
             type="number"
+            step="0.01"
             control={control}
+            onChange={(value) => setValue("price", parseFloat(value) || 0)}
             error={errors.price?.message}
-            onChange={(e) => parseFloat(e)}
           />
           <FormInput
-            label="Initial Quantity"
+            label="New Quantity"
             name="quantity"
-            type="number"
             control={control}
             error={errors.quantity?.message}
-            onChange={(e) => parseInt(e, 10)}
+            onChange={(value) => setValue("quantity", parseInt(value, 10) || 0)}
+            type="number"
           />
           <FormInput
             label="Low Stock Margin"
@@ -155,7 +160,6 @@ export function AddProductDialog({
             type="number"
             control={control}
             error={errors.lowStockMargin?.message}
-            onChange={(e) => parseInt(e, 10)}
           />
           <FormInput
             label="Image URL (Optional)"
