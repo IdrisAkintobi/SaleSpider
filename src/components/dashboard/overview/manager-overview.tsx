@@ -11,7 +11,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getAllProducts, getAllSales, getAllUsers } from "@/lib/data";
 import type { Sale } from "@/lib/types";
 import {
   AlertTriangle,
@@ -24,15 +23,63 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { PerformanceChart } from "./performance-chart";
 import { StatsCard } from "./stats-card";
+import { useToast } from "@/hooks/use-toast";
 
 interface DailySalesData {
-  name: string; // Day name
+  name: string;
   sales: number;
 }
 
 interface WeeklySalesData {
-  name: string; // Week (e.g., "This Week", "Last Week")
+  name: string;
   sales: number;
+  target?: number;
+}
+
+interface WeeklyDataIntermediate {
+  name: string;
+  thisWeek: number;
+  lastWeek: number;
+}
+
+interface User {
+  id: string;
+  role: string;
+  status: string;
+}
+
+interface Product {
+  id: string;
+  quantity: number;
+  lowStockMargin: number;
+}
+
+async function fetchSalesData() {
+  const res = await fetch("/api/sales");
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to fetch sales");
+  }
+  return res.json() as Promise<Sale[]>;
+}
+
+async function fetchUsersData() {
+  const res = await fetch("/api/users");
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to fetch users");
+  }
+  return res.json() as Promise<User[]>;
+}
+
+async function fetchProductsData() {
+  const res = await fetch("/api/products");
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to fetch products");
+  }
+  const data = await res.json();
+  return data.products as Product[];
 }
 
 export function ManagerOverview() {
@@ -43,90 +90,120 @@ export function ManagerOverview() {
   const [dailySalesData, setDailySalesData] = useState<DailySalesData[]>([]);
   const [weeklySalesData, setWeeklySalesData] = useState<WeeklySalesData[]>([]);
   const [recentSales, setRecentSales] = useState<Sale[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
-    const sales = getAllSales();
-    const products = getAllProducts();
-    const users = getAllUsers();
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const [sales, users, products] = await Promise.all([
+          fetchSalesData(),
+          fetchUsersData(),
+          fetchProductsData(),
+        ]);
 
-    const currentTotalSales = sales.reduce(
-      (sum, sale) => sum + sale.totalAmount,
-      0
-    );
-    setTotalSales(currentTotalSales);
-    setTotalOrders(sales.length);
-    setActiveStaff(
-      users.filter((u) => u.status === "Active" && u.role === "CASHIER").length
-    );
-    setLowStockItems(
-      products.filter((p) => p.quantity <= p.lowStockMargin).length
-    );
+        const currentTotalSales = sales.reduce(
+          (sum, sale) => sum + sale.totalAmount,
+          0
+        );
+        setTotalSales(currentTotalSales);
+        setTotalOrders(sales.length);
+        setActiveStaff(
+          users.filter((u) => u.status === "ACTIVE" && u.role === "CASHIER").length
+        );
+        setLowStockItems(
+          products.filter((p) => p.quantity <= p.lowStockMargin).length
+        );
 
-    // Process daily sales (last 7 days)
-    const today = new Date();
-    const dailyData: DailySalesData[] = Array(7)
-      .fill(null)
-      .map((_, i) => {
-        const d = new Date(today);
-        d.setDate(today.getDate() - i);
-        const dayName = d.toLocaleDateString("en-US", { weekday: "short" });
-        return { name: dayName, sales: 0 };
-      })
-      .reverse();
+        // Process daily sales (last 7 days)
+        const today = new Date();
+        const dailyData: DailySalesData[] = Array(7)
+          .fill(null)
+          .map((_, i) => {
+            const d = new Date(today);
+            d.setDate(today.getDate() - i);
+            const dayName = d.toLocaleDateString("en-US", { weekday: "short" });
+            return { name: dayName, sales: 0 };
+          })
+          .reverse();
 
-    sales.forEach((sale) => {
-      const saleDate = new Date(sale.timestamp);
-      const diffDays = Math.floor(
-        (today.getTime() - saleDate.getTime()) / (1000 * 3600 * 24)
-      );
-      if (diffDays < 7) {
-        const dayIndex = 6 - diffDays; // today is 6, yesterday is 5, etc.
-        if (dailyData[dayIndex]) {
-          dailyData[dayIndex].sales += sale.totalAmount;
-        }
+        sales.forEach((sale) => {
+          const saleDate = new Date(sale.timestamp);
+          const diffDays = Math.floor(
+            (today.getTime() - saleDate.getTime()) / (1000 * 3600 * 24)
+          );
+          if (diffDays < 7) {
+            const dayIndex = 6 - diffDays; // today is 6, yesterday is 5, etc.
+            if (dailyData[dayIndex]) {
+              dailyData[dayIndex].sales += sale.totalAmount;
+            }
+          }
+        });
+        setDailySalesData(
+          dailyData.map((d) => ({ ...d, sales: parseFloat(d.sales.toFixed(2)) }))
+        );
+
+        // Process weekly sales comparison
+        const weeklyData: WeeklyDataIntermediate[] = [
+          { name: "Mon", thisWeek: 0, lastWeek: 0 },
+          { name: "Tue", thisWeek: 0, lastWeek: 0 },
+          { name: "Wed", thisWeek: 0, lastWeek: 0 },
+          { name: "Thu", thisWeek: 0, lastWeek: 0 },
+          { name: "Fri", thisWeek: 0, lastWeek: 0 },
+          { name: "Sat", thisWeek: 0, lastWeek: 0 },
+          { name: "Sun", thisWeek: 0, lastWeek: 0 },
+        ];
+
+        sales.forEach((sale) => {
+          const saleDate = new Date(sale.timestamp);
+          const dayOfWeek = saleDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+          const weekDiff = Math.floor(
+            (today.getTime() - saleDate.getTime()) / (1000 * 3600 * 24 * 7)
+          );
+
+          if (weekDiff === 0) {
+            // This week
+            weeklyData[dayOfWeek].thisWeek += sale.totalAmount;
+          } else if (weekDiff === 1) {
+            // Last week
+            weeklyData[dayOfWeek].lastWeek += sale.totalAmount;
+          }
+        });
+
+        // Transform weekly data to match chart expectations
+        const weeklyChartData: WeeklySalesData[] = weeklyData.map((d) => ({
+          name: d.name,
+          sales: parseFloat(d.thisWeek.toFixed(2)),
+          target: parseFloat(d.lastWeek.toFixed(2)),
+        }));
+
+        setWeeklySalesData(weeklyChartData);
+
+        // Recent sales (last 5)
+        setRecentSales(sales.slice(0, 5));
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to fetch data",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
       }
-    });
-    setDailySalesData(
-      dailyData.map((d) => ({ ...d, sales: parseFloat(d.sales.toFixed(2)) }))
-    );
-
-    // Process weekly sales (This week vs Last week) - simplified
-    const getWeekNumber = (d: Date) => {
-      const date = new Date(d.getTime());
-      date.setHours(0, 0, 0, 0);
-      date.setDate(date.getDate() + 3 - ((date.getDay() + 6) % 7));
-      const week1 = new Date(date.getFullYear(), 0, 4);
-      return (
-        1 +
-        Math.round(
-          ((date.getTime() - week1.getTime()) / 86400000 -
-            3 +
-            ((week1.getDay() + 6) % 7)) /
-            7
-        )
-      );
     };
-    const currentWeek = getWeekNumber(new Date());
-    const lastWeek = currentWeek - 1; // This might need adjustment for year boundaries
 
-    let thisWeekSales = 0;
-    let lastWeekSales = 0;
+    fetchData();
+  }, [toast]);
 
-    sales.forEach((sale) => {
-      const saleWeek = getWeekNumber(new Date(sale.timestamp));
-      if (saleWeek === currentWeek) thisWeekSales += sale.totalAmount;
-      else if (saleWeek === lastWeek) lastWeekSales += sale.totalAmount;
-    });
-
-    setWeeklySalesData([
-      { name: "Last Week", sales: parseFloat(lastWeekSales.toFixed(2)) },
-      { name: "This Week", sales: parseFloat(thisWeekSales.toFixed(2)) },
-    ]);
-
-    setRecentSales(
-      sales.toSorted((a, b) => b.timestamp - a.timestamp).slice(0, 5)
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+        <p className="text-muted-foreground">Loading overview data...</p>
+      </div>
     );
-  }, []);
+  }
 
   return (
     <div className="space-y-6">

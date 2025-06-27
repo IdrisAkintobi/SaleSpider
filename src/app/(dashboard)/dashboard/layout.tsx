@@ -11,7 +11,7 @@ export default async function DashboardLayout({ children }: PropsWithChildren) {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-        <aside className="hidden border-r bg-sidebar text-sidebar-foreground md:block">
+        <aside className="hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:block" data-theme="sidebar" data-debug="sidebar-container">
           <div className="flex flex-col h-full">
             <div className="flex h-16 items-center border-b border-sidebar-border px-4 lg:px-6">
               <Logo className="text-sidebar-foreground" />

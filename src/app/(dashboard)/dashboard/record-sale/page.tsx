@@ -28,11 +28,41 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
-import { getAllProducts, recordSale as recordSaleData } from "@/lib/data";
 import type { PaymentMode, Product, SaleItem } from "@/lib/types";
 import { DollarSign, PlusCircle, ShoppingCart, XCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+
+async function fetchProducts(): Promise<Product[]> {
+  const res = await fetch("/api/products");
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to fetch products");
+  }
+  const data = await res.json();
+  return data.products as Product[];
+}
+
+async function recordSale(saleData: {
+  cashierId: string;
+  items: SaleItem[];
+  totalAmount: number;
+  paymentMode: PaymentMode;
+}): Promise<any> {
+  const res = await fetch("/api/sales", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(saleData),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to record sale");
+  }
+  return res.json();
+}
 
 interface CartItem extends SaleItem {
   stock: number; // Available stock for validation
@@ -48,10 +78,26 @@ export default function RecordSalePage() {
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   const [selectedQuantity, setSelectedQuantity] = useState<number>(1);
   const [paymentMode, setPaymentMode] = useState<PaymentMode>("Cash");
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setAllProducts(getAllProducts().filter((p) => p.quantity > 0)); // Only show products in stock
-  }, []);
+    const loadProducts = async () => {
+      try {
+        setIsLoading(true);
+        const products = await fetchProducts();
+        setAllProducts(products.filter((p: Product) => p.quantity > 0)); // Only show products in stock
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to load products",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadProducts();
+  }, [toast]);
 
   const selectedProductDetails = useMemo(() => {
     return allProducts.find((p) => p.id === selectedProductId);
@@ -138,7 +184,7 @@ export default function RecordSalePage() {
     return cart.reduce((total, item) => total + item.price * item.quantity, 0);
   }, [cart]);
 
-  const handleRecordSale = () => {
+  const handleRecordSale = async () => {
     if (userIsManager) {
       toast({
         title: "Unauthorized",
@@ -156,31 +202,39 @@ export default function RecordSalePage() {
       return;
     }
 
-    const saleToRecord = {
-      cashierId: user!.id,
-      cashierName: user!.name,
-      items: cart.map(({ stock, ...item }) => item),
-      totalAmount: cartTotal,
-      paymentMode,
-    };
+    try {
+      const saleToRecord = {
+        cashierId: user!.id,
+        items: cart.map(({ stock, ...item }) => item),
+        totalAmount: cartTotal,
+        paymentMode,
+      };
 
-    const recordedSale = recordSaleData(saleToRecord);
+      const recordedSale = await recordSale(saleToRecord);
 
-    // Refresh products list to reflect new stock
-    setAllProducts(getAllProducts().filter((p) => p.quantity > 0));
+      // Refresh products list to reflect new stock
+      const products = await fetchProducts();
+      setAllProducts(products.filter((p: Product) => p.quantity > 0));
 
-    toast({
-      title: "Sale Recorded!",
-      description: `Sale ID: ${recordedSale.id.substring(
-        0,
-        8
-      )}... Total: $${cartTotal.toFixed(2)}`,
-    });
-    setCart([]);
-    setSelectedProductId("");
-    setSelectedQuantity(1);
-    setPaymentMode("Cash");
-    router.push("/dashboard/sales"); // Navigate to sales history or overview
+      toast({
+        title: "Sale Recorded!",
+        description: `Sale ID: ${recordedSale.id.substring(
+          0,
+          8
+        )}... Total: $${cartTotal.toFixed(2)}`,
+      });
+      setCart([]);
+      setSelectedProductId("");
+      setSelectedQuantity(1);
+      setPaymentMode("Cash");
+      router.push("/dashboard/sales"); // Navigate to sales history or overview
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to record sale",
+        variant: "destructive",
+      });
+    }
   };
 
   if (userIsManager) {

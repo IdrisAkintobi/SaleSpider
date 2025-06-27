@@ -17,9 +17,12 @@ datasource db {
 model User {
   id       String   @id          @default(cuid()) 
   email    String   @unique
+  username String   @unique
   name     String
   password String
   role     Role
+  status   UserStatus @default(ACTIVE)
+  sales    Sale[]    @relation("CashierSales")
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
@@ -29,6 +32,11 @@ enum Role {
   SUPER_ADMIN
   MANAGER
   CASHIER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
 }
 
 model Product {
@@ -41,6 +49,7 @@ model Product {
   lowStockMargin Int
   imageUrl       String?
   gtin           String?  @unique // Optional field for GTIN (Global Trade Item Number)
+  saleItems      SaleItem[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
@@ -66,4 +75,39 @@ enum ProductCategory {
   JEWELRY_AND_WATCHES
   HEALTH_AND_FITNESS
   OTHERS
+}
+
+enum PaymentMode {
+  CASH
+  CARD
+  BANK_TRANSFER
+  CRYPTO
+  OTHER
+}
+
+model Sale {
+  id           String       @id @default(cuid())
+  cashierId    String
+  cashier      User         @relation("CashierSales", fields: [cashierId], references: [id])
+  subtotal     Float        // Amount before VAT
+  vatAmount    Float        // VAT amount applied
+  vatPercentage Float       // VAT percentage used (stored for record keeping)
+  totalAmount  Float        // Total amount including VAT
+  paymentMode  PaymentMode
+  items        SaleItem[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  deletedAt    DateTime?
+}
+
+model SaleItem {
+  id        String  @id @default(cuid())
+  saleId    String
+  sale      Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Float   // Price at the time of sale
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

@@ -1,15 +1,16 @@
 import { ProductCategory, Role } from "@prisma/client";
 
-export type UserStatus = "Active" | "Inactive";
+export type UserStatus = "ACTIVE" | "INACTIVE";
 
 export interface User {
   id: string;
   name: string;
   username: string;
+  email: string;
   role: Role;
   status: UserStatus;
-  passwordHash?: string;
-  token?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Product {
