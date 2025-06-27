@@ -25,6 +25,7 @@ export async function seedSuperAdmin(client: PrismaClient) {
   const superAdmin = await client.user.create({
     data: {
       id: "super_admin",
+      username: "super_admin",
       name: "Super Admin",
       email: superAdminEmail,
       password: hashedSuperAdminPassword,

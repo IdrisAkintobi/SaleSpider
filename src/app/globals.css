@@ -38,15 +38,15 @@ body {
 
     --radius: 0.5rem;
 
-    /* Sidebar specific colors */
-    --sidebar-background: 225 30% 18%; /* Darker shade of primary blue */
-    --sidebar-foreground: 0 0% 98%; /* Light text for contrast */
-    --sidebar-primary: 291 64% 55%; /* Accent color for active items in sidebar */
+    /* Sidebar specific colors - Light theme */
+    --sidebar-background: 0 0% 100%; /* Pure white background */
+    --sidebar-foreground: 222 47% 11%; /* Dark text for contrast */
+    --sidebar-primary: 231 48% 48%; /* Primary color for active items */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 225 30% 23%; /* Hover/accent state in sidebar */
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 225 30% 13%;
-    --sidebar-ring: 291 64% 55%;
+    --sidebar-accent: 210 15% 88%; /* Hover/accent state */
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 210 10% 80%;
+    --sidebar-ring: 231 48% 48%;
     --chart-1: 231 48% 48%;
     --chart-2: 291 64% 42%;
     --chart-3: 197 37% 24%;
@@ -90,13 +90,13 @@ body {
     --chart-5: 340 75% 55%;
 
     /* Dark Sidebar specific colors */
-    --sidebar-background: 222 47% 8%; 
+    --sidebar-background: 222 47% 4%; /* Very dark background */
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 291 64% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 47% 12%;
+    --sidebar-accent: 222 47% 8%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 222 47% 5%;
+    --sidebar-border: 222 47% 2%;
     --sidebar-ring: 291 64% 55%;
   }
 }
@@ -107,5 +107,10 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+  }
+  
+  /* Ensure smooth theme transitions */
+  * {
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
   }
 }

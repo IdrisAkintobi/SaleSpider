@@ -24,11 +24,6 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
-import {
-  getAllSales,
-  getAllUsers,
-  updateUserStatus as updateUserDataStatus,
-} from "@/lib/data";
 import type { User, UserStatus } from "@/lib/types";
 import {
   Search,
@@ -45,6 +40,41 @@ interface StaffPerformance extends User {
   numberOfSales: number;
 }
 
+async function fetchStaffData() {
+  const res = await fetch("/api/users");
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to fetch staff");
+  }
+  return res.json() as Promise<User[]>;
+}
+
+async function fetchSalesData() {
+  const res = await fetch("/api/sales");
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to fetch sales");
+  }
+  return res.json() as Promise<any[]>;
+}
+
+async function updateUserStatus(userId: string, status: UserStatus) {
+  const res = await fetch(`/api/users/${userId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ status }),
+  });
+  
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to update user status");
+  }
+  
+  return res.json() as Promise<User>;
+}
+
 export default function StaffPage() {
   const { user: currentUser, userIsManager, userIsCashier } = useAuth();
   const router = useRouter();
@@ -55,44 +85,66 @@ export default function StaffPage() {
   const [selectedStaff, setSelectedStaff] = useState<StaffPerformance | null>(
     null
   );
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (userIsManager) {
-      const users = getAllUsers();
-      const sales = getAllSales();
-
-      const performanceData = users.map((user) => {
-        const userSales = sales.filter((sale) => sale.cashierId === user.id);
-        const totalSalesValue = userSales.reduce(
-          (sum, sale) => sum + sale.totalAmount,
-          0
-        );
-        return {
-          ...user,
-          totalSalesValue,
-          numberOfSales: userSales.length,
-        };
-      });
-      setStaffList(performanceData);
+      setIsLoading(true);
+      // Fetch users and sales from API
+      Promise.all([fetchStaffData(), fetchSalesData()])
+        .then(([users, sales]) => {
+          const performanceData = users.map((user: User) => {
+            const userSales = sales.filter((sale: any) => sale.cashierId === user.id);
+            const totalSalesValue = userSales.reduce(
+              (sum: number, sale: any) => sum + sale.totalAmount,
+              0
+            );
+            return {
+              ...user,
+              totalSalesValue,
+              numberOfSales: userSales.length,
+            };
+          });
+          setStaffList(performanceData);
+        })
+        .catch((err) => {
+          toast({ 
+            title: "Error", 
+            description: err.message, 
+            variant: "destructive" 
+          });
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
     }
-  }, [currentUser]);
+  }, [userIsManager, toast]);
 
-  const handleStatusChange = (
+  const handleStatusChange = async (
     staffMember: StaffPerformance,
     newStatus: boolean
   ) => {
-    const status: UserStatus = newStatus ? "Active" : "Inactive";
-    updateUserDataStatus(staffMember.id, status);
+    const status: UserStatus = newStatus ? "ACTIVE" : "INACTIVE";
+    
+    try {
+      await updateUserStatus(staffMember.id, status);
 
-    // Optimistically update UI
-    setStaffList((prevList) =>
-      prevList.map((s) => (s.id === staffMember.id ? { ...s, status } : s))
-    );
+      // Optimistically update UI
+      setStaffList((prevList) =>
+        prevList.map((s) => (s.id === staffMember.id ? { ...s, status } : s))
+      );
 
-    toast({
-      title: "Status Updated",
-      description: `${staffMember.name}'s status changed to ${status}.`,
-    });
+      toast({
+        title: "Status Updated",
+        description: `${staffMember.name}'s status changed to ${status}.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update status",
+        variant: "destructive",
+      });
+    }
   };
 
   const filteredStaff = useMemo(
@@ -122,6 +174,15 @@ export default function StaffPage() {
         >
           Go to Overview
         </Button>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+        <p className="text-muted-foreground">Loading staff data...</p>
       </div>
     );
   }
@@ -171,15 +232,15 @@ export default function StaffPage() {
                     <TableCell>
                       <Badge
                         variant={
-                          staff.status === "Active" ? "outline" : "destructive"
+                          staff.status === "ACTIVE" ? "outline" : "destructive"
                         }
                         className={
-                          staff.status === "Active"
+                          staff.status === "ACTIVE"
                             ? "border-green-500 text-green-600"
                             : ""
                         }
                       >
-                        {staff.status === "Active" ? (
+                        {staff.status === "ACTIVE" ? (
                           <UserCheck className="mr-1 h-3 w-3" />
                         ) : (
                           <UserX className="mr-1 h-3 w-3" />
@@ -228,14 +289,14 @@ export default function StaffPage() {
                                   : "0.00"}
                               </p>
                               <p className="text-xs text-muted-foreground pt-2">
-                                Staff Address: {selectedStaff.id}
+                                Staff ID: {selectedStaff.id}
                               </p>
                             </div>
                           )}
                         </DialogContent>
                       </Dialog>
                       <Switch
-                        checked={staff.status === "Active"}
+                        checked={staff.status === "ACTIVE"}
                         onCheckedChange={(checked) =>
                           handleStatusChange(staff, checked)
                         }
