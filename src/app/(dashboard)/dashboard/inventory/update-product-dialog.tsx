@@ -126,7 +126,9 @@ export function UpdateProductDialog({
           <FormInput
             label="Product Category"
             name="category"
+            type="select"
             control={control}
+            options={Object.values(ProductCategory)}
             error={errors.category?.message}
           />
           <FormInput
@@ -143,6 +145,9 @@ export function UpdateProductDialog({
             name="lowStockMargin"
             type="number"
             control={control}
+            onChange={(value) =>
+              setValue("lowStockMargin", parseInt(value) || 0)
+            }
             error={errors.lowStockMargin?.message}
           />
           <FormInput
