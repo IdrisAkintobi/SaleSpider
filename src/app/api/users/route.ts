@@ -1,33 +1,32 @@
 import { PrismaClient, Role } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
+import * as argon2 from "argon2";
 
 const prisma = new PrismaClient();
 
-export async function GET(req: NextRequest) {
-  // Read the X-User-Id header set by the middleware
-  const userId = req.headers.get("X-User-Id");
-
-  if (!userId) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
-
-  // Fetch the user to check their role
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-  });
-
-  if (!user || (user.role !== Role.MANAGER && user.role !== Role.SUPER_ADMIN)) {
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-  }
-
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const role = searchParams.get("role");
+    const status = searchParams.get("status");
+
+    const where: any = {};
+
+    if (role) {
+      where.role = role as Role;
+    }
+
+    if (status) {
+      where.status = status;
+    }
+
+    // Exclude super admin users from the list
+    where.role = {
+      not: "SUPER_ADMIN",
+    };
+
     const users = await prisma.user.findMany({
-      where: {
-        deletedAt: null,
-        role: {
-          not: Role.SUPER_ADMIN, // Exclude super admin users
-        },
-      },
+      where,
       select: {
         id: true,
         name: true,
@@ -39,7 +38,7 @@ export async function GET(req: NextRequest) {
         updatedAt: true,
       },
       orderBy: {
-        name: "asc",
+        createdAt: "desc",
       },
     });
 
@@ -48,6 +47,71 @@ export async function GET(req: NextRequest) {
     console.error("Error fetching users:", error);
     return NextResponse.json(
       { message: "Failed to fetch users" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { name, username, email, password, role } = body;
+
+    // Validate required fields
+    if (!name || !username || !email || !password || !role) {
+      return NextResponse.json(
+        { message: "All fields are required" },
+        { status: 400 }
+      );
+    }
+
+    // Check if user already exists
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email },
+          { username },
+        ],
+      },
+    });
+
+    if (existingUser) {
+      return NextResponse.json(
+        { message: "User with this email or username already exists" },
+        { status: 409 }
+      );
+    }
+
+    // Hash the password
+    const hashedPassword = await argon2.hash(password);
+
+    // Create the user
+    const newUser = await prisma.user.create({
+      data: {
+        name,
+        username,
+        email,
+        password: hashedPassword,
+        role: role as Role,
+        status: "ACTIVE",
+      },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        email: true,
+        role: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    return NextResponse.json(newUser, { status: 201 });
+  } catch (error) {
+    console.error("Error creating user:", error);
+    return NextResponse.json(
+      { message: "Failed to create user" },
       { status: 500 }
     );
   }

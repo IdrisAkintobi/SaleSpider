@@ -9,11 +9,11 @@ export async function POST(req: NextRequest) {
     // TODO: Implement super admin authentication
     // If not authenticated as super admin, return unauthorized response
 
-    const { email, name, password, role } = await req.json();
+    const { email, username, name, password, role } = await req.json();
 
-    if (!email || !name || !password || !role) {
+    if (!email || !username || !name || !password || !role) {
       return NextResponse.json(
-        { message: "Email, name, password, and role are required" },
+        { message: "Email, username, name, password, and role are required" },
         { status: 400 }
       );
     }
@@ -26,16 +26,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
+    // Check if user already exists by email or username
+    const existingUser = await prisma.user.findFirst({
       where: {
-        email,
+        OR: [
+          { email },
+          { username }
+        ]
       },
     });
 
     if (existingUser) {
       return NextResponse.json(
-        { message: "User with this email already exists" },
+        { message: "User with this email or username already exists" },
         { status: 409 }
       );
     }
@@ -47,6 +50,7 @@ export async function POST(req: NextRequest) {
     const newUser = await prisma.user.create({
       data: {
         email,
+        username,
         name,
         password: hashedPassword,
         role,
@@ -56,7 +60,9 @@ export async function POST(req: NextRequest) {
         id: true,
         name: true,
         email: true,
+        username: true,
         role: true,
+        status: true,
       },
     });
 
