@@ -315,7 +315,9 @@ export default function StaffPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="CASHIER">Cashier</SelectItem>
-                                  <SelectItem value="MANAGER">Manager</SelectItem>
+                                  {currentUser?.role === "SUPER_ADMIN" && (
+                                    <SelectItem value="MANAGER">Manager</SelectItem>
+                                  )}
                                 </SelectContent>
                               </Select>
                               <div className="flex justify-end gap-2">
