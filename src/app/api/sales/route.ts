@@ -34,69 +34,61 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
-  try {
-    let sales: any[];
+  // Parse query params
+  const { searchParams } = new URL(req.url);
+  const page = parseInt(searchParams.get("page") || "1", 10);
+  const pageSize = parseInt(searchParams.get("pageSize") || "20", 10);
+  const sort = searchParams.get("sort") || "createdAt";
+  const order = (searchParams.get("order") || "desc").toLowerCase() === "asc" ? "asc" : "desc";
 
+  // Map sort field to Prisma
+  let orderBy: any = {};
+  if (sort === "cashierName") {
+    orderBy = { cashier: { name: order } };
+  } else if (sort === "totalAmount") {
+    orderBy = { totalAmount: order };
+  } else if (sort === "paymentMode") {
+    orderBy = { paymentMode: order };
+  } else {
+    orderBy = { createdAt: order };
+  }
+
+  try {
+    // Build where clause
+    let where: any = { deletedAt: null };
     if (user.role === Role.CASHIER) {
-      // Cashiers can only see their own sales
-      sales = await prisma.sale.findMany({
-        where: {
-          cashierId: userId,
-          deletedAt: null,
-        },
-        include: {
-          cashier: {
-            select: {
-              id: true,
-              name: true,
-              username: true,
-            },
-          },
-          items: {
-            include: {
-              product: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
-            },
-          },
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
-    } else {
-      // Managers and Super Admins can see all sales
-      sales = await prisma.sale.findMany({
-        where: {
-          deletedAt: null,
-        },
-        include: {
-          cashier: {
-            select: {
-              id: true,
-              name: true,
-              username: true,
-            },
-          },
-          items: {
-            include: {
-              product: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
-            },
-          },
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
+      where.cashierId = userId;
     }
+
+    // Get total count for pagination
+    const total = await prisma.sale.count({ where });
+
+    // Fetch paginated, sorted sales
+    const sales = await prisma.sale.findMany({
+      where,
+      include: {
+        cashier: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+          },
+        },
+        items: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    });
 
     // Transform the data to match frontend expectations
     const transformedSales = sales.map((sale: any) => ({
@@ -114,7 +106,7 @@ export async function GET(req: NextRequest) {
       })),
     }));
 
-    return NextResponse.json(transformedSales);
+    return NextResponse.json({ data: transformedSales, total });
   } catch (error) {
     console.error("Error fetching sales:", error);
     return NextResponse.json(
