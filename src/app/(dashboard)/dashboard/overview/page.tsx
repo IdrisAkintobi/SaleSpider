@@ -7,9 +7,12 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
 import { DollarSign } from "lucide-react";
 import Link from "next/link";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState } from "react";
 
 export default function OverviewPage() {
   const { user, userIsManager } = useAuth();
+  const [period, setPeriod] = useState<string>("today");
 
   if (!user) {
     return null;
@@ -22,7 +25,19 @@ export default function OverviewPage() {
         <DollarSign className="mr-2 h-5 w-5" /> Record New Sale
       </Link>
     </Button>
-  ) : undefined;
+  ) : (
+    <Select value={period} onValueChange={setPeriod}>
+      <SelectTrigger className="w-[180px]">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="today">Today</SelectItem>
+        <SelectItem value="week">This Week</SelectItem>
+        <SelectItem value="month">This Month</SelectItem>
+        <SelectItem value="year">This Year</SelectItem>
+      </SelectContent>
+    </Select>
+  );
 
   return (
     <>
@@ -35,7 +50,7 @@ export default function OverviewPage() {
         }
         actions={recordSaleAction}
       />
-      {userIsManager ? <ManagerOverview /> : <CashierOverview />}
+      {userIsManager ? <ManagerOverview period={period} /> : <CashierOverview />}
     </>
   );
 }

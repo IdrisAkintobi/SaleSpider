@@ -20,13 +20,21 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { PerformanceChart } from "./performance-chart";
 import { StatsCard } from "./stats-card";
 import { useToast } from "@/hooks/use-toast";
 import { useSales } from "@/hooks/use-sales";
 import { useStaff } from "@/hooks/use-staff";
 import { useQuery } from "@tanstack/react-query";
+import { useSalesStats } from "@/hooks/use-sales-stats";
+import { useSalesMonthly } from "@/hooks/use-sales-monthly";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { DateRange } from "react-day-picker";
+import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 
 interface DailySalesData {
   name: string;
@@ -57,6 +65,10 @@ interface Product {
   lowStockMargin: number;
 }
 
+interface ManagerOverviewProps {
+  period: string;
+}
+
 async function fetchProductsData() {
   const res = await fetch("/api/products");
   if (!res.ok) {
@@ -67,12 +79,14 @@ async function fetchProductsData() {
   return data.products as Product[];
 }
 
-export function ManagerOverview() {
+export function ManagerOverview({ period }: ManagerOverviewProps) {
   const { toast } = useToast();
 
   // Use TanStack Query for data fetching
-  const { data: sales = [], isLoading: isLoadingSales, error: salesError } = useSales();
-  const { data: users = [], isLoading: isLoadingUsers, error: usersError } = useStaff();
+  const { data: salesData, isLoading: isLoadingSales, error: salesError } = useSales();
+  const sales: Sale[] = salesData?.data ?? [];
+  const { data: usersData, isLoading: isLoadingUsers, error: usersError } = useStaff();
+  const users = usersData?.data ?? [];
   const { data: products = [], isLoading: isLoadingProducts, error: productsError } = useQuery({
     queryKey: ['products-overview'],
     queryFn: fetchProductsData,
@@ -80,9 +94,30 @@ export function ManagerOverview() {
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
+  // Compute date range based on period
+  let statsDateRange: { from?: Date; to?: Date } = {};
+  const now = new Date();
+  if (period === "today") {
+    statsDateRange = { from: startOfDay(now), to: endOfDay(now) };
+  } else if (period === "week") {
+    statsDateRange = { from: startOfWeek(now, { weekStartsOn: 1 }), to: endOfWeek(now, { weekStartsOn: 1 }) };
+  } else if (period === "month") {
+    statsDateRange = { from: startOfMonth(now), to: endOfMonth(now) };
+  } else if (period === "year") {
+    statsDateRange = { from: startOfYear(now), to: endOfYear(now) };
+  }
+
+  const { data: stats, isLoading: isLoadingStats, error: statsError } =
+    (statsDateRange.from && statsDateRange.to)
+      ? useSalesStats({ from: statsDateRange.from, to: statsDateRange.to })
+      : useSalesStats(undefined);
+
+  const [comparisonType, setComparisonType] = useState<'weekly' | 'monthly'>('weekly');
+  const { data: monthlyData, isLoading: isLoadingMonthly, error: monthlyError } = useSalesMonthly();
+
   // Handle errors
-  if (salesError || usersError || productsError) {
-    const error = salesError || usersError || productsError;
+  if (salesError || usersError || productsError || statsError) {
+    const error = salesError || usersError || productsError || statsError;
     toast({
       title: "Error",
       description: error?.message || "Failed to fetch data",
@@ -90,14 +125,14 @@ export function ManagerOverview() {
     });
   }
 
-  const isLoading = isLoadingSales || isLoadingUsers || isLoadingProducts;
+  const isLoading = isLoadingSales || isLoadingUsers || isLoadingProducts || isLoadingStats || isLoadingMonthly;
 
   // Calculate stats using useMemo
-  const stats = useMemo(() => {
-    const totalSales = sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
+  const statsMemo = useMemo(() => {
+    const totalSales = sales.reduce((sum: number, sale: Sale) => sum + sale.totalAmount, 0);
     const totalOrders = sales.length;
-    const activeStaff = users.filter((u) => u.status === "ACTIVE" && u.role === "CASHIER").length;
-    const lowStockItems = products.filter((p) => p.quantity <= p.lowStockMargin).length;
+    const activeStaff = users.filter((u: User) => u.status === "ACTIVE" && u.role === "CASHIER").length;
+    const lowStockItems = products.filter((p: Product) => p.quantity <= p.lowStockMargin).length;
 
     return { totalSales, totalOrders, activeStaff, lowStockItems };
   }, [sales, users, products]);
@@ -115,7 +150,7 @@ export function ManagerOverview() {
       })
       .reverse();
 
-    sales.forEach((sale) => {
+    sales.forEach((sale: Sale) => {
       const saleDate = new Date(sale.timestamp);
       const diffDays = Math.floor(
         (today.getTime() - saleDate.getTime()) / (1000 * 3600 * 24)
@@ -134,38 +169,54 @@ export function ManagerOverview() {
   // Process weekly sales data
   const weeklySalesData = useMemo(() => {
     const today = new Date();
-    const weeklyData: WeeklyDataIntermediate[] = [
-      { name: "Mon", thisWeek: 0, lastWeek: 0 },
-      { name: "Tue", thisWeek: 0, lastWeek: 0 },
-      { name: "Wed", thisWeek: 0, lastWeek: 0 },
-      { name: "Thu", thisWeek: 0, lastWeek: 0 },
-      { name: "Fri", thisWeek: 0, lastWeek: 0 },
-      { name: "Sat", thisWeek: 0, lastWeek: 0 },
-      { name: "Sun", thisWeek: 0, lastWeek: 0 },
-    ];
+    // Generate last 7 days, oldest to newest, matching dailySalesData
+    const days = Array(7)
+      .fill(null)
+      .map((_, i) => {
+        const d = new Date(today);
+        d.setDate(today.getDate() - (6 - i)); // oldest first
+        return {
+          date: new Date(d.getFullYear(), d.getMonth(), d.getDate()), // strip time
+          name: d.toLocaleDateString("en-US", { weekday: "short" }),
+        };
+      });
 
-    sales.forEach((sale) => {
-      const saleDate = new Date(sale.timestamp);
-      const dayOfWeek = saleDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
-      const weekDiff = Math.floor(
-        (today.getTime() - saleDate.getTime()) / (1000 * 3600 * 24 * 7)
-      );
+    // For each day, sum sales for this week and last week
+    const weeklyData = days.map((day) => {
+      // This week: sales on this day
+      const thisWeekSales = sales
+        .filter((sale: Sale) => {
+          const saleDate = new Date(sale.timestamp);
+          return (
+            saleDate.getFullYear() === day.date.getFullYear() &&
+            saleDate.getMonth() === day.date.getMonth() &&
+            saleDate.getDate() === day.date.getDate()
+          );
+        })
+        .reduce((sum: number, sale: Sale) => sum + sale.totalAmount, 0);
 
-      if (weekDiff === 0) {
-        // This week
-        weeklyData[dayOfWeek].thisWeek += sale.totalAmount;
-      } else if (weekDiff === 1) {
-        // Last week
-        weeklyData[dayOfWeek].lastWeek += sale.totalAmount;
-      }
+      // Last week: sales on this weekday, 7 days ago
+      const lastWeekDate = new Date(day.date);
+      lastWeekDate.setDate(lastWeekDate.getDate() - 7);
+      const lastWeekSales = sales
+        .filter((sale: Sale) => {
+          const saleDate = new Date(sale.timestamp);
+          return (
+            saleDate.getFullYear() === lastWeekDate.getFullYear() &&
+            saleDate.getMonth() === lastWeekDate.getMonth() &&
+            saleDate.getDate() === lastWeekDate.getDate()
+          );
+        })
+        .reduce((sum: number, sale: Sale) => sum + sale.totalAmount, 0);
+
+      return {
+        name: day.name,
+        sales: parseFloat(thisWeekSales.toFixed(2)),
+        target: parseFloat(lastWeekSales.toFixed(2)),
+      };
     });
 
-    // Transform weekly data to match chart expectations
-    return weeklyData.map((d) => ({
-      name: d.name,
-      sales: parseFloat(d.thisWeek.toFixed(2)),
-      target: parseFloat(d.lastWeek.toFixed(2)),
-    }));
+    return weeklyData;
   }, [sales]);
 
   // Recent sales (last 5)
@@ -173,11 +224,19 @@ export function ManagerOverview() {
     return sales.slice(0, 5);
   }, [sales]);
 
-  if (isLoading) {
+  if (isLoading || isLoadingStats) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
         <p className="text-muted-foreground">Loading overview data...</p>
+      </div>
+    );
+  }
+
+  if (statsError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-center">
+        <p className="text-destructive">Failed to fetch sales stats: {statsError.message}</p>
       </div>
     );
   }
@@ -187,31 +246,31 @@ export function ManagerOverview() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="Total Revenue"
-          value={`$${stats.totalSales.toFixed(2)}`}
+          value={`$${stats?.totalSales?.toFixed(2) ?? "0.00"}`}
           icon={DollarSign}
-          description="All-time sales"
+          description={period === "today" ? "Today's sales" : period === "week" ? "This week's sales" : period === "month" ? "This month's sales" : period === "year" ? "This year's sales" : "All-time sales"}
         />
         <StatsCard
           title="Total Orders"
-          value={stats.totalOrders}
+          value={stats?.totalOrders ?? 0}
           icon={ShoppingCart}
-          description="All-time orders"
+          description={period === "today" ? "Today's orders" : period === "week" ? "This week's orders" : period === "month" ? "This month's orders" : period === "year" ? "This year's orders" : "All-time orders"}
         />
         <StatsCard
           title="Active Cashiers"
-          value={stats.activeStaff}
+          value={statsMemo.activeStaff}
           icon={Users}
           description="Currently active staff"
         />
         <StatsCard
           title="Low Stock Items"
-          value={stats.lowStockItems}
-          icon={stats.lowStockItems > 0 ? AlertTriangle : PackageCheck}
+          value={statsMemo.lowStockItems}
+          icon={statsMemo.lowStockItems > 0 ? AlertTriangle : PackageCheck}
           description={
-            stats.lowStockItems > 0 ? "Needs attention" : "All items well stocked"
+            statsMemo.lowStockItems > 0 ? "Needs attention" : "All items well stocked"
           }
           iconClassName={
-            stats.lowStockItems > 0 ? "text-destructive" : "text-green-500"
+            statsMemo.lowStockItems > 0 ? "text-destructive" : "text-green-500"
           }
         />
       </div>
@@ -222,11 +281,40 @@ export function ManagerOverview() {
           title="Daily Sales (Last 7 Days)"
           description="Revenue generated per day."
         />
-        <PerformanceChart
-          data={weeklySalesData}
-          title="Weekly Sales Comparison"
-          description="This week vs. last week."
-        />
+        {comparisonType === 'weekly' && (
+          <PerformanceChart
+            data={weeklySalesData}
+            title="Weekly Sales Comparison"
+            description="This week vs. last week."
+            comparisonType={comparisonType}
+            onComparisonTypeChange={v => setComparisonType(v as 'weekly' | 'monthly')}
+            comparisonOptions={[
+              { value: 'weekly', label: 'Weekly' },
+              { value: 'monthly', label: 'Monthly (Last 6 Months)' },
+            ]}
+          />
+        )}
+        {comparisonType === 'monthly' && (
+          isLoadingMonthly ? (
+            <div className="flex items-center justify-center h-[300px]">Loading monthly data...</div>
+          ) : monthlyError ? (
+            <div className="flex items-center justify-center h-[300px] text-destructive">Failed to fetch monthly sales: {monthlyError.message}</div>
+          ) : (
+            <PerformanceChart
+              data={monthlyData?.map(m => ({ name: new Date(m.month + '-01').toLocaleString('en-US', { month: 'short' }), sales: m.sales })) ?? []}
+              title="Monthly Sales Comparison"
+              description="Total sales per month."
+              xAxisDataKey="name"
+              barDataKey="sales"
+              comparisonType={comparisonType}
+              onComparisonTypeChange={v => setComparisonType(v as 'weekly' | 'monthly')}
+              comparisonOptions={[
+                { value: 'weekly', label: 'Weekly' },
+                { value: 'monthly', label: 'Monthly (Last 6 Months)' },
+              ]}
+            />
+          )
+        )}
       </div>
 
       <Card className="shadow-lg">
