@@ -1,13 +1,32 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { User, UserStatus } from "@/lib/types";
 
-async function fetchStaffData() {
-  const res = await fetch("/api/users");
+export interface UseStaffParams {
+  page?: number;
+  pageSize?: number;
+  sort?: string;
+  order?: string;
+  searchTerm?: string;
+}
+
+export interface StaffQueryResult {
+  data: User[];
+  total: number;
+}
+
+async function fetchStaffData(params: UseStaffParams = {}) {
+  const query = new URLSearchParams();
+  if (params.page) query.set("page", params.page.toString());
+  if (params.pageSize) query.set("pageSize", params.pageSize.toString());
+  if (params.sort) query.set("sort", params.sort);
+  if (params.order) query.set("order", params.order);
+  if (params.searchTerm) query.set("search", params.searchTerm);
+  const res = await fetch(`/api/users?${query.toString()}`);
   if (!res.ok) {
     const error = await res.json();
     throw new Error(error.message || "Failed to fetch staff");
   }
-  return res.json() as Promise<User[]>;
+  return res.json() as Promise<StaffQueryResult>;
 }
 
 async function updateUserStatus(userId: string, status: UserStatus) {
@@ -50,10 +69,10 @@ async function addStaff(staffData: {
   return res.json();
 }
 
-export function useStaff(enabled: boolean = true) {
-  return useQuery({
-    queryKey: ['staff'],
-    queryFn: fetchStaffData,
+export function useStaff(params: UseStaffParams = {}, enabled: boolean = true) {
+  return useQuery<StaffQueryResult, Error>({
+    queryKey: ['staff', params],
+    queryFn: () => fetchStaffData(params),
     enabled,
     staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes
