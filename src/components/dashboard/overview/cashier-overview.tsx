@@ -21,9 +21,10 @@ import { useAuth } from "@/contexts/auth-context";
 import type { Sale } from "@/lib/types";
 import { DollarSign, ShoppingCart, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { StatsCard } from "./stats-card";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 
 async function fetchSalesByCashierId(cashierId: string): Promise<Sale[]> {
   const res = await fetch(`/api/sales?cashierId=${cashierId}`);
@@ -36,60 +37,59 @@ async function fetchSalesByCashierId(cashierId: string): Promise<Sale[]> {
 
 export function CashierOverview() {
   const { user } = useAuth();
-  const [mySales, setMySales] = useState<Sale[]>([]);
-  const [totalMySalesValue, setTotalMySalesValue] = useState(0);
-  const [totalMyOrders, setTotalMyOrders] = useState(0);
-  const [averageSaleValue, setAverageSaleValue] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!user) return;
-      
-      try {
-        setIsLoading(true);
-        const sales = await fetchSalesByCashierId(user.id);
-        setMySales(sales.toSorted((a, b) => b.timestamp - a.timestamp));
+  // Use TanStack Query for data fetching
+  const { data: mySales = [], isLoading, error } = useQuery({
+    queryKey: ['sales', 'cashier', user?.id],
+    queryFn: () => fetchSalesByCashierId(user!.id),
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
 
-        const totalValue = sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
-        setTotalMySalesValue(totalValue);
-        setTotalMyOrders(sales.length);
-        setAverageSaleValue(sales.length > 0 ? totalValue / sales.length : 0);
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: error instanceof Error ? error.message : "Failed to fetch sales data",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
+  // Handle errors
+  if (error) {
+    toast({
+      title: "Error",
+      description: error.message || "Failed to fetch sales data",
+      variant: "destructive",
+    });
+  }
+
+  // Calculate stats using useMemo
+  const stats = useMemo(() => {
+    const sortedSales = mySales.toSorted((a, b) => b.timestamp - a.timestamp);
+    const totalValue = sortedSales.reduce((sum, sale) => sum + sale.totalAmount, 0);
+    const totalOrders = sortedSales.length;
+    const averageValue = totalOrders > 0 ? totalValue / totalOrders : 0;
+
+    return {
+      totalValue,
+      totalOrders,
+      averageValue,
+      recentSales: sortedSales.slice(0, 5),
     };
-
-    fetchData();
-  }, [user, toast]);
-
-  const recentSalesToDisplay = mySales.slice(0, 5);
+  }, [mySales]);
 
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <StatsCard
           title="My Total Sales Value"
-          value={`$${totalMySalesValue.toFixed(2)}`}
+          value={`$${stats.totalValue.toFixed(2)}`}
           icon={DollarSign}
           description="All sales you've recorded."
         />
         <StatsCard
           title="My Total Orders"
-          value={totalMyOrders}
+          value={stats.totalOrders}
           icon={ShoppingCart}
           description="Total orders you've processed."
         />
         <StatsCard
           title="My Average Sale Value"
-          value={`$${averageSaleValue.toFixed(2)}`}
+          value={`$${stats.averageValue.toFixed(2)}`}
           icon={TrendingUp}
           description="Average value per order."
         />
@@ -119,8 +119,8 @@ export function CashierOverview() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {recentSalesToDisplay.length > 0 ? (
-                recentSalesToDisplay.map((sale) => (
+              {stats.recentSales.length > 0 ? (
+                stats.recentSales.map((sale) => (
                   <TableRow key={sale.id}>
                     <TableCell className="font-medium">
                       {sale.id.substring(0, 8)}...
@@ -149,13 +149,6 @@ export function CashierOverview() {
           </Table>
         </CardContent>
       </Card>
-      <div className="mt-8 text-center">
-        <Button size="lg" asChild>
-          <Link href="/dashboard/record-sale">
-            <DollarSign className="mr-2 h-5 w-5" /> Record New Sale
-          </Link>
-        </Button>
-      </div>
     </div>
   );
 }

@@ -20,35 +20,42 @@ import {
   Sun,
   User as UserIcon,
 } from "lucide-react";
-import { useTheme } from "next-themes"; // Assuming next-themes is or will be installed
+import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Fragment } from "react";
-import { SidebarNav } from "./sidebar-nav"; // We'll create this next
+import { Fragment, useEffect, useState } from "react";
+import { SidebarNav } from "./sidebar-nav";
 
 // Helper for theme toggle, assuming next-themes
 function ThemeToggle() {
   const { setTheme, theme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // useEffect only runs on the client, so now we can safely show the UI
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const handleThemeChange = () => {
+    if (mounted) {
+      setTheme(theme === "light" ? "dark" : "light");
+    }
+  };
 
   return (
-    <div className="flex items-center gap-2">
-      {/* Debug info - remove in production */}
-      {process.env.NODE_ENV === "development" && (
-        <span className="text-xs text-muted-foreground hidden md:inline">
-          {resolvedTheme}
-        </span>
-      )}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-        title={`Current theme: ${resolvedTheme}`}
-      >
-        <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-        <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-        <span className="sr-only">Toggle theme</span>
-      </Button>
-    </div>
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={handleThemeChange}
+      title={mounted ? `Current theme: ${resolvedTheme}` : "Loading theme..."}
+      disabled={!mounted}
+      className="transition-all duration-200"
+      data-theme-toggle
+    >
+      <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+      <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+      <span className="sr-only">Toggle theme</span>
+    </Button>
   );
 }
 

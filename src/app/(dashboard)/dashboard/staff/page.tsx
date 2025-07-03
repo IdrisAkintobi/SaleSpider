@@ -24,6 +24,8 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
+import { useSales } from "@/hooks/use-sales";
+import { useStaff, useUpdateUserStatus } from "@/hooks/use-staff";
 import type { User, UserStatus } from "@/lib/types";
 import {
   Search,
@@ -33,46 +35,12 @@ import {
   UserX,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { AddStaffDialog } from "./add-staff-dialog";
 
 interface StaffPerformance extends User {
   totalSalesValue: number;
   numberOfSales: number;
-}
-
-async function fetchStaffData() {
-  const res = await fetch("/api/users");
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || "Failed to fetch staff");
-  }
-  return res.json() as Promise<User[]>;
-}
-
-async function fetchSalesData() {
-  const res = await fetch("/api/sales");
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || "Failed to fetch sales");
-  }
-  return res.json() as Promise<any[]>;
-}
-
-async function updateUserStatus(userId: string, status: UserStatus) {
-  const res = await fetch(`/api/users/${userId}`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ status }),
-  });
-  
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || "Failed to update user status");
-  }
-  
-  return res.json() as Promise<User>;
 }
 
 export default function StaffPage() {
@@ -80,71 +48,60 @@ export default function StaffPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const [staffList, setStaffList] = useState<StaffPerformance[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStaff, setSelectedStaff] = useState<StaffPerformance | null>(
     null
   );
-  const [isLoading, setIsLoading] = useState(true);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
-  useEffect(() => {
-    if (userIsManager) {
-      setIsLoading(true);
-      // Fetch users and sales from API
-      Promise.all([fetchStaffData(), fetchSalesData()])
-        .then(([users, sales]) => {
-          const performanceData = users.map((user: User) => {
-            const userSales = sales.filter((sale: any) => sale.cashierId === user.id);
-            const totalSalesValue = userSales.reduce(
-              (sum: number, sale: any) => sum + sale.totalAmount,
-              0
-            );
-            return {
-              ...user,
-              totalSalesValue,
-              numberOfSales: userSales.length,
-            };
-          });
-          setStaffList(performanceData);
-        })
-        .catch((err) => {
-          toast({ 
-            title: "Error", 
-            description: err.message, 
-            variant: "destructive" 
-          });
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
-    }
-  }, [userIsManager, toast]);
+  // Use custom hooks for data fetching
+  const { data: users = [], isLoading: isLoadingUsers } = useStaff(userIsManager);
+  const { data: sales = [], isLoading: isLoadingSales } = useSales();
+  const updateStatusMutation = useUpdateUserStatus();
 
-  const handleStatusChange = async (
+  // Combine users and sales data to create performance data
+  const staffList: StaffPerformance[] = useMemo(() => {
+    return users.map((user: User) => {
+      const userSales = sales.filter((sale: any) => sale.cashierId === user.id);
+      const totalSalesValue = userSales.reduce(
+        (sum: number, sale: any) => sum + sale.totalAmount,
+        0
+      );
+      return {
+        ...user,
+        totalSalesValue,
+        numberOfSales: userSales.length,
+      };
+    });
+  }, [users, sales]);
+
+  const isLoading = isLoadingUsers || isLoadingSales;
+
+  const handleStatusChange = (
     staffMember: StaffPerformance,
     newStatus: boolean
   ) => {
     const status: UserStatus = newStatus ? "ACTIVE" : "INACTIVE";
     
-    try {
-      await updateUserStatus(staffMember.id, status);
-
-      // Optimistically update UI
-      setStaffList((prevList) =>
-        prevList.map((s) => (s.id === staffMember.id ? { ...s, status } : s))
-      );
-
-      toast({
-        title: "Status Updated",
-        description: `${staffMember.name}'s status changed to ${status}.`,
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update status",
-        variant: "destructive",
-      });
-    }
+    // Use the mutation with toast handling
+    updateStatusMutation.mutate(
+      { userId: staffMember.id, status },
+      {
+        onSuccess: (updatedUser) => {
+          toast({
+            title: "Status Updated",
+            description: `${updatedUser.name}'s status changed to ${updatedUser.status}.`,
+          });
+        },
+        onError: (error) => {
+          toast({
+            title: "Error",
+            description: error.message || "Failed to update status",
+            variant: "destructive",
+          });
+        },
+      }
+    );
   };
 
   const filteredStaff = useMemo(
@@ -192,6 +149,17 @@ export default function StaffPage() {
       <PageHeader
         title="Staff Management"
         description="View staff details, performance, and manage their status."
+        actions={
+          (currentUser?.role === "SUPER_ADMIN" || currentUser?.role === "MANAGER") && (
+            <AddStaffDialog
+              isOpen={isAddDialogOpen}
+              onOpenChange={setIsAddDialogOpen}
+              onStaffAdded={() => {
+                // No need to invalidate queries here, as the mutation handles it
+              }}
+            />
+          )
+        }
       />
       <div className="mb-4">
         <Input

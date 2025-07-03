@@ -28,11 +28,17 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
+import { useCreateSale } from "@/hooks/use-sales";
 import type { PaymentMode, Product, SaleItem } from "@/lib/types";
-import { DollarSign, PlusCircle, ShoppingCart, XCircle } from "lucide-react";
+import { DollarSign, PlusCircle, ShoppingCart, XCircle, Search, HelpCircle, PackageSearch } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 async function fetchProducts(): Promise<Product[]> {
   const res = await fetch("/api/products");
@@ -71,6 +77,7 @@ interface CartItem extends SaleItem {
 export default function RecordSalePage() {
   const { user, userIsManager } = useAuth();
   const { toast } = useToast();
+  const createSaleMutation = useCreateSale();
   const router = useRouter();
 
   const [allProducts, setAllProducts] = useState<Product[]>([]);
@@ -79,6 +86,7 @@ export default function RecordSalePage() {
   const [selectedQuantity, setSelectedQuantity] = useState<number>(1);
   const [paymentMode, setPaymentMode] = useState<PaymentMode>("Cash");
   const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -99,9 +107,77 @@ export default function RecordSalePage() {
     loadProducts();
   }, [toast]);
 
+  // Filter products based on search term
+  const filteredProducts = useMemo(() => {
+    if (!searchTerm.trim()) return allProducts;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return allProducts.filter((product) => {
+      // Search by product ID
+      const idMatch = product.id.toLowerCase().includes(searchLower);
+      
+      // Search by product name
+      const nameMatch = product.name.toLowerCase().includes(searchLower);
+      
+      // Search by description
+      const descriptionMatch = product.description.toLowerCase().includes(searchLower);
+      
+      // Search by category
+      const categoryMatch = product.category.toLowerCase().includes(searchLower);
+      
+      // Search by GTIN
+      const gtinMatch = product.gtin?.toLowerCase().includes(searchLower) || false;
+      
+      // Search by exact price
+      const priceMatch = product.price.toString().includes(searchTerm);
+      
+      // Search by price range (e.g., "10-50")
+      let priceRangeMatch = false;
+      if (searchTerm.includes('-')) {
+        const parts = searchTerm.split('-');
+        if (parts.length === 2) {
+          const minPrice = parseFloat(parts[0]);
+          const maxPrice = parseFloat(parts[1]);
+          if (!isNaN(minPrice) && !isNaN(maxPrice)) {
+            priceRangeMatch = product.price >= minPrice && product.price <= maxPrice;
+          }
+        }
+      }
+      
+      // Search by minimum price (e.g., ">10" or "10+")
+      let minPriceMatch = false;
+      if (searchTerm.includes('>') || searchTerm.includes('+')) {
+        const priceStr = searchTerm.replace(/[>+]/g, '');
+        const minPrice = parseFloat(priceStr);
+        if (!isNaN(minPrice)) {
+          minPriceMatch = product.price >= minPrice;
+        }
+      }
+      
+      // Search by maximum price (e.g., "<50")
+      let maxPriceMatch = false;
+      if (searchTerm.includes('<')) {
+        const priceStr = searchTerm.replace('<', '');
+        const maxPrice = parseFloat(priceStr);
+        if (!isNaN(maxPrice)) {
+          maxPriceMatch = product.price <= maxPrice;
+        }
+      }
+      
+      return idMatch || nameMatch || descriptionMatch || categoryMatch || gtinMatch || 
+             priceMatch || priceRangeMatch || minPriceMatch || maxPriceMatch;
+    });
+  }, [allProducts, searchTerm]);
+
   const selectedProductDetails = useMemo(() => {
     return allProducts.find((p) => p.id === selectedProductId);
   }, [allProducts, selectedProductId]);
+
+  // Clear search when product is selected
+  const handleProductSelect = (productId: string) => {
+    setSelectedProductId(productId);
+    setSearchTerm(""); // Clear search when product is selected
+  };
 
   const handleAddProductToCart = () => {
     if (!selectedProductDetails || selectedQuantity <= 0) {
@@ -210,14 +286,14 @@ export default function RecordSalePage() {
         paymentMode,
       };
 
-      const recordedSale = await recordSale(saleToRecord);
+      const recordedSale = await createSaleMutation.mutateAsync(saleToRecord);
 
       // Refresh products list to reflect new stock
       const products = await fetchProducts();
       setAllProducts(products.filter((p: Product) => p.quantity > 0));
 
       toast({
-        title: "Sale Recorded!",
+        title: "Sale Recorded Successfully!",
         description: `Sale ID: ${recordedSale.id.substring(
           0,
           8
@@ -227,11 +303,11 @@ export default function RecordSalePage() {
       setSelectedProductId("");
       setSelectedQuantity(1);
       setPaymentMode("Cash");
-      router.push("/dashboard/sales"); // Navigate to sales history or overview
+      // Stay on the record sale page - no redirect needed
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to record sale",
+        title: "Failed to Record Sale",
+        description: error instanceof Error ? error.message : "An error occurred while recording the sale",
         variant: "destructive",
       });
     }
@@ -268,26 +344,82 @@ export default function RecordSalePage() {
             <CardTitle>Add Products to Cart</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Product Search */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Label htmlFor="product-search">Search Products</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-sm">
+                      <div className="space-y-2">
+                        <p className="font-medium">Search Examples:</p>
+                        <ul className="text-xs space-y-1">
+                          <li>• <strong>ID:</strong> "prod_123"</li>
+                          <li>• <strong>Name:</strong> "laptop" or "gaming"</li>
+                          <li>• <strong>Category:</strong> "electronics"</li>
+                          <li>• <strong>Price:</strong> "25.99" or "10-50"</li>
+                          <li>• <strong>GTIN:</strong> "1234567890123"</li>
+                          <li>• <strong>Description:</strong> "wireless" or "bluetooth"</li>
+                        </ul>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <div className="relative">
+                <PackageSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-20 pointer-events-none" />
+                <Input
+                  id="product-search"
+                  placeholder="Search by ID, name, description, category, GTIN, price, range (10-50), min (>10), max (<50)"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 mb-2"
+                />
+              </div>
+              {searchTerm && (
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p>
+                    Found {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''}
+                  </p>
+                  <p className="text-xs">
+                    Searchable fields: ID, Name, Description, Category, GTIN, Price
+                  </p>
+                </div>
+              )}
+            </div>
             <div>
               <Label htmlFor="product-select">Product</Label>
               <Select
                 value={selectedProductId}
-                onValueChange={setSelectedProductId}
+                onValueChange={handleProductSelect}
               >
                 <SelectTrigger id="product-select">
                   <SelectValue placeholder="Select a product" />
                 </SelectTrigger>
                 <SelectContent>
-                  {allProducts.map((product) => (
-                    <SelectItem
-                      key={product.id}
-                      value={product.id}
-                      disabled={product.quantity === 0}
-                    >
-                      {product.name} (${product.price.toFixed(2)}) - Stock:{" "}
-                      {product.quantity}
-                    </SelectItem>
-                  ))}
+                  {filteredProducts.length > 0 ? (
+                    filteredProducts.map((product) => (
+                      <SelectItem
+                        key={product.id}
+                        value={product.id}
+                        disabled={product.quantity === 0}
+                      >
+                        {product.name} (${product.price.toFixed(2)})
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          ID: {product.id.substring(0, 8)}... | {product.category}
+                          {product.gtin && ` | GTIN: ${product.gtin}`}
+                          <span className="ml-2">Stock: {product.quantity}</span>
+                        </div>
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                      No products found
+                    </div>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -416,9 +548,18 @@ export default function RecordSalePage() {
                 size="lg"
                 onClick={handleRecordSale}
                 className="w-full"
-                disabled={cart.length === 0}
+                disabled={cart.length === 0 || createSaleMutation.isPending}
               >
-                <DollarSign className="mr-2 h-5 w-5" /> Complete Sale
+                {createSaleMutation.isPending ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    Recording Sale...
+                  </>
+                ) : (
+                  <>
+                    <DollarSign className="mr-2 h-5 w-5" /> Complete Sale
+                  </>
+                )}
               </Button>
             </CardFooter>
           )}

@@ -1,8 +1,10 @@
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/auth-context";
+import { Providers } from "./(dashboard)/dashboard/providers";
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 import type { Metadata } from "next";
+import { ThemeProvider } from "next-themes";
 import "./globals.css";
 
 const geistSans = GeistSans; // Using the direct import
@@ -24,10 +26,21 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
       >
-        <AuthProvider>
-          {children}
-          <Toaster />
-        </AuthProvider>
+        <Providers>
+          <ThemeProvider 
+            attribute="class" 
+            defaultTheme="system" 
+            enableSystem
+            disableTransitionOnChange={false}
+            storageKey="salepider-theme"
+            themes={["light", "dark", "system"]}
+          >
+            <AuthProvider>
+              {children}
+              <Toaster />
+            </AuthProvider>
+          </ThemeProvider>
+        </Providers>
       </body>
     </html>
   );

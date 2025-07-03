@@ -109,8 +109,23 @@ body {
     @apply bg-background text-foreground;
   }
   
-  /* Ensure smooth theme transitions */
+  /* Optimized smooth theme transitions - faster and more responsive */
   * {
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    transition: background-color 0.15s ease-out, border-color 0.15s ease-out, color 0.15s ease-out;
+  }
+  
+  /* Faster transitions for interactive elements */
+  button, a, [role="button"] {
+    transition: background-color 0.1s ease-out, border-color 0.1s ease-out, color 0.1s ease-out, transform 0.1s ease-out;
+  }
+  
+  /* Instant transitions for theme toggle to feel more responsive */
+  [data-theme-toggle] {
+    transition: none;
+  }
+  
+  /* Optimize sidebar transitions */
+  [data-theme="sidebar"] {
+    transition: background-color 0.15s ease-out, border-color 0.15s ease-out, color 0.15s ease-out;
   }
 }

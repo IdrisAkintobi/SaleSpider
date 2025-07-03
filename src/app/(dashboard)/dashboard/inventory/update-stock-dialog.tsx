@@ -14,6 +14,7 @@ import type { Product } from "@/lib/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SubmitHandler, useForm } from "react-hook-form";
 import * as z from "zod";
+import React from "react";
 
 const DEFAULT_RESTOCK_QUANTITY = 12;
 
@@ -45,6 +46,13 @@ export function UpdateStockDialog({
     "Error updating stock",
     onOpenChange
   );
+
+  // Reset form when dialog opens/closes
+  React.useEffect(() => {
+    if (isOpen) {
+      stockForm.reset({ quantity: DEFAULT_RESTOCK_QUANTITY });
+    }
+  }, [isOpen, stockForm]);
 
   // Usage in component
   const handleStockUpdate: SubmitHandler<StockUpdateFormData> = (data) => {

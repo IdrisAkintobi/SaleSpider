@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 
-export type SortField = "name" | "price" | "quantity" | "createdAt";
+export type SortField = "name" | "price" | "quantity" | "updatedAt";
 export type SortOrder = "asc" | "desc";
 interface ProductTableProps {
   products: Product[];
@@ -81,10 +81,10 @@ export function ProductTable({
                 </div>
               </TableHead>
               <TableHead>Status</TableHead>
-              <TableHead onClick={() => onSort?.("createdAt")}>
+              <TableHead onClick={() => onSort?.("updatedAt")}>
                 <div className="flex items-center">
-                  Date Added
-                  {sortField === "createdAt" &&
+                  Date Updated
+                  {sortField === "updatedAt" &&
                     (sortOrder === "asc" ? (
                       <ArrowUp size={14} />
                     ) : (
@@ -140,8 +140,8 @@ export function ProductTable({
                     )}
                   </TableCell>
                   <TableCell>
-                    {product.createdAt &&
-                      new Date(product.createdAt)?.toLocaleDateString()}
+                    {product.updatedAt &&
+                      new Date(product.updatedAt)?.toLocaleDateString()}
                   </TableCell>
                   {userIsManager && (
                     <TableCell className="text-right">

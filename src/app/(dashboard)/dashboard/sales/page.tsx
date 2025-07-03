@@ -28,49 +28,44 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
+import { useSales } from "@/hooks/use-sales";
 import type { Sale } from "@/lib/types";
 import { CalendarDays, Filter, UserCircle, Eye } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-
-async function fetchSalesData() {
-  const res = await fetch("/api/sales");
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || "Failed to fetch sales");
-  }
-  return res.json() as Promise<Sale[]>;
-}
+import { useMemo, useState } from "react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format, addDays } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { DateRange } from "react-day-picker";
 
 export default function SalesPage() {
   const { user, userIsManager, userIsCashier } = useAuth();
   const { toast } = useToast();
   
-  const [sales, setSales] = useState<Sale[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCashier, setFilterCashier] = useState<string>("all");
   const [filterDateRange, setFilterDateRange] = useState<string>("all");
-  const [isLoading, setIsLoading] = useState(true);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: undefined,
+    to: undefined,
+  });
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
 
-  useEffect(() => {
-    setIsLoading(true);
-    fetchSalesData()
-      .then((salesData) => {
-        setSales(salesData);
-      })
-      .catch((error) => {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-        });
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, [toast]);
+  // Use custom hook for sales data
+  const { data: sales = [], isLoading, error } = useSales();
+
+  // Handle query errors
+  if (error) {
+    toast({
+      title: "Error",
+      description: error.message,
+      variant: "destructive",
+    });
+  }
 
   const filteredSales = useMemo(() => {
     let filtered = sales;
@@ -104,6 +99,18 @@ export default function SalesPage() {
         break;
     }
 
+    // Filter by selected date range
+    if (dateRange?.from && dateRange?.to) {
+      filtered = filtered.filter((sale) => {
+        const saleDate = new Date(sale.timestamp);
+        const fromDate = new Date(dateRange.from!);
+        fromDate.setHours(0, 0, 0, 0);
+        const toDate = new Date(dateRange.to!);
+        toDate.setHours(23, 59, 59, 999);
+        return saleDate >= fromDate && saleDate <= toDate;
+      });
+    }
+
     // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(
@@ -117,7 +124,7 @@ export default function SalesPage() {
     }
 
     return filtered.sort((a, b) => b.timestamp - a.timestamp);
-  }, [sales, filterCashier, filterDateRange, searchTerm]);
+  }, [sales, filterCashier, filterDateRange, dateRange, searchTerm]);
 
   const uniqueCashiers = useMemo(() => {
     const cashiers = sales.map((sale) => ({
@@ -193,6 +200,46 @@ export default function SalesPage() {
               <SelectItem value="month">This Month</SelectItem>
             </SelectContent>
           </Select>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full sm:w-[280px] justify-start text-left font-normal",
+                  !dateRange || (!dateRange.from && !dateRange.to) && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {dateRange && dateRange.from && dateRange.to ? (
+                  <>
+                    {format(dateRange.from, "LLL dd, y")} -{" "}
+                    {format(dateRange.to, "LLL dd, y")}
+                  </>
+                ) : (
+                  "Pick a date range"
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                initialFocus
+                mode="range"
+                defaultMonth={dateRange?.from}
+                selected={dateRange}
+                onSelect={setDateRange}
+                numberOfMonths={1}
+              />
+            </PopoverContent>
+          </Popover>
+          {dateRange && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setDateRange(undefined)}
+            >
+              Clear Range
+            </Button>
+          )}
         </div>
 
         <Card>
@@ -261,7 +308,7 @@ export default function SalesPage() {
                             View Details
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-2xl">
+                        <DialogContent className="max-w-2xl max-h-[80vh]">
                           <DialogHeader>
                             <DialogTitle>Sale Details</DialogTitle>
                             <DialogDescription>
@@ -269,61 +316,71 @@ export default function SalesPage() {
                             </DialogDescription>
                           </DialogHeader>
                           {selectedSale && (
-                            <div className="space-y-4">
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <p className="text-sm font-medium text-muted-foreground">Sale ID</p>
-                                  <p className="text-sm">{selectedSale.id}</p>
+                            <ScrollArea className="max-h-[60vh]">
+                              <div className="space-y-4 pr-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <p className="text-sm font-medium text-muted-foreground">Sale ID</p>
+                                    <p className="text-sm">{selectedSale.id}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium text-muted-foreground">Date</p>
+                                    <p className="text-sm">{formatDate(selectedSale.timestamp)}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium text-muted-foreground">Cashier</p>
+                                    <p className="text-sm">{selectedSale.cashierName}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium text-muted-foreground">Payment Method</p>
+                                    <p className="text-sm">{selectedSale.paymentMode}</p>
+                                  </div>
                                 </div>
+                                
                                 <div>
-                                  <p className="text-sm font-medium text-muted-foreground">Date</p>
-                                  <p className="text-sm">{formatDate(selectedSale.timestamp)}</p>
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium text-muted-foreground">Cashier</p>
-                                  <p className="text-sm">{selectedSale.cashierName}</p>
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium text-muted-foreground">Payment Method</p>
-                                  <p className="text-sm">{selectedSale.paymentMode}</p>
-                                </div>
-                              </div>
-                              
-                              <div>
-                                <p className="text-sm font-medium text-muted-foreground mb-2">Items</p>
-                                <div className="border rounded-lg">
-                                  <Table>
-                                    <TableHeader>
-                                      <TableRow>
-                                        <TableHead>Product</TableHead>
-                                        <TableHead>Quantity</TableHead>
-                                        <TableHead>Price</TableHead>
-                                        <TableHead className="text-right">Total</TableHead>
-                                      </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                      {selectedSale.items.map((item, index) => (
-                                        <TableRow key={index}>
-                                          <TableCell>{item.productName}</TableCell>
-                                          <TableCell>{item.quantity}</TableCell>
-                                          <TableCell>${item.price.toFixed(2)}</TableCell>
-                                          <TableCell className="text-right">
-                                            ${(item.quantity * item.price).toFixed(2)}
-                                          </TableCell>
+                                  <p className="text-sm font-medium text-muted-foreground mb-2">Items</p>
+                                  <div className="border rounded-lg">
+                                    <Table>
+                                      <TableHeader>
+                                        <TableRow>
+                                          <TableHead>Product</TableHead>
+                                          <TableHead>Quantity</TableHead>
+                                          <TableHead>Price</TableHead>
+                                          <TableHead className="text-right">Total</TableHead>
                                         </TableRow>
-                                      ))}
-                                    </TableBody>
-                                  </Table>
+                                      </TableHeader>
+                                      <TableBody>
+                                        {selectedSale.items.map((item, index) => (
+                                          <TableRow key={index}>
+                                            <TableCell>{item.productName}</TableCell>
+                                            <TableCell>{item.quantity}</TableCell>
+                                            <TableCell>${item.price.toFixed(2)}</TableCell>
+                                            <TableCell className="text-right">
+                                              ${(item.quantity * item.price).toFixed(2)}
+                                            </TableCell>
+                                          </TableRow>
+                                        ))}
+                                      </TableBody>
+                                    </Table>
+                                  </div>
+                                </div>
+                                
+                                <div className="border-t pt-4 space-y-2">
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm text-muted-foreground">Subtotal</span>
+                                    <span className="text-sm">${(selectedSale.totalAmount / 1.15).toFixed(2)}</span>
+                                  </div>
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm text-muted-foreground">VAT (15%)</span>
+                                    <span className="text-sm">${(selectedSale.totalAmount - (selectedSale.totalAmount / 1.15)).toFixed(2)}</span>
+                                  </div>
+                                  <div className="flex justify-between items-center border-t pt-2">
+                                    <span className="text-lg font-semibold">Total Amount</span>
+                                    <span className="text-lg font-bold">${selectedSale.totalAmount.toFixed(2)}</span>
+                                  </div>
                                 </div>
                               </div>
-                              
-                              <div className="border-t pt-4">
-                                <div className="flex justify-between items-center">
-                                  <span className="text-lg font-semibold">Total Amount</span>
-                                  <span className="text-lg font-bold">${selectedSale.totalAmount.toFixed(2)}</span>
-                                </div>
-                              </div>
-                            </div>
+                            </ScrollArea>
                           )}
                         </DialogContent>
                       </Dialog>
