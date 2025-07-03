@@ -14,6 +14,13 @@ import {
 } from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
 import { Bar, BarChart, CartesianGrid, Legend, XAxis, YAxis } from "recharts";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface PerformanceChartProps {
   data: Array<{ name: string; sales: number; target?: number }>; // Name could be day, week, month, cashier
@@ -22,6 +29,9 @@ interface PerformanceChartProps {
   xAxisDataKey?: string;
   barDataKey?: string;
   className?: string;
+  comparisonType?: string;
+  onComparisonTypeChange?: (type: string) => void;
+  comparisonOptions?: { value: string; label: string }[];
 }
 
 const chartConfig = {
@@ -42,14 +52,31 @@ export function PerformanceChart({
   xAxisDataKey = "name",
   barDataKey = "sales",
   className,
+  comparisonType,
+  onComparisonTypeChange,
+  comparisonOptions,
 }: PerformanceChartProps) {
   const hasTarget = data.some((item) => item.target !== undefined);
 
   return (
     <Card className={cn("shadow-lg", className)}>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        {description && <CardDescription>{description}</CardDescription>}
+      <CardHeader className="flex flex-row items-center justify-between gap-2">
+        <div>
+          <CardTitle>{title}</CardTitle>
+          {description && <CardDescription>{description}</CardDescription>}
+        </div>
+        {comparisonType && onComparisonTypeChange && comparisonOptions && (
+          <Select value={comparisonType} onValueChange={onComparisonTypeChange}>
+            <SelectTrigger className="w-[180px] ml-auto">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {comparisonOptions.map(opt => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-[300px] w-full">

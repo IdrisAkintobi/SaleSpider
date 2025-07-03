@@ -33,7 +33,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { useSales } from "@/hooks/use-sales";
 import type { Sale } from "@/lib/types";
-import { CalendarDays, Filter, UserCircle, Eye } from "lucide-react";
+import { CalendarDays, Filter, UserCircle, Eye, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUp, ArrowDown } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -54,9 +54,22 @@ export default function SalesPage() {
     to: undefined,
   });
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [sort, setSort] = useState<string>("createdAt");
+  const [order, setOrder] = useState<string>("desc");
 
   // Use custom hook for sales data
-  const { data: sales = [], isLoading, error } = useSales();
+  const { data, isLoading, error } = useSales({
+    page,
+    pageSize,
+    sort,
+    order,
+    searchTerm,
+  });
+  const sales = data?.data || [];
+  const total = data?.total || 0;
+  const totalPages = Math.ceil(total / pageSize);
 
   // Handle query errors
   if (error) {
@@ -66,65 +79,6 @@ export default function SalesPage() {
       variant: "destructive",
     });
   }
-
-  const filteredSales = useMemo(() => {
-    let filtered = sales;
-
-    // Filter by cashier
-    if (filterCashier !== "all") {
-      filtered = filtered.filter((sale) => sale.cashierId === filterCashier);
-    }
-
-    // Filter by date range
-    const now = Date.now();
-    const oneDay = 24 * 60 * 60 * 1000;
-    const oneWeek = 7 * oneDay;
-    const oneMonth = 30 * oneDay;
-
-    switch (filterDateRange) {
-      case "today":
-        filtered = filtered.filter(
-          (sale) => now - sale.timestamp < oneDay
-        );
-        break;
-      case "week":
-        filtered = filtered.filter(
-          (sale) => now - sale.timestamp < oneWeek
-        );
-        break;
-      case "month":
-        filtered = filtered.filter(
-          (sale) => now - sale.timestamp < oneMonth
-        );
-        break;
-    }
-
-    // Filter by selected date range
-    if (dateRange?.from && dateRange?.to) {
-      filtered = filtered.filter((sale) => {
-        const saleDate = new Date(sale.timestamp);
-        const fromDate = new Date(dateRange.from!);
-        fromDate.setHours(0, 0, 0, 0);
-        const toDate = new Date(dateRange.to!);
-        toDate.setHours(23, 59, 59, 999);
-        return saleDate >= fromDate && saleDate <= toDate;
-      });
-    }
-
-    // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (sale) =>
-          sale.cashierName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          sale.items.some((item) =>
-            item.productName.toLowerCase().includes(searchTerm.toLowerCase())
-          ) ||
-          sale.paymentMode.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    return filtered.sort((a, b) => b.timestamp - a.timestamp);
-  }, [sales, filterCashier, filterDateRange, dateRange, searchTerm]);
 
   const uniqueCashiers = useMemo(() => {
     const cashiers = sales.map((sale) => ({
@@ -137,8 +91,8 @@ export default function SalesPage() {
   }, [sales]);
 
   const totalRevenue = useMemo(
-    () => filteredSales.reduce((sum, sale) => sum + sale.totalAmount, 0),
-    [filteredSales]
+    () => sales.reduce((sum, sale) => sum + sale.totalAmount, 0),
+    [sales]
   );
 
   const formatDate = (timestamp: number) => {
@@ -147,6 +101,34 @@ export default function SalesPage() {
     } catch (error) {
       return "Invalid Date";
     }
+  };
+
+  // Sorting handler
+  const handleSort = (field: string) => {
+    if (sort === field) {
+      setOrder(order === "asc" ? "desc" : "asc");
+    } else {
+      setSort(field);
+      setOrder("asc");
+    }
+    setPage(1);
+  };
+
+  // For cashier filter
+  const handleCashierFilter = (value: string) => {
+    setFilterCashier(value);
+    setPage(1);
+  };
+
+  // For date range filter
+  const handleDateRangeFilter = (value: string) => {
+    setFilterDateRange(value);
+    setPage(1);
+  };
+
+  const handleDateRangeSelect = (range: DateRange | undefined) => {
+    setDateRange(range);
+    setPage(1);
   };
 
   if (isLoading) {
@@ -168,14 +150,14 @@ export default function SalesPage() {
       <div className="mb-6 space-y-4">
         <div className="flex flex-col sm:flex-row gap-4">
           <Input
-            placeholder="Search sales by cashier, product, or payment mode..."
+            placeholder={userIsCashier ? "Search sales by product or payment mode..." : "Search sales by cashier, product, or payment mode..."}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="flex-1"
             icon={<Filter className="h-4 w-4 text-muted-foreground" />}
           />
           {userIsManager && (
-            <Select value={filterCashier} onValueChange={setFilterCashier}>
+            <Select value={filterCashier} onValueChange={handleCashierFilter}>
               <SelectTrigger className="w-full sm:w-[200px]">
                 <SelectValue placeholder="Filter by cashier" />
               </SelectTrigger>
@@ -189,7 +171,7 @@ export default function SalesPage() {
               </SelectContent>
             </Select>
           )}
-          <Select value={filterDateRange} onValueChange={setFilterDateRange}>
+          <Select value={filterDateRange} onValueChange={handleDateRangeFilter}>
             <SelectTrigger className="w-full sm:w-[200px]">
               <SelectValue placeholder="Filter by date" />
             </SelectTrigger>
@@ -226,7 +208,7 @@ export default function SalesPage() {
                 mode="range"
                 defaultMonth={dateRange?.from}
                 selected={dateRange}
-                onSelect={setDateRange}
+                onSelect={handleDateRangeSelect}
                 numberOfMonths={1}
               />
             </PopoverContent>
@@ -251,7 +233,7 @@ export default function SalesPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Sales</p>
-                <p className="text-2xl font-bold">{filteredSales.length}</p>
+                <p className="text-2xl font-bold">{sales.length}</p>
               </div>
             </div>
           </CardContent>
@@ -263,17 +245,17 @@ export default function SalesPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Cashier</TableHead>
+                <TableHead className="cursor-pointer" onClick={() => handleSort("createdAt")}>Date {sort === "createdAt" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</TableHead>
+                <TableHead className="cursor-pointer" onClick={() => handleSort("cashierName")}>Cashier {sort === "cashierName" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</TableHead>
                 <TableHead>Items Count</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead>Payment</TableHead>
+                <TableHead className="cursor-pointer" onClick={() => handleSort("totalAmount")}>Total {sort === "totalAmount" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</TableHead>
+                <TableHead className="cursor-pointer" onClick={() => handleSort("paymentMode")}>Payment {sort === "paymentMode" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredSales.length > 0 ? (
-                filteredSales.map((sale) => (
+              {sales.length > 0 ? (
+                sales.map((sale) => (
                   <TableRow key={sale.id}>
                     <TableCell>
                       <div className="flex items-center">
@@ -396,6 +378,29 @@ export default function SalesPage() {
               )}
             </TableBody>
           </Table>
+          {/* Pagination Controls */}
+          <div className="flex items-center justify-between px-4 py-2 border-t bg-muted">
+            <div className="flex items-center gap-2">
+              <Button size="icon" variant="ghost" onClick={() => setPage(1)} disabled={page === 1}><ChevronsLeft className="w-4 h-4" /></Button>
+              <Button size="icon" variant="ghost" onClick={() => setPage(page - 1)} disabled={page === 1}><ChevronLeft className="w-4 h-4" /></Button>
+              <span className="text-sm">Page {page} of {totalPages}</span>
+              <Button size="icon" variant="ghost" onClick={() => setPage(page + 1)} disabled={page === totalPages}><ChevronRight className="w-4 h-4" /></Button>
+              <Button size="icon" variant="ghost" onClick={() => setPage(totalPages)} disabled={page === totalPages}><ChevronsRight className="w-4 h-4" /></Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm">Rows per page:</span>
+              <Select value={pageSize.toString()} onValueChange={v => { setPageSize(Number(v)); setPage(1); }}>
+                <SelectTrigger className="w-[80px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[10, 20, 50, 100].map(size => (
+                    <SelectItem key={size} value={size.toString()}>{size}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </>
