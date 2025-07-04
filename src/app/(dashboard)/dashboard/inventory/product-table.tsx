@@ -1,26 +1,21 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { GenericTable, GenericTableColumn } from "@/components/ui/generic-table";
 import type { Product } from "@/lib/types";
 import {
   AlertTriangle,
-  ArrowDown,
-  ArrowUp,
   CheckCircle2,
   Edit3,
+  ArrowDown,
+  ArrowUp,
 } from "lucide-react";
 import Image from "next/image";
+import React from "react";
 
 export type SortField = "name" | "price" | "quantity" | "updatedAt";
 export type SortOrder = "asc" | "desc";
+
 interface ProductTableProps {
   products: Product[];
   userIsManager: boolean;
@@ -29,6 +24,11 @@ interface ProductTableProps {
   sortField?: SortField;
   sortOrder?: SortOrder;
   onSort?: (field: SortField) => void;
+  page?: number;
+  pageSize?: number;
+  total?: number;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (size: number) => void;
 }
 
 export function ProductTable({
@@ -39,135 +39,126 @@ export function ProductTable({
   sortField,
   sortOrder,
   onSort,
+  page,
+  pageSize,
+  total,
+  onPageChange,
+  onPageSizeChange,
 }: Readonly<ProductTableProps>) {
+  // Define columns for the generic table
+  const columns: GenericTableColumn<Product>[] = [
+    {
+      key: "imageUrl",
+      label: "Image",
+      align: "left",
+    },
+    {
+      key: "name",
+      label: (
+        <div className="flex items-center cursor-pointer" onClick={() => onSort?.("name")}>Name {sortField === "name" && (sortOrder === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}</div>
+      ),
+      sortable: true,
+      onSort: () => onSort?.("name"),
+    },
+    {
+      key: "price",
+      label: (
+        <div className="flex items-center cursor-pointer" onClick={() => onSort?.("price")}>Price {sortField === "price" && (sortOrder === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}</div>
+      ),
+      sortable: true,
+      onSort: () => onSort?.("price"),
+    },
+    {
+      key: "quantity",
+      label: (
+        <div className="flex items-center cursor-pointer" onClick={() => onSort?.("quantity")}>Stock {sortField === "quantity" && (sortOrder === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}</div>
+      ),
+      sortable: true,
+      onSort: () => onSort?.("quantity"),
+    },
+    {
+      key: "status",
+      label: "Status",
+    },
+    {
+      key: "updatedAt",
+      label: (
+        <div className="flex items-center cursor-pointer" onClick={() => onSort?.("updatedAt")}>Date Updated {sortField === "updatedAt" && (sortOrder === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}</div>
+      ),
+      sortable: true,
+      onSort: () => onSort?.("updatedAt"),
+    },
+  ];
+  if (userIsManager) {
+    columns.push({
+      key: "actions",
+      label: <span className="text-right">Actions</span>,
+      align: "right",
+    });
+  }
+
   return (
     <Card className="shadow-lg">
       <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Image</TableHead>
-              <TableHead onClick={() => onSort?.("name")}>
-                <div className="flex items-center">
-                  Name
-                  {sortField === "name" &&
-                    (sortOrder === "asc" ? (
-                      <ArrowUp size={14} />
-                    ) : (
-                      <ArrowDown size={14} />
-                    ))}
-                </div>
-              </TableHead>
-              <TableHead onClick={() => onSort?.("price")}>
-                <div className="flex items-center">
-                  Price
-                  {sortField === "price" &&
-                    (sortOrder === "asc" ? (
-                      <ArrowUp size={14} />
-                    ) : (
-                      <ArrowDown size={14} />
-                    ))}
-                </div>
-              </TableHead>
-              <TableHead onClick={() => onSort?.("quantity")}>
-                <div className="flex items-center">
-                  Stock
-                  {sortField === "quantity" &&
-                    (sortOrder === "asc" ? (
-                      <ArrowUp size={14} />
-                    ) : (
-                      <ArrowDown size={14} />
-                    ))}
-                </div>
-              </TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead onClick={() => onSort?.("updatedAt")}>
-                <div className="flex items-center">
-                  Date Updated
-                  {sortField === "updatedAt" &&
-                    (sortOrder === "asc" ? (
-                      <ArrowUp size={14} />
-                    ) : (
-                      <ArrowDown size={14} />
-                    ))}
-                </div>
-              </TableHead>
-              {userIsManager && (
-                <TableHead className="text-right">Actions</TableHead>
-              )}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {products.length > 0 ? (
-              products.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell>
-                    <Image
-                      src={
-                        product.imageUrl ??
-                        "https://placehold.co/64x64.png?text=N/A"
-                      }
-                      alt={product.name}
-                      width={48}
-                      height={48}
-                      className="rounded-md object-cover"
-                      data-ai-hint="product item"
-                    />
-                  </TableCell>
-                  <TableCell
-                    className="font-medium"
-                    onClick={() => onUpdateProduct(product)}
-                  >
+        <GenericTable
+          columns={columns}
+          data={products}
+          rowKey={(row) => row.id}
+          renderCell={(product, col) => {
+            switch (col.key) {
+              case "imageUrl":
+                return (
+                  <Image
+                    src={product.imageUrl ?? "https://placehold.co/64x64.png?text=N/A"}
+                    alt={product.name}
+                    width={48}
+                    height={48}
+                    className="rounded-md object-cover"
+                  />
+                );
+              case "name":
+                return (
+                  <span className="font-medium cursor-pointer" onClick={() => onUpdateProduct(product)}>
                     {product.name}
-                  </TableCell>
-                  <TableCell>${product.price.toFixed(2)}</TableCell>
-                  <TableCell>{product.quantity}</TableCell>
-                  <TableCell>
-                    {product.quantity <= product.lowStockMargin ? (
-                      <Badge
-                        variant="destructive"
-                        className="items-center gap-1"
-                      >
-                        <AlertTriangle className="h-3 w-3" /> Low Stock
-                      </Badge>
-                    ) : (
-                      <Badge
-                        variant="default"
-                        className="bg-green-500 hover:bg-green-600 items-center gap-1 text-white"
-                      >
-                        <CheckCircle2 className="h-3 w-3" /> In Stock
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {product.updatedAt &&
-                      new Date(product.updatedAt)?.toLocaleDateString()}
-                  </TableCell>
-                  {userIsManager && (
-                    <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onUpdateStock(product)}
-                      >
-                        <Edit3 className="mr-2 h-3 w-3" /> Update Stock
-                      </Button>
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={userIsManager ? 7 : 6}
-                  className="h-24 text-center"
-                >
-                  No products found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+                  </span>
+                );
+              case "price":
+                return `$${product.price.toFixed(2)}`;
+              case "quantity":
+                return product.quantity;
+              case "status":
+                return product.quantity <= product.lowStockMargin ? (
+                  <Badge variant="destructive" className="items-center gap-1">
+                    <AlertTriangle className="h-3 w-3" /> Low Stock
+                  </Badge>
+                ) : (
+                  <Badge variant="default" className="bg-green-500 hover:bg-green-600 items-center gap-1 text-white">
+                    <CheckCircle2 className="h-3 w-3" /> In Stock
+                  </Badge>
+                );
+              case "updatedAt":
+                return product.updatedAt ? new Date(product.updatedAt).toLocaleDateString() : "";
+              case "actions":
+                return userIsManager ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onUpdateStock(product)}
+                  >
+                    <Edit3 className="mr-2 h-3 w-3" /> Update Stock
+                  </Button>
+                ) : null;
+              default:
+                return (product as any)[col.key];
+            }
+          }}
+          emptyMessage="No products found."
+          paginationProps={
+            typeof page === "number" && typeof pageSize === "number" && typeof total === "number" && onPageChange && onPageSizeChange
+              ? { page, pageSize, total, onPageChange, onPageSizeChange }
+              : undefined
+          }
+        />
       </CardContent>
     </Card>
   );

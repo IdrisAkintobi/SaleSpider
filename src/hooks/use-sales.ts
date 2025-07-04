@@ -1,5 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Sale, SaleItem, PaymentMode } from "@/lib/types";
+import { usePaginatedQuery } from "./use-paginated-query";
 
 export interface UseSalesParams {
   page?: number;
@@ -29,6 +30,15 @@ async function fetchSalesData(params: UseSalesParams = {}) {
   return res.json() as Promise<SaleQueryResult>;
 }
 
+export function useSales(params: UseSalesParams = {}) {
+  return usePaginatedQuery<SaleQueryResult>({
+    queryKey: ["sales", params],
+    queryFn: () => fetchSalesData(params),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
+}
+
 async function createSale(saleData: {
   cashierId: string;
   items: SaleItem[];
@@ -47,15 +57,6 @@ async function createSale(saleData: {
     throw new Error(error.message || "Failed to record sale");
   }
   return res.json();
-}
-
-export function useSales(params: UseSalesParams = {}) {
-  return useQuery<SaleQueryResult, Error>({
-    queryKey: ["sales", params],
-    queryFn: () => fetchSalesData(params),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-  });
 }
 
 export function useCreateSale() {

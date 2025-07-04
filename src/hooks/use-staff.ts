@@ -1,5 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { User, UserStatus } from "@/lib/types";
+import { usePaginatedQuery } from "./use-paginated-query";
 
 export interface UseStaffParams {
   page?: number;
@@ -27,6 +28,16 @@ async function fetchStaffData(params: UseStaffParams = {}) {
     throw new Error(error.message || "Failed to fetch staff");
   }
   return res.json() as Promise<StaffQueryResult>;
+}
+
+export function useStaff(params: UseStaffParams = {}, enabled: boolean = true) {
+  return usePaginatedQuery<StaffQueryResult>({
+    queryKey: ['staff', params],
+    queryFn: () => fetchStaffData(params),
+    enabled,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes
+  });
 }
 
 async function updateUserStatus(userId: string, status: UserStatus) {
@@ -67,16 +78,6 @@ async function addStaff(staffData: {
   }
   
   return res.json();
-}
-
-export function useStaff(params: UseStaffParams = {}, enabled: boolean = true) {
-  return useQuery<StaffQueryResult, Error>({
-    queryKey: ['staff', params],
-    queryFn: () => fetchStaffData(params),
-    enabled,
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    gcTime: 15 * 60 * 1000, // 15 minutes
-  });
 }
 
 export function useUpdateUserStatus() {
