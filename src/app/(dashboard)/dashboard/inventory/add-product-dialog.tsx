@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button, type ButtonProps } from "@/components/ui/button";
 import { FormInput } from "@/components/ui/custom-form-input";
 import {
   Dialog,
@@ -37,11 +37,13 @@ type ProductFormData = z.infer<typeof productSchema>;
 interface AddProductDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  triggerButtonProps?: ButtonProps;
 }
 
 export function AddProductDialog({
   isOpen,
   onOpenChange,
+  triggerButtonProps,
 }: Readonly<AddProductDialogProps>) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -102,7 +104,7 @@ export function AddProductDialog({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button>
+        <Button {...triggerButtonProps}>
           <PlusCircle className="mr-2 h-4 w-4" /> Add Product
         </Button>
       </DialogTrigger>

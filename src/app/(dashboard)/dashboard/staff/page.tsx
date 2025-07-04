@@ -47,6 +47,9 @@ import { useMemo, useState } from "react";
 import { AddStaffDialog } from "./add-staff-dialog";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTableControls } from "@/hooks/use-table-controls";
+import { TablePagination } from "@/components/ui/table-pagination";
+import { GenericTable, GenericTableColumn } from "@/components/ui/generic-table";
 
 interface StaffPerformance extends User {
   totalSalesValue: number;
@@ -69,15 +72,24 @@ export default function StaffPage() {
   const router = useRouter();
   const { toast } = useToast();
 
+  // Use shared table controls
+  const {
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    sort,
+    order,
+    handleSort,
+    handlePageChange,
+    handlePageSizeChange,
+  } = useTableControls({ initialSort: "name", initialOrder: "asc" });
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStaff, setSelectedStaff] = useState<StaffPerformance | null>(
     null
   );
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [sort, setSort] = useState<string>("name");
-  const [order, setOrder] = useState<string>("asc");
   const [editStaff, setEditStaff] = useState<StaffPerformance | null>(null);
 
   // Use custom hooks for data fetching
@@ -155,17 +167,6 @@ export default function StaffPage() {
     [staffList, searchTerm]
   );
 
-  // Sorting handler
-  const handleSort = (field: string) => {
-    if (sort === field) {
-      setOrder(order === "asc" ? "desc" : "asc");
-    } else {
-      setSort(field);
-      setOrder("asc");
-    }
-    setPage(1);
-  };
-
   // Replace the editMutation definition inside the component with:
   const queryClient = useQueryClient();
   const editMutation = useMutation({
@@ -228,145 +229,154 @@ export default function StaffPage() {
       </div>
       <Card className="shadow-lg">
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="cursor-pointer" onClick={() => handleSort("name")}>Name {sort === "name" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</TableHead>
-                <TableHead className="cursor-pointer" onClick={() => handleSort("username")}>Username {sort === "username" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</TableHead>
-                <TableHead className="cursor-pointer" onClick={() => handleSort("role")}>Role {sort === "role" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</TableHead>
-                <TableHead>Total Sales</TableHead>
-                <TableHead># Orders</TableHead>
-                <TableHead className="cursor-pointer" onClick={() => handleSort("status")}>Status {sort === "status" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredStaff.length > 0 ? (
-                filteredStaff.map((staff) => (
-                  <TableRow key={staff.id}>
-                    <TableCell className="font-medium">{staff.name}</TableCell>
-                    <TableCell>{staff.username}</TableCell>
-                    <TableCell>
-                      <Badge variant={userIsManager ? "default" : "secondary"}>{staff.role}</Badge>
-                    </TableCell>
-                    <TableCell>${staff.totalSalesValue.toFixed(2)}</TableCell>
-                    <TableCell>{staff.numberOfSales}</TableCell>
-                    <TableCell>
-                      <Switch
-                        checked={staff.status === "ACTIVE"}
-                        onCheckedChange={(checked) => handleStatusChange(staff, checked)}
+          <GenericTable
+            columns={[
+              {
+                key: "name",
+                label: (
+                  <span className="cursor-pointer" onClick={() => handleSort("name")}>Name {sort === "name" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</span>
+                ),
+                sortable: true,
+                onSort: () => handleSort("name"),
+              },
+              {
+                key: "username",
+                label: (
+                  <span className="cursor-pointer" onClick={() => handleSort("username")}>Username {sort === "username" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</span>
+                ),
+                sortable: true,
+                onSort: () => handleSort("username"),
+              },
+              {
+                key: "role",
+                label: (
+                  <span className="cursor-pointer" onClick={() => handleSort("role")}>Role {sort === "role" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</span>
+                ),
+                sortable: true,
+                onSort: () => handleSort("role"),
+              },
+              { key: "totalSalesValue", label: "Total Sales" },
+              { key: "numberOfSales", label: "# Orders" },
+              {
+                key: "status",
+                label: (
+                  <span className="cursor-pointer" onClick={() => handleSort("status")}>Status {sort === "status" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</span>
+                ),
+                sortable: true,
+                onSort: () => handleSort("status"),
+              },
+              { key: "actions", label: <span className="text-right">Actions</span>, align: "right" },
+            ]}
+            data={filteredStaff}
+            rowKey={row => row.id}
+            renderCell={(staff, col) => {
+              switch (col.key) {
+                case "name":
+                  return <span className="font-medium">{staff.name}</span>;
+                case "username":
+                  return staff.username;
+                case "role":
+                  return <Badge variant={userIsManager ? "default" : "secondary"}>{staff.role}</Badge>;
+                case "totalSalesValue":
+                  return `$${staff.totalSalesValue.toFixed(2)}`;
+                case "numberOfSales":
+                  return staff.numberOfSales;
+                case "status":
+                  return <><Switch
+                    checked={staff.status === "ACTIVE"}
+                    onCheckedChange={checked => handleStatusChange(staff, checked)}
+                    disabled={currentUser?.role !== "SUPER_ADMIN" && (currentUser?.role !== "MANAGER" || staff.role !== "CASHIER")}
+                  /><span className="ml-2">{staff.status}</span></>;
+                case "actions":
+                  return (
+                    <div className="text-right space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEditStaff(staff)}
                         disabled={currentUser?.role !== "SUPER_ADMIN" && (currentUser?.role !== "MANAGER" || staff.role !== "CASHIER")}
-                      />
-                      <span className="ml-2">{staff.status}</span>
-                    </TableCell>
-                    <TableCell className="text-right space-x-2">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setEditStaff(staff)}
-                            disabled={currentUser?.role !== "SUPER_ADMIN" && (currentUser?.role !== "MANAGER" || staff.role !== "CASHIER")}
-                          >
-                            <Pencil className="mr-2 h-3 w-3" /> Edit
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Edit Staff: {editStaff?.name}</DialogTitle>
-                            <DialogDescription>Update staff details below.</DialogDescription>
-                          </DialogHeader>
-                          {editStaff && (
-                            <form
-                              onSubmit={async (e) => {
-                                e.preventDefault();
-                                const form = e.target as HTMLFormElement;
-                                const formData = new FormData(form);
-                                const update: any = { id: editStaff.id };
-                                if (currentUser?.role === "SUPER_ADMIN" || (currentUser?.role === "MANAGER" && editStaff.role === "CASHIER")) {
-                                  update.name = formData.get("name");
-                                  update.username = formData.get("username");
-                                  update.role = formData.get("role");
-                                }
-                                editMutation.mutate(update, {
-                                  onSuccess: () => {
-                                    toast({ title: "Staff updated" });
-                                    setEditStaff(null);
-                                  },
-                                  onError: (error: any) => {
-                                    toast({ title: "Error", description: error.message, variant: "destructive" });
-                                  },
-                                });
-                              }}
-                              className="space-y-4"
-                            >
-                              <Input name="name" defaultValue={editStaff.name} placeholder="Name" required disabled={currentUser?.role !== "SUPER_ADMIN" && (currentUser?.role !== "MANAGER" || editStaff.role !== "CASHIER")}/>
-                              <Input name="username" defaultValue={editStaff.username} placeholder="Username" required disabled={currentUser?.role !== "SUPER_ADMIN" && (currentUser?.role !== "MANAGER" || editStaff.role !== "CASHIER")}/>
-                              <Select
-                                name="role"
-                                value={editStaff.role}
-                                onValueChange={value => {
-                                  setEditStaff(editStaff => editStaff ? { ...editStaff, role: value as Role } : editStaff);
-                                }}
-                                disabled={currentUser?.role !== "SUPER_ADMIN" && (currentUser?.role !== "MANAGER" || editStaff.role !== "CASHIER")}
-                              >
-                                <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Select role" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="CASHIER">Cashier</SelectItem>
-                                  {currentUser?.role === "SUPER_ADMIN" && (
-                                    <SelectItem value="MANAGER">Manager</SelectItem>
-                                  )}
-                                </SelectContent>
-                              </Select>
-                              <div className="flex justify-end gap-2">
-                                <Button type="button" variant="outline" onClick={() => setEditStaff(null)}>Cancel</Button>
-                                <Button type="submit" variant="default" disabled={editMutation.isPending}>
-                                  {editMutation.isPending ? "Saving..." : "Save"}
-                                </Button>
-                              </div>
-                            </form>
-                          )}
-                        </DialogContent>
-                      </Dialog>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center">
-                    No staff found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-          {/* Pagination Controls */}
-          <div className="flex items-center justify-between px-4 py-2 border-t bg-muted">
-            <div className="flex items-center gap-2">
-              <Button size="icon" variant="ghost" onClick={() => setPage(1)} disabled={page === 1}><ChevronsLeft className="w-4 h-4" /></Button>
-              <Button size="icon" variant="ghost" onClick={() => setPage(page - 1)} disabled={page === 1}><ChevronLeft className="w-4 h-4" /></Button>
-              <span className="text-sm">Page {page} of {totalPages}</span>
-              <Button size="icon" variant="ghost" onClick={() => setPage(page + 1)} disabled={page === totalPages}><ChevronRight className="w-4 h-4" /></Button>
-              <Button size="icon" variant="ghost" onClick={() => setPage(totalPages)} disabled={page === totalPages}><ChevronsRight className="w-4 h-4" /></Button>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm">Rows per page:</span>
-              <Select value={pageSize.toString()} onValueChange={v => { setPageSize(Number(v)); setPage(1); }}>
-                <SelectTrigger className="w-[80px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[10, 20, 50, 100].map(size => (
-                    <SelectItem key={size} value={size.toString()}>{size}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+                      >
+                        <Pencil className="mr-2 h-3 w-3" /> Edit
+                      </Button>
+                    </div>
+                  );
+                default:
+                  return (staff as any)[col.key];
+              }
+            }}
+            emptyMessage="No staff found."
+            paginationProps={{
+              page,
+              pageSize,
+              total,
+              onPageChange: handlePageChange,
+              onPageSizeChange: handlePageSizeChange,
+            }}
+          />
         </CardContent>
       </Card>
+      {editStaff && (
+        <Dialog open={!!editStaff} onOpenChange={open => setEditStaff(open ? editStaff : null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Staff: {editStaff?.name}</DialogTitle>
+              <DialogDescription>Update staff details below.</DialogDescription>
+            </DialogHeader>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const form = e.target as HTMLFormElement;
+                const formData = new FormData(form);
+                const update: any = { id: editStaff.id };
+                if (currentUser?.role === "SUPER_ADMIN" || (currentUser?.role === "MANAGER" && editStaff.role === "CASHIER")) {
+                  update.name = formData.get("name");
+                  update.username = formData.get("username");
+                  update.email = formData.get("email");
+                  update.role = formData.get("role");
+                }
+                editMutation.mutate(update, {
+                  onSuccess: () => {
+                    toast({ title: "Staff updated" });
+                    setEditStaff(null);
+                  },
+                  onError: (error: any) => {
+                    toast({ title: "Error", description: error.message, variant: "destructive" });
+                  },
+                });
+              }}
+              className="space-y-4"
+            >
+              <Input name="name" defaultValue={editStaff.name} placeholder="Name" required disabled={currentUser?.role !== "SUPER_ADMIN" && (currentUser?.role !== "MANAGER" || editStaff.role !== "CASHIER")}/>
+              <Input name="username" defaultValue={editStaff.username} placeholder="Username" required disabled={currentUser?.role !== "SUPER_ADMIN" && (currentUser?.role !== "MANAGER" || editStaff.role !== "CASHIER")}/>
+              <Input name="email" type="email" defaultValue={editStaff.email} placeholder="Email" required disabled={currentUser?.role !== "SUPER_ADMIN" && (currentUser?.role !== "MANAGER" || editStaff.role !== "CASHIER")}/>
+              <Select
+                name="role"
+                value={editStaff.role}
+                onValueChange={value => {
+                  setEditStaff(editStaff => editStaff ? { ...editStaff, role: value as Role } : editStaff);
+                }}
+                disabled={currentUser?.role !== "SUPER_ADMIN" && (currentUser?.role !== "MANAGER" || editStaff.role !== "CASHIER")}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CASHIER">Cashier</SelectItem>
+                  {currentUser?.role === "SUPER_ADMIN" && (
+                    <SelectItem value="MANAGER">Manager</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setEditStaff(null)}>Cancel</Button>
+                <Button type="submit" variant="default" disabled={editMutation.isPending}>
+                  {editMutation.isPending ? "Saving..." : "Save"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }

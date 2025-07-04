@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
+// Function to register a new user
 export async function POST(req: NextRequest) {
   try {
     // TODO: Implement super admin authentication

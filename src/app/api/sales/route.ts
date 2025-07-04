@@ -17,6 +17,7 @@ function mapPaymentMode(paymentModeString: string): PaymentMode {
   return mapping[paymentModeString] || PaymentMode.CASH;
 }
 
+// Function to get sales
 export async function GET(req: NextRequest) {
   // Read the X-User-Id header set by the middleware
   const userId = req.headers.get("X-User-Id");
@@ -116,6 +117,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
+// Function to record a sale
 export async function POST(req: NextRequest) {
   // Read the X-User-Id header set by the middleware
   const userId = req.headers.get("X-User-Id");

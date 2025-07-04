@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
+// Function to get products
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const page = parseInt(url.searchParams.get("page") ?? "1", 10);
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
 
   if (isNaN(page) || page < 1 || isNaN(pageSize) || pageSize < 1) {
     return NextResponse.json(
-      { error: "Invalid pagination parameters" },
+      { message: "Invalid pagination parameters" },
       { status: 400 }
     );
   }
@@ -53,19 +54,20 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error("Error fetching products:", error);
     return NextResponse.json(
-      { error: "Failed to fetch products" },
+      { message: "Failed to fetch products" },
       { status: 500 }
     );
   }
 }
 
+// Function to create a product
 export async function POST(req: NextRequest) {
   // Read the custom user ID header set by the middleware
   const userId = req.headers.get("X-User-Id");
 
   if (!userId) {
     // fallback safety check.
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
   const user = await prisma.user.findUnique({
@@ -73,7 +75,7 @@ export async function POST(req: NextRequest) {
   });
 
   if (!user || user.role === Role.CASHIER) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
   try {
@@ -89,7 +91,7 @@ export async function POST(req: NextRequest) {
       !quantity
     ) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { message: "Missing required fields" },
         { status: 400 }
       );
     }
@@ -109,12 +111,13 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Error creating product:", error);
     return NextResponse.json(
-      { error: "Failed to create product" },
+      { message: "Failed to create product" },
       { status: 500 }
     );
   }
 }
-// Get enum values that contain the search term
+
+// Function to get enum values that contain the search term
 const matchingCategories = (searchQuery?: string) => {
   return searchQuery
     ? Object.values(ProductCategory).filter((cat) =>
@@ -122,6 +125,8 @@ const matchingCategories = (searchQuery?: string) => {
       )
     : [];
 };
+
+// Function to search for products
 function productSearchWhere(searchQuery?: string) {
   const matchCategories = matchingCategories(searchQuery);
   return searchQuery

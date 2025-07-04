@@ -20,7 +20,7 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { PerformanceChart } from "./performance-chart";
 import { StatsCard } from "./stats-card";
 import { useToast } from "@/hooks/use-toast";
@@ -29,28 +29,11 @@ import { useStaff } from "@/hooks/use-staff";
 import { useQuery } from "@tanstack/react-query";
 import { useSalesStats } from "@/hooks/use-sales-stats";
 import { useSalesMonthly } from "@/hooks/use-sales-monthly";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
-import type { DateRange } from "react-day-picker";
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 
 interface DailySalesData {
   name: string;
   sales: number;
-}
-
-interface WeeklySalesData {
-  name: string;
-  sales: number;
-  target?: number;
-}
-
-interface WeeklyDataIntermediate {
-  name: string;
-  thisWeek: number;
-  lastWeek: number;
 }
 
 interface User {
@@ -115,15 +98,14 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
   const [comparisonType, setComparisonType] = useState<'weekly' | 'monthly'>('weekly');
   const { data: monthlyData, isLoading: isLoadingMonthly, error: monthlyError } = useSalesMonthly();
 
-  // Handle errors
-  if (salesError || usersError || productsError || statsError) {
     const error = salesError || usersError || productsError || statsError;
-    toast({
-      title: "Error",
-      description: error?.message || "Failed to fetch data",
-      variant: "destructive",
-    });
-  }
+    if (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : String(error),
+        variant: "destructive",
+      });
+    };
 
   const isLoading = isLoadingSales || isLoadingUsers || isLoadingProducts || isLoadingStats || isLoadingMonthly;
 
@@ -211,8 +193,8 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
 
       return {
         name: day.name,
-        sales: parseFloat(thisWeekSales.toFixed(2)),
-        target: parseFloat(lastWeekSales.toFixed(2)),
+        thisWeek: parseFloat(thisWeekSales.toFixed(2)),
+        lastWeek: parseFloat(lastWeekSales.toFixed(2)),
       };
     });
 
@@ -286,6 +268,10 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
             data={weeklySalesData}
             title="Weekly Sales Comparison"
             description="This week vs. last week."
+            xAxisDataKey="name"
+            barDataKey="thisWeek"
+            extraBarDataKey="lastWeek"
+            barLabels={{ thisWeek: 'This Week', lastWeek: 'Last Week' }}
             comparisonType={comparisonType}
             onComparisonTypeChange={v => setComparisonType(v as 'weekly' | 'monthly')}
             comparisonOptions={[

@@ -6,12 +6,15 @@ import type { Product } from "@/lib/types";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import { AddProductDialog } from "./add-product-dialog";
-import { PaginationControls } from "./pagination-controls";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { ProductTable, type SortField, type SortOrder } from "./product-table";
 import { ProductTableSkeleton } from "./product-table-skeleton";
 import { SearchInput } from "./search-input";
 import { UpdateProductDialog } from "./update-product-dialog";
 import { UpdateStockDialog } from "./update-stock-dialog";
+import { DollarSign } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 // Define the expected API response structure
 interface ProductsResponse {
@@ -23,8 +26,8 @@ export default function InventoryPage() {
   const { userIsManager } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
-  const [page, setPage] = useState(0);
-  const [pageSize] = useState(10);
+  const [page, setPage] = useState(1); // 1-based for TablePagination
+  const [pageSize, setPageSize] = useState(10);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [isUpdateProductDialogOpen, setIsUpdateProductDialogOpen] =
@@ -46,7 +49,7 @@ export default function InventoryPage() {
     ],
     queryFn: async () => {
       const res = await fetch(
-        `/api/products?page=${page + 1}&pageSize=${pageSize}${
+        `/api/products?page=${page}&pageSize=${pageSize}${
           debouncedSearchTerm
             ? `&search=${encodeURIComponent(debouncedSearchTerm)}`
             : ""
@@ -60,7 +63,7 @@ export default function InventoryPage() {
   });
 
   const products = data?.products ?? [];
-  const totalPages = data ? Math.ceil(data.totalCount / pageSize) : 0;
+  const total = data?.totalCount ?? 0;
 
   const handleSort = useCallback(
     (field: SortField) => {
@@ -70,18 +73,23 @@ export default function InventoryPage() {
         setSortField(field);
         setSortOrder("asc");
       }
-      setPage(0); // Reset to first page when changing sort
+      setPage(1); // Reset to first page when changing sort
     },
     [sortField, sortOrder]
   );
 
   const handleSearchChange = useCallback((value: string) => {
     setSearchTerm(value);
-    setPage(0); // Reset to first page when searching
+    setPage(1); // Reset to first page when searching
   }, []);
 
   const handlePageChange = useCallback((newPage: number) => {
     setPage(newPage);
+  }, []);
+
+  const handlePageSizeChange = useCallback((newSize: number) => {
+    setPageSize(newSize);
+    setPage(1);
   }, []);
 
   const handleOpenUpdateDialog = useCallback((product: Product) => {
@@ -104,6 +112,15 @@ export default function InventoryPage() {
     setSelectedProductForEdit(null);
   }, []);
 
+  // Record New Sale button for cashiers
+  const recordSaleAction = !userIsManager ? (
+    <Button size="lg" asChild>
+      <Link href="/dashboard/record-sale">
+        <DollarSign className="mr-2 h-5 w-5" /> Record New Sale
+      </Link>
+    </Button>
+  ) : null;
+
   if (isError) return <div>Error loading products.</div>;
 
   return (
@@ -112,12 +129,16 @@ export default function InventoryPage() {
         title="Inventory Management"
         description="View, add, and manage your product stock."
         actions={
-          userIsManager && (
-            <AddProductDialog
-              isOpen={isAddDialogOpen}
-              onOpenChange={setIsAddDialogOpen}
-            />
-          )
+          <>
+            {recordSaleAction}
+            {userIsManager && (
+              <AddProductDialog
+                isOpen={isAddDialogOpen}
+                onOpenChange={setIsAddDialogOpen}
+                triggerButtonProps={{ variant: "default", size: "lg" }}
+              />
+            )}
+          </>
         }
       />
 
@@ -125,12 +146,6 @@ export default function InventoryPage() {
         value={searchTerm}
         onChange={handleSearchChange}
         isLoading={isFetching}
-      />
-
-      <PaginationControls
-        currentPage={page}
-        totalPages={totalPages}
-        onPageChange={handlePageChange}
       />
 
       {isLoading ? (
@@ -144,6 +159,11 @@ export default function InventoryPage() {
           sortField={sortField}
           sortOrder={sortOrder}
           onSort={handleSort}
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
         />
       )}
 

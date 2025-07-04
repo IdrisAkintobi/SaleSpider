@@ -32,7 +32,8 @@ async function fetchSalesByCashierId(cashierId: string): Promise<Sale[]> {
     const error = await res.json();
     throw new Error(error.message || "Failed to fetch sales");
   }
-  return res.json() as Promise<Sale[]>;
+  const { data } = await res.json();
+  return data as Sale[];
 }
 
 export function CashierOverview() {
@@ -40,7 +41,7 @@ export function CashierOverview() {
   const { toast } = useToast();
 
   // Use TanStack Query for data fetching
-  const { data: mySales = [], isLoading, error } = useQuery({
+  const { data: mySales = [], error } = useQuery({
     queryKey: ['sales', 'cashier', user?.id],
     queryFn: () => fetchSalesByCashierId(user!.id),
     enabled: !!user,
@@ -59,6 +60,7 @@ export function CashierOverview() {
 
   // Calculate stats using useMemo
   const stats = useMemo(() => {
+    console.log({mySales})
     const sortedSales = mySales.toSorted((a, b) => b.timestamp - a.timestamp);
     const totalValue = sortedSales.reduce((sum, sale) => sum + sale.totalAmount, 0);
     const totalOrders = sortedSales.length;

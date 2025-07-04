@@ -33,19 +33,36 @@ import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { useSales } from "@/hooks/use-sales";
 import type { Sale } from "@/lib/types";
-import { CalendarDays, Filter, UserCircle, Eye, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUp, ArrowDown } from "lucide-react";
-import { useMemo, useState } from "react";
+import { CalendarDays, Filter, UserCircle, Eye, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUp, ArrowDown, DollarSign } from "lucide-react";
+import { useMemo, useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format, addDays } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DateRange } from "react-day-picker";
+import { useTableControls } from "@/hooks/use-table-controls";
+import { TablePagination } from "@/components/ui/table-pagination";
+import { GenericTable, GenericTableColumn } from "@/components/ui/generic-table";
+import Link from "next/link";
 
 export default function SalesPage() {
   const { user, userIsManager, userIsCashier } = useAuth();
   const { toast } = useToast();
   
+  // Use shared table controls
+  const {
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    sort,
+    order,
+    handleSort,
+    handlePageChange,
+    handlePageSizeChange,
+  } = useTableControls({ initialSort: "createdAt", initialOrder: "desc" });
+
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCashier, setFilterCashier] = useState<string>("all");
   const [filterDateRange, setFilterDateRange] = useState<string>("all");
@@ -54,10 +71,6 @@ export default function SalesPage() {
     to: undefined,
   });
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [sort, setSort] = useState<string>("createdAt");
-  const [order, setOrder] = useState<string>("desc");
 
   // Use custom hook for sales data
   const { data, isLoading, error } = useSales({
@@ -72,13 +85,15 @@ export default function SalesPage() {
   const totalPages = Math.ceil(total / pageSize);
 
   // Handle query errors
-  if (error) {
-    toast({
-      title: "Error",
-      description: error.message,
-      variant: "destructive",
-    });
-  }
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : String(error),
+        variant: "destructive",
+      });
+    }
+  }, [error]);
 
   const uniqueCashiers = useMemo(() => {
     const cashiers = sales.map((sale) => ({
@@ -103,17 +118,6 @@ export default function SalesPage() {
     }
   };
 
-  // Sorting handler
-  const handleSort = (field: string) => {
-    if (sort === field) {
-      setOrder(order === "asc" ? "desc" : "asc");
-    } else {
-      setSort(field);
-      setOrder("asc");
-    }
-    setPage(1);
-  };
-
   // For cashier filter
   const handleCashierFilter = (value: string) => {
     setFilterCashier(value);
@@ -131,6 +135,15 @@ export default function SalesPage() {
     setPage(1);
   };
 
+  // Record New Sale button for cashiers
+  const recordSaleAction = !userIsManager ? (
+    <Button size="lg" asChild>
+      <Link href="/dashboard/record-sale">
+        <DollarSign className="mr-2 h-5 w-5" /> Record New Sale
+      </Link>
+    </Button>
+  ) : null;
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center">
@@ -145,6 +158,7 @@ export default function SalesPage() {
       <PageHeader
         title="Sales History"
         description="View and filter sales transactions."
+        actions={recordSaleAction}
       />
 
       <div className="mb-6 space-y-4">
@@ -242,43 +256,70 @@ export default function SalesPage() {
 
       <Card className="shadow-lg">
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="cursor-pointer" onClick={() => handleSort("createdAt")}>Date {sort === "createdAt" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</TableHead>
-                <TableHead className="cursor-pointer" onClick={() => handleSort("cashierName")}>Cashier {sort === "cashierName" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</TableHead>
-                <TableHead>Items Count</TableHead>
-                <TableHead className="cursor-pointer" onClick={() => handleSort("totalAmount")}>Total {sort === "totalAmount" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</TableHead>
-                <TableHead className="cursor-pointer" onClick={() => handleSort("paymentMode")}>Payment {sort === "paymentMode" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sales.length > 0 ? (
-                sales.map((sale) => (
-                  <TableRow key={sale.id}>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <CalendarDays className="mr-2 h-4 w-4 text-muted-foreground" />
-                        {formatDate(sale.timestamp)}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <UserCircle className="mr-2 h-4 w-4 text-muted-foreground" />
-                        {sale.cashierName}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {sale.items.length} item{sale.items.length !== 1 ? 's' : ''}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      ${sale.totalAmount.toFixed(2)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{sale.paymentMode}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
+          <GenericTable
+            columns={[
+              {
+                key: "createdAt",
+                label: (
+                  <span className="cursor-pointer" onClick={() => handleSort("createdAt")}>Date {sort === "createdAt" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</span>
+                ),
+                sortable: true,
+                onSort: () => handleSort("createdAt"),
+              },
+              {
+                key: "cashierName",
+                label: (
+                  <span className="cursor-pointer" onClick={() => handleSort("cashierName")}>Cashier {sort === "cashierName" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</span>
+                ),
+                sortable: true,
+                onSort: () => handleSort("cashierName"),
+              },
+              { key: "itemsCount", label: "Items Count" },
+              {
+                key: "totalAmount",
+                label: (
+                  <span className="cursor-pointer" onClick={() => handleSort("totalAmount")}>Total {sort === "totalAmount" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</span>
+                ),
+                sortable: true,
+                onSort: () => handleSort("totalAmount"),
+              },
+              {
+                key: "paymentMode",
+                label: (
+                  <span className="cursor-pointer" onClick={() => handleSort("paymentMode")}>Payment {sort === "paymentMode" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</span>
+                ),
+                sortable: true,
+                onSort: () => handleSort("paymentMode"),
+              },
+              { key: "actions", label: <span className="text-right">Actions</span>, align: "right" },
+            ]}
+            data={sales.map(sale => ({ ...sale, itemsCount: sale.items.length }))}
+            rowKey={row => row.id}
+            renderCell={(sale, col) => {
+              switch (col.key) {
+                case "createdAt":
+                  return (
+                    <div className="flex items-center">
+                      <CalendarDays className="mr-2 h-4 w-4 text-muted-foreground" />
+                      {formatDate(sale.timestamp)}
+                    </div>
+                  );
+                case "cashierName":
+                  return (
+                    <div className="flex items-center">
+                      <UserCircle className="mr-2 h-4 w-4 text-muted-foreground" />
+                      {sale.cashierName}
+                    </div>
+                  );
+                case "itemsCount":
+                  return `${sale.items.length} item${sale.items.length !== 1 ? 's' : ''}`;
+                case "totalAmount":
+                  return <span className="font-medium">${sale.totalAmount.toFixed(2)}</span>;
+                case "paymentMode":
+                  return <Badge variant="outline">{sale.paymentMode}</Badge>;
+                case "actions":
+                  return (
+                    <div className="text-right">
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button
@@ -318,7 +359,6 @@ export default function SalesPage() {
                                     <p className="text-sm">{selectedSale.paymentMode}</p>
                                   </div>
                                 </div>
-                                
                                 <div>
                                   <p className="text-sm font-medium text-muted-foreground mb-2">Items</p>
                                   <div className="border rounded-lg">
@@ -346,7 +386,6 @@ export default function SalesPage() {
                                     </Table>
                                   </div>
                                 </div>
-                                
                                 <div className="border-t pt-4 space-y-2">
                                   <div className="flex justify-between items-center">
                                     <span className="text-sm text-muted-foreground">Subtotal</span>
@@ -366,41 +405,21 @@ export default function SalesPage() {
                           )}
                         </DialogContent>
                       </Dialog>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
-                    No sales found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-          {/* Pagination Controls */}
-          <div className="flex items-center justify-between px-4 py-2 border-t bg-muted">
-            <div className="flex items-center gap-2">
-              <Button size="icon" variant="ghost" onClick={() => setPage(1)} disabled={page === 1}><ChevronsLeft className="w-4 h-4" /></Button>
-              <Button size="icon" variant="ghost" onClick={() => setPage(page - 1)} disabled={page === 1}><ChevronLeft className="w-4 h-4" /></Button>
-              <span className="text-sm">Page {page} of {totalPages}</span>
-              <Button size="icon" variant="ghost" onClick={() => setPage(page + 1)} disabled={page === totalPages}><ChevronRight className="w-4 h-4" /></Button>
-              <Button size="icon" variant="ghost" onClick={() => setPage(totalPages)} disabled={page === totalPages}><ChevronsRight className="w-4 h-4" /></Button>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm">Rows per page:</span>
-              <Select value={pageSize.toString()} onValueChange={v => { setPageSize(Number(v)); setPage(1); }}>
-                <SelectTrigger className="w-[80px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[10, 20, 50, 100].map(size => (
-                    <SelectItem key={size} value={size.toString()}>{size}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+                    </div>
+                  );
+                default:
+                  return (sale as any)[col.key];
+              }
+            }}
+            emptyMessage="No sales found."
+            paginationProps={{
+              page,
+              pageSize,
+              total,
+              onPageChange: handlePageChange,
+              onPageSizeChange: handlePageSizeChange,
+            }}
+          />
         </CardContent>
       </Card>
     </>

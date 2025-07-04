@@ -1,8 +1,10 @@
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
+import { getMonthlySales } from "@/lib/utils";
 
 const prisma = new PrismaClient();
 
+// Function to get sales stats
 export async function GET(req: NextRequest) {
   // Read the X-User-Id header set by the middleware
   const userId = req.headers.get("X-User-Id");
@@ -66,36 +68,7 @@ export async function GET(req: NextRequest) {
 
       // Monthly stats: group by month within the range
       if (from && to) {
-        const months = [];
-        const start = new Date(from.getFullYear(), from.getMonth(), 1);
-        const end = new Date(to.getFullYear(), to.getMonth(), 1);
-        let current = new Date(start);
-        while (current <= end) {
-          months.push(new Date(current));
-          current.setMonth(current.getMonth() + 1);
-        }
-        monthly = await Promise.all(
-          months.map(async (monthStart) => {
-            const nextMonth = new Date(monthStart);
-            nextMonth.setMonth(monthStart.getMonth() + 1);
-            const sales = await prisma.sale.aggregate({
-              _sum: { totalAmount: true },
-              where: {
-                deletedAt: null,
-                createdAt: {
-                  gte: monthStart,
-                  lt: nextMonth,
-                  ...(from ? { gte: from } : {}),
-                  ...(to ? { lte: to } : {}),
-                },
-              },
-            });
-            return {
-              month: `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, "0")}`,
-              sales: sales._sum.totalAmount || 0,
-            };
-          })
-        );
+        monthly = await getMonthlySales(prisma, from, to);
       }
     } else {
       // Default logic (no date range)
@@ -142,34 +115,7 @@ export async function GET(req: NextRequest) {
       });
 
       // Monthly sales for last 6 months
-      const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      startMonth.setMonth(startMonth.getMonth() - 5);
-      startMonth.setHours(0, 0, 0, 0);
-      const months = Array.from({ length: 6 }, (_, i) => {
-        const d = new Date(startMonth);
-        d.setMonth(startMonth.getMonth() + i);
-        return d;
-      });
-      monthly = await Promise.all(
-        months.map(async (monthStart, i) => {
-          const nextMonth = new Date(monthStart);
-          nextMonth.setMonth(monthStart.getMonth() + 1);
-          const sales = await prisma.sale.aggregate({
-            _sum: { totalAmount: true },
-            where: {
-              deletedAt: null,
-              createdAt: {
-                gte: monthStart,
-                lt: nextMonth,
-              },
-            },
-          });
-          return {
-            month: `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, "0")}`,
-            sales: sales._sum.totalAmount || 0,
-          };
-        })
-      );
+      monthly = await getMonthlySales(prisma);
     }
 
     return NextResponse.json({

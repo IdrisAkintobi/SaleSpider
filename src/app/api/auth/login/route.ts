@@ -6,9 +6,10 @@ import { authTokenKey, setCookie } from "../lib/cookie-handler";
 
 const prisma = new PrismaClient();
 const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-const tokenExpiry = process.env.TOKEN_EXPIRY ?? "24h";
+const tokenExpiry = process.env.TOKEN_EXPIRY ?? "12h";
 const alg = "HS256";
 
+// Function to login
 export async function POST(req: NextRequest) {
   try {
     const { username: email, password } = await req.json();
@@ -30,6 +31,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { message: "Invalid credentials" },
         { status: 401 }
+      );
+    }
+
+    if (user.status !== "ACTIVE") {
+      return NextResponse.json(
+        { message: "Your account is inactive. Please contact an administrator." },
+        { status: 403 }
       );
     }
 

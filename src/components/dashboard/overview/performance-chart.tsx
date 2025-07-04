@@ -23,11 +23,13 @@ import {
 } from "@/components/ui/select";
 
 interface PerformanceChartProps {
-  data: Array<{ name: string; sales: number; target?: number }>; // Name could be day, week, month, cashier
+  data: Array<{ name: string; [key: string]: any }>;
   title: string;
   description?: string;
   xAxisDataKey?: string;
   barDataKey?: string;
+  extraBarDataKey?: string;
+  barLabels?: { [key: string]: string };
   className?: string;
   comparisonType?: string;
   onComparisonTypeChange?: (type: string) => void;
@@ -51,13 +53,14 @@ export function PerformanceChart({
   description,
   xAxisDataKey = "name",
   barDataKey = "sales",
+  extraBarDataKey,
+  barLabels,
   className,
   comparisonType,
   onComparisonTypeChange,
   comparisonOptions,
 }: PerformanceChartProps) {
-  const hasTarget = data.some((item) => item.target !== undefined);
-
+  const hasExtraBar = !!extraBarDataKey;
   return (
     <Card className={cn("shadow-lg", className)}>
       <CardHeader className="flex flex-row items-center justify-between gap-2">
@@ -103,10 +106,13 @@ export function PerformanceChart({
               cursor={false}
               content={<ChartTooltipContent indicator="dot" />}
             />
-            {hasTarget && <Legend />}
+            {(barLabels && (barDataKey || extraBarDataKey)) && <Legend payload={[
+              ...(barDataKey ? [{ value: barLabels[barDataKey] || barDataKey, type: "rect", color: "var(--color-sales)" }] : []),
+              ...(extraBarDataKey ? [{ value: barLabels[extraBarDataKey] || extraBarDataKey, type: "rect", color: "var(--color-target)" }] : []),
+            ] as any} />}
             <Bar dataKey={barDataKey} fill="var(--color-sales)" radius={4} />
-            {hasTarget && (
-              <Bar dataKey="target" fill="var(--color-target)" radius={4} />
+            {hasExtraBar && (
+              <Bar dataKey={extraBarDataKey} fill="var(--color-target)" radius={4} />
             )}
           </BarChart>
         </ChartContainer>

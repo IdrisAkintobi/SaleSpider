@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { clearAuthToken } from "../lib/cookie-handler";
 
+// Function to logout
 export async function POST() {
   try {
     const response = NextResponse.json(

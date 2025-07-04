@@ -2,10 +2,29 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { useState, type ReactNode } from "react";
+import { useState, type ReactNode, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 interface ProvidersProps {
   children: ReactNode;
+}
+
+function Global401Handler({ children }: { children: React.ReactNode }) {
+  // Listen for unhandled promise rejections (React Query errors)
+  useEffect(() => {
+    const handler = (event: PromiseRejectionEvent) => {
+      const error = event.reason;
+      if (
+        (error?.message && error.message.toLowerCase().includes("unauthorized")) ||
+        error?.status === 401
+      ) {
+        window.location.href = "/login";
+      }
+    };
+    window.addEventListener("unhandledrejection", handler);
+    return () => window.removeEventListener("unhandledrejection", handler);
+  }, []);
+  return <>{children}</>;
 }
 
 export function Providers({ children }: Readonly<ProvidersProps>) {
@@ -32,7 +51,9 @@ export function Providers({ children }: Readonly<ProvidersProps>) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
+      <Global401Handler>
+        {children}
+      </Global401Handler>
       {process.env.NODE_ENV === "development" && (
         <ReactQueryDevtools initialIsOpen={false} />
       )}
