@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
+// Function to get products
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const page = parseInt(url.searchParams.get("page") ?? "1", 10);
@@ -59,6 +60,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
+// Function to create a product
 export async function POST(req: NextRequest) {
   // Read the custom user ID header set by the middleware
   const userId = req.headers.get("X-User-Id");
@@ -114,7 +116,8 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-// Get enum values that contain the search term
+
+// Function to get enum values that contain the search term
 const matchingCategories = (searchQuery?: string) => {
   return searchQuery
     ? Object.values(ProductCategory).filter((cat) =>
@@ -122,6 +125,8 @@ const matchingCategories = (searchQuery?: string) => {
       )
     : [];
 };
+
+// Function to search for products
 function productSearchWhere(searchQuery?: string) {
   const matchCategories = matchingCategories(searchQuery);
   return searchQuery

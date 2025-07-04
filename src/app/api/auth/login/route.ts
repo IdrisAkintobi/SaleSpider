@@ -9,6 +9,7 @@ const secret = new TextEncoder().encode(process.env.JWT_SECRET);
 const tokenExpiry = process.env.TOKEN_EXPIRY ?? "12h";
 const alg = "HS256";
 
+// Function to login
 export async function POST(req: NextRequest) {
   try {
     const { username: email, password } = await req.json();

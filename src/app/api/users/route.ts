@@ -4,6 +4,7 @@ import * as argon2 from "argon2";
 
 const prisma = new PrismaClient();
 
+// Function to get users
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -67,6 +68,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// Function to create a user
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -132,6 +134,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// Function to update a user
 export async function PATCH(request: NextRequest) {
   // Read the X-User-Id header set by the middleware
   const userId = request.headers.get("X-User-Id");

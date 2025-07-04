@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
+// Function to update user status
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

@@ -7,6 +7,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+// Function to get session
 export async function GET(req: NextRequest) {
   try {
     // Read cookies from the request

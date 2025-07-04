@@ -4,6 +4,7 @@ import { getMonthlySales } from "@/lib/utils";
 
 const prisma = new PrismaClient();
 
+// Function to get monthly sales
 export async function GET(req: NextRequest) {
   // Read the X-User-Id header set by the middleware
   const userId = req.headers.get("X-User-Id");

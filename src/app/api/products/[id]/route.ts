@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 const prisma = new PrismaClient();
 
-// Get product by ID
+// Function to get product by ID
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -35,7 +35,7 @@ export async function GET(
   }
 }
 
-// Update product by ID
+// Function to update product by ID
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }

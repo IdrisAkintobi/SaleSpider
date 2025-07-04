@@ -9,6 +9,7 @@ const defaultCookieProperties = {
   secure: process.env.NODE_ENV === "production",
 };
 
+// Function to clear a cookie
 export async function clearCookie(res: NextResponse, name: string) {
   // Clear the cookie by setting its expiration to a past date
   res.cookies.set(name, "", {
