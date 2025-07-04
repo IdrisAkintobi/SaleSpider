@@ -147,7 +147,7 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { id, name, username, role, status } = body;
+    const { id, name, username, email, role, status } = body;
     if (!id) {
       return NextResponse.json({ message: "User ID is required" }, { status: 400 });
     }
@@ -168,6 +168,7 @@ export async function PATCH(request: NextRequest) {
       data: {
         ...(name && { name }),
         ...(username && { username }),
+        ...(email && { email }),
         ...(role && { role }),
         ...(status && { status }),
       },
