@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "@/lib/types";
+import { useEffect } from "react";
 
 // Fetch current user session
 async function fetchUserSession(): Promise<User | null> {
@@ -10,7 +11,13 @@ async function fetchUserSession(): Promise<User | null> {
     const { user } = await res.json();
     return user;
   }
-  return null;
+  if (res.status === 401) {
+    // Gracefully handle unauthorized (logged out)
+    return null;
+  }
+  // For other errors, throw
+  const error = await res.json().catch(() => ({}));
+  throw new Error(error.message || "Failed to fetch session");
 }
 
 // Login function
@@ -120,6 +127,18 @@ export function useAuth() {
   // Computed values
   const userIsManager = user?.role === "MANAGER" || user?.role === "SUPER_ADMIN";
   const userIsCashier = user?.role === "CASHIER";
+
+  // Kick out inactive users
+  useEffect(() => {
+    if (user && user.status && user.status !== "ACTIVE") {
+      toast({
+        title: "Account Inactive",
+        description: "Your account is inactive. Please contact an administrator.",
+        variant: "destructive",
+      });
+      logout();
+    }
+  }, [user]);
 
   return {
     user,
