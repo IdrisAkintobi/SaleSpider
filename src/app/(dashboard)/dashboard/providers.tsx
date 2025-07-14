@@ -52,7 +52,7 @@ export function Providers({ children }: Readonly<ProvidersProps>) {
   return (
     <QueryClientProvider client={queryClient}>
       <Global401Handler>
-        {children}
+      {children}
       </Global401Handler>
       {process.env.NODE_ENV === "development" && (
         <ReactQueryDevtools initialIsOpen={false} />

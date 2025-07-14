@@ -44,6 +44,7 @@ import type { DateRange } from "react-day-picker";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { GenericTable, GenericTableColumn } from "@/components/ui/generic-table";
+import { SalesTableSkeleton } from "@/components/dashboard/sales/sales-table-skeleton";
 import Link from "next/link";
 
 export default function SalesPage() {
@@ -146,10 +147,46 @@ export default function SalesPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
-        <p className="text-muted-foreground">Loading sales data...</p>
-      </div>
+      <>
+        <PageHeader
+          title="Sales History"
+          description="View and filter sales transactions."
+          actions={recordSaleAction}
+        />
+        <div className="mb-6 space-y-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Input
+              placeholder={userIsCashier ? "Search sales by product or payment mode..." : "Search sales by cashier, product, or payment mode..."}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1"
+              icon={<Filter className="h-4 w-4 text-muted-foreground" />}
+            />
+            {userIsManager && (
+              <Select value={filterCashier} onValueChange={handleCashierFilter}>
+                <SelectTrigger className="w-full sm:w-[200px]">
+                  <SelectValue placeholder="Filter by cashier" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Cashiers</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+            <Select value={filterDateRange} onValueChange={handleDateRangeFilter}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Filter by date" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Time</SelectItem>
+                <SelectItem value="today">Today</SelectItem>
+                <SelectItem value="week">This Week</SelectItem>
+                <SelectItem value="month">This Month</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <SalesTableSkeleton />
+      </>
     );
   }
 

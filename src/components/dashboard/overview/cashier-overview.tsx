@@ -23,6 +23,8 @@ import { DollarSign, ShoppingCart, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
 import { StatsCard } from "./stats-card";
+import { StatsCardSkeleton } from "./stats-card-skeleton";
+import { RecentSalesSkeleton } from "./recent-sales-skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 
@@ -58,10 +60,24 @@ export function CashierOverview() {
     });
   }
 
+  // Show skeleton while loading
+  if (!mySales) {
+    return (
+      <div className="space-y-6">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <StatsCardSkeleton />
+          <StatsCardSkeleton />
+          <StatsCardSkeleton />
+        </div>
+        <RecentSalesSkeleton />
+      </div>
+    );
+  }
+
   // Calculate stats using useMemo
   const stats = useMemo(() => {
     console.log({mySales})
-    const sortedSales = mySales.toSorted((a, b) => b.timestamp - a.timestamp);
+    const sortedSales = [...mySales].sort((a, b) => b.timestamp - a.timestamp);
     const totalValue = sortedSales.reduce((sum, sale) => sum + sale.totalAmount, 0);
     const totalOrders = sortedSales.length;
     const averageValue = totalOrders > 0 ? totalValue / totalOrders : 0;

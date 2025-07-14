@@ -13,7 +13,7 @@ async function fetchUserSession(): Promise<User | null> {
   }
   if (res.status === 401) {
     // Gracefully handle unauthorized (logged out)
-    return null;
+  return null;
   }
   // For other errors, throw
   const error = await res.json().catch(() => ({}));

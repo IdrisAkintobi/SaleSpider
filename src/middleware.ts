@@ -18,7 +18,7 @@ export async function middleware(request: NextRequest) {
       );
     } else {
       // For pages, redirect to login
-      return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(new URL("/login", request.url));
     }
   }
 
@@ -42,9 +42,9 @@ export async function middleware(request: NextRequest) {
       );
     } else {
       // For pages, redirect to login
-      const response = NextResponse.redirect(new URL("/login", request.url));
-      clearAuthToken(response);
-      return response;
+    const response = NextResponse.redirect(new URL("/login", request.url));
+    clearAuthToken(response);
+    return response;
     }
   }
 }

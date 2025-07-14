@@ -65,8 +65,8 @@ export function PerformanceChart({
     <Card className={cn("shadow-lg", className)}>
       <CardHeader className="flex flex-row items-center justify-between gap-2">
         <div>
-          <CardTitle>{title}</CardTitle>
-          {description && <CardDescription>{description}</CardDescription>}
+        <CardTitle>{title}</CardTitle>
+        {description && <CardDescription>{description}</CardDescription>}
         </div>
         {comparisonType && onComparisonTypeChange && comparisonOptions && (
           <Select value={comparisonType} onValueChange={onComparisonTypeChange}>

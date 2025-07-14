@@ -50,6 +50,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useTableControls } from "@/hooks/use-table-controls";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { GenericTable, GenericTableColumn } from "@/components/ui/generic-table";
+import { StaffTableSkeleton } from "@/components/dashboard/staff/staff-table-skeleton";
 
 interface StaffPerformance extends User {
   totalSalesValue: number;
@@ -196,10 +197,31 @@ export default function StaffPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
-        <p className="text-muted-foreground">Loading staff data...</p>
+      <>
+        <PageHeader
+          title="Staff Management"
+          description="View staff details, performance, and manage their status."
+          actions={
+            (currentUser?.role === "SUPER_ADMIN" || currentUser?.role === "MANAGER") && (
+              <AddStaffDialog
+                isOpen={isAddDialogOpen}
+                onOpenChange={setIsAddDialogOpen}
+                onStaffAdded={() => {}}
+              />
+            )
+          }
+        />
+        <div className="mb-4">
+          <Input
+            placeholder="Search staff by name, username, or role..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="max-w-sm"
+            icon={<Search className="h-4 w-4 text-muted-foreground" />}
+          />
       </div>
+        <StaffTableSkeleton userIsManager={userIsManager} />
+      </>
     );
   }
 
@@ -290,15 +312,15 @@ export default function StaffPage() {
                 case "actions":
                   return (
                     <div className="text-right space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                          <Button
+                            variant="ghost"
+                            size="sm"
                         onClick={() => setEditStaff(staff)}
                         disabled={currentUser?.role !== "SUPER_ADMIN" && (currentUser?.role !== "MANAGER" || staff.role !== "CASHIER")}
-                      >
+                          >
                         <Pencil className="mr-2 h-3 w-3" /> Edit
-                      </Button>
-                    </div>
+                          </Button>
+                            </div>
                   );
                 default:
                   return (staff as any)[col.key];

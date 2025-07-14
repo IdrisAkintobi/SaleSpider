@@ -132,11 +132,11 @@ export default function InventoryPage() {
           <>
             {recordSaleAction}
             {userIsManager && (
-              <AddProductDialog
-                isOpen={isAddDialogOpen}
-                onOpenChange={setIsAddDialogOpen}
+            <AddProductDialog
+              isOpen={isAddDialogOpen}
+              onOpenChange={setIsAddDialogOpen}
                 triggerButtonProps={{ variant: "default", size: "lg" }}
-              />
+            />
             )}
           </>
         }

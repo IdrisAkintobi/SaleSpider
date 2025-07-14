@@ -23,6 +23,8 @@ import Link from "next/link";
 import { useMemo, useState, useEffect } from "react";
 import { PerformanceChart } from "./performance-chart";
 import { StatsCard } from "./stats-card";
+import { StatsCardSkeleton } from "./stats-card-skeleton";
+import { PerformanceChartSkeleton } from "./performance-chart-skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useSales } from "@/hooks/use-sales";
 import { useStaff } from "@/hooks/use-staff";
@@ -65,51 +67,56 @@ async function fetchProductsData() {
 export function ManagerOverview({ period }: ManagerOverviewProps) {
   const { toast } = useToast();
 
-  // Use TanStack Query for data fetching
+  // All hooks must be called in the same order every render
   const { data: salesData, isLoading: isLoadingSales, error: salesError } = useSales();
-  const sales: Sale[] = salesData?.data ?? [];
   const { data: usersData, isLoading: isLoadingUsers, error: usersError } = useStaff();
-  const users = usersData?.data ?? [];
   const { data: products = [], isLoading: isLoadingProducts, error: productsError } = useQuery({
     queryKey: ['products-overview'],
     queryFn: fetchProductsData,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   // Compute date range based on period
-  let statsDateRange: { from?: Date; to?: Date } = {};
-  const now = new Date();
-  if (period === "today") {
-    statsDateRange = { from: startOfDay(now), to: endOfDay(now) };
-  } else if (period === "week") {
-    statsDateRange = { from: startOfWeek(now, { weekStartsOn: 1 }), to: endOfWeek(now, { weekStartsOn: 1 }) };
-  } else if (period === "month") {
-    statsDateRange = { from: startOfMonth(now), to: endOfMonth(now) };
-  } else if (period === "year") {
-    statsDateRange = { from: startOfYear(now), to: endOfYear(now) };
-  }
+  const statsDateRange = useMemo(() => {
+    const now = new Date();
+    if (period === "today") {
+      return { from: startOfDay(now), to: endOfDay(now) };
+    } else if (period === "week") {
+      return { from: startOfWeek(now, { weekStartsOn: 1 }), to: endOfWeek(now, { weekStartsOn: 1 }) };
+    } else if (period === "month") {
+      return { from: startOfMonth(now), to: endOfMonth(now) };
+    } else if (period === "year") {
+      return { from: startOfYear(now), to: endOfYear(now) };
+    }
+    return { from: undefined, to: undefined };
+  }, [period]);
 
-  const { data: stats, isLoading: isLoadingStats, error: statsError } =
-    (statsDateRange.from && statsDateRange.to)
-      ? useSalesStats({ from: statsDateRange.from, to: statsDateRange.to })
-      : useSalesStats(undefined);
+  const { data: stats, isLoading: isLoadingStats, error: statsError } = useSalesStats(
+    (statsDateRange.from && statsDateRange.to) 
+      ? { from: statsDateRange.from, to: statsDateRange.to }
+      : undefined
+  );
 
   const [comparisonType, setComparisonType] = useState<'weekly' | 'monthly'>('weekly');
   const { data: monthlyData, isLoading: isLoadingMonthly, error: monthlyError } = useSalesMonthly();
 
-    const error = salesError || usersError || productsError || statsError;
+  // Handle errors in useEffect
+  useEffect(() => {
+    const error = salesError || usersError || productsError || statsError || monthlyError;
     if (error) {
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : String(error),
         variant: "destructive",
       });
-    };
+    }
+  }, [salesError, usersError, productsError, statsError, monthlyError, toast]);
 
-  const isLoading = isLoadingSales || isLoadingUsers || isLoadingProducts || isLoadingStats || isLoadingMonthly;
+  // All data processing with useMemo
+  const sales: Sale[] = salesData?.data ?? [];
+  const users = usersData?.data ?? [];
 
-  // Calculate stats using useMemo
   const statsMemo = useMemo(() => {
     const totalSales = sales.reduce((sum: number, sale: Sale) => sum + sale.totalAmount, 0);
     const totalOrders = sales.length;
@@ -119,7 +126,6 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
     return { totalSales, totalOrders, activeStaff, lowStockItems };
   }, [sales, users, products]);
 
-  // Process daily sales data
   const dailySalesData = useMemo(() => {
     const today = new Date();
     const dailyData: DailySalesData[] = Array(7)
@@ -138,7 +144,7 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
         (today.getTime() - saleDate.getTime()) / (1000 * 3600 * 24)
       );
       if (diffDays < 7) {
-        const dayIndex = 6 - diffDays; // today is 6, yesterday is 5, etc.
+        const dayIndex = 6 - diffDays;
         if (dailyData[dayIndex]) {
           dailyData[dayIndex].sales += sale.totalAmount;
         }
@@ -148,24 +154,20 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
     return dailyData.map((d) => ({ ...d, sales: parseFloat(d.sales.toFixed(2)) }));
   }, [sales]);
 
-  // Process weekly sales data
   const weeklySalesData = useMemo(() => {
     const today = new Date();
-    // Generate last 7 days, oldest to newest, matching dailySalesData
     const days = Array(7)
       .fill(null)
       .map((_, i) => {
         const d = new Date(today);
-        d.setDate(today.getDate() - (6 - i)); // oldest first
+        d.setDate(today.getDate() - (6 - i));
         return {
-          date: new Date(d.getFullYear(), d.getMonth(), d.getDate()), // strip time
+          date: new Date(d.getFullYear(), d.getMonth(), d.getDate()),
           name: d.toLocaleDateString("en-US", { weekday: "short" }),
         };
       });
 
-    // For each day, sum sales for this week and last week
     const weeklyData = days.map((day) => {
-      // This week: sales on this day
       const thisWeekSales = sales
         .filter((sale: Sale) => {
           const saleDate = new Date(sale.timestamp);
@@ -177,7 +179,6 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
         })
         .reduce((sum: number, sale: Sale) => sum + sale.totalAmount, 0);
 
-      // Last week: sales on this weekday, 7 days ago
       const lastWeekDate = new Date(day.date);
       lastWeekDate.setDate(lastWeekDate.getDate() - 7);
       const lastWeekSales = sales
@@ -201,16 +202,34 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
     return weeklyData;
   }, [sales]);
 
-  // Recent sales (last 5)
   const recentSales = useMemo(() => {
     return sales.slice(0, 5);
   }, [sales]);
 
-  if (isLoading || isLoadingStats) {
+  const monthlyChartData = useMemo(() => {
+    if (!monthlyData) return [];
+    return monthlyData.map(m => ({ 
+      name: new Date(m.month + '-01').toLocaleString('en-US', { month: 'short' }), 
+      sales: m.sales 
+    }));
+  }, [monthlyData]);
+
+  // Loading state
+  const isLoading = isLoadingSales || isLoadingUsers || isLoadingProducts || isLoadingStats || isLoadingMonthly;
+
+  if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
-        <p className="text-muted-foreground">Loading overview data...</p>
+      <div className="space-y-6">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <StatsCardSkeleton />
+          <StatsCardSkeleton />
+          <StatsCardSkeleton />
+          <StatsCardSkeleton />
+        </div>
+        <div className="grid gap-6 md:grid-cols-2">
+          <PerformanceChartSkeleton />
+          <PerformanceChartSkeleton />
+        </div>
       </div>
     );
   }
@@ -287,7 +306,7 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
             <div className="flex items-center justify-center h-[300px] text-destructive">Failed to fetch monthly sales: {monthlyError.message}</div>
           ) : (
             <PerformanceChart
-              data={monthlyData?.map(m => ({ name: new Date(m.month + '-01').toLocaleString('en-US', { month: 'short' }), sales: m.sales })) ?? []}
+              data={monthlyChartData}
               title="Monthly Sales Comparison"
               description="Total sales per month."
               xAxisDataKey="name"
