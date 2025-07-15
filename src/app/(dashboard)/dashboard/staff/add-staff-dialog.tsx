@@ -24,10 +24,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useAddStaff } from "@/hooks/use-staff";
 import type { Role } from "@prisma/client";
 import { UserPlus } from "lucide-react";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useTranslation } from "@/lib/i18n";
 
 const addStaffSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -52,6 +52,7 @@ export function AddStaffDialog({
 }: Readonly<AddStaffDialogProps>) {
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
+  const t = useTranslation();
 
   const form = useForm<AddStaffFormData>({
     resolver: zodResolver(addStaffSchema),
@@ -105,23 +106,23 @@ export function AddStaffDialog({
       <DialogTrigger asChild>
         <Button>
           <UserPlus className="mr-2 h-4 w-4" />
-          Add Staff
+          {t("add_staff")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New Staff Member</DialogTitle>
+          <DialogTitle>{t("add_new_staff_member")}</DialogTitle>
           <DialogDescription>
-            Add a new staff member to the system.
+            {t("add_staff_description")}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Full Name</Label>
+            <Label htmlFor="name">{t("full_name")}</Label>
             <Input
               id="name"
               {...form.register("name")}
-              placeholder="Enter full name"
+              placeholder={t("enter_full_name")}
             />
             {form.formState.errors.name && (
               <p className="text-sm text-destructive">
@@ -131,11 +132,11 @@ export function AddStaffDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="username">{t("username")}</Label>
             <Input
               id="username"
               {...form.register("username")}
-              placeholder="Enter username"
+              placeholder={t("enter_username")}
             />
             {form.formState.errors.username && (
               <p className="text-sm text-destructive">
@@ -145,12 +146,12 @@ export function AddStaffDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t("email")}</Label>
             <Input
               id="email"
               type="email"
               {...form.register("email")}
-              placeholder="Enter email address"
+              placeholder={t("email")}
             />
             {form.formState.errors.email && (
               <p className="text-sm text-destructive">
@@ -160,12 +161,12 @@ export function AddStaffDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t("password")}</Label>
             <Input
               id="password"
               type="password"
               {...form.register("password")}
-              placeholder="Enter password"
+              placeholder={t("enter_password")}
             />
             {form.formState.errors.password && (
               <p className="text-sm text-destructive">
@@ -175,13 +176,13 @@ export function AddStaffDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="role">Role</Label>
+            <Label htmlFor="role">{t("role")}</Label>
             <Select
               value={form.watch("role")}
               onValueChange={(value) => form.setValue("role", value as "MANAGER" | "CASHIER")}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select role" />
+                <SelectValue placeholder={t("select_role")} />
               </SelectTrigger>
               <SelectContent>
                 {availableRoles.map((role) => (
@@ -204,10 +205,10 @@ export function AddStaffDialog({
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              Cancel
+              {t("cancel")}
             </Button>
             <Button type="submit" disabled={addStaffMutation.isPending}>
-              {addStaffMutation.isPending ? "Adding..." : "Add Staff"}
+              {addStaffMutation.isPending ? t("adding") : t("add_staff")}
             </Button>
           </DialogFooter>
         </form>

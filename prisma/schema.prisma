@@ -111,3 +111,23 @@ model SaleItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model AppSettings {
+  id                String   @id @default(cuid())
+  appName           String   @default("SaleSpider")
+  appLogo           String?  // URL to logo image
+  primaryColor      String   @default("#0f172a") // Default dark blue
+  secondaryColor    String   @default("#3b82f6") // Default blue
+  accentColor       String   @default("#f59e0b") // Default amber
+  currency          String   @default("NGN") // Nigerian Naira
+  currencySymbol    String   @default("₦")
+  vatPercentage     Float    @default(7.5) // Default VAT percentage
+  timezone          String   @default("Africa/Lagos")
+  dateFormat        String   @default("dd/MM/yyyy")
+  timeFormat        String   @default("HH:mm")
+  language          String   @default("en")
+  theme             String   @default("light") // light, dark, auto
+  maintenanceMode   Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}

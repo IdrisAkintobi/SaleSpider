@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -27,6 +26,8 @@ import { StatsCardSkeleton } from "./stats-card-skeleton";
 import { RecentSalesSkeleton } from "./recent-sales-skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
+import { useFormatCurrency } from "@/lib/currency";
+import { useTranslation } from "@/lib/i18n";
 
 async function fetchSalesByCashierId(cashierId: string): Promise<Sale[]> {
   const res = await fetch(`/api/sales?cashierId=${cashierId}`);
@@ -41,9 +42,11 @@ async function fetchSalesByCashierId(cashierId: string): Promise<Sale[]> {
 export function CashierOverview() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const formatCurrency = useFormatCurrency();
+  const t = useTranslation();
 
   // Use TanStack Query for data fetching
-  const { data: mySales = [], error } = useQuery({
+  const { data: mySales = [], error, isLoading: isLoadingSales } = useQuery({
     queryKey: ['sales', 'cashier', user?.id],
     queryFn: () => fetchSalesByCashierId(user!.id),
     enabled: !!user,
@@ -90,81 +93,79 @@ export function CashierOverview() {
     };
   }, [mySales]);
 
+  const recentSales = stats.recentSales;
+
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <StatsCard
-          title="My Total Sales Value"
-          value={`$${stats.totalValue.toFixed(2)}`}
+          title={t("my_total_sales_value")}
+          value={formatCurrency(stats.totalValue)}
           icon={DollarSign}
-          description="All sales you've recorded."
+          description={t("all_sales_recorded")}
         />
         <StatsCard
-          title="My Total Orders"
+          title={t("my_total_orders")}
           value={stats.totalOrders}
           icon={ShoppingCart}
-          description="Total orders you've processed."
+          description={t("total_orders_processed")}
         />
         <StatsCard
-          title="My Average Sale Value"
-          value={`$${stats.averageValue.toFixed(2)}`}
+          title={t("my_average_sale_value")}
+          value={formatCurrency(stats.averageValue)}
           icon={TrendingUp}
-          description="Average value per order."
+          description={t("average_value_per_order")}
         />
       </div>
 
       <Card className="shadow-lg">
         <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>My Recent Sales</CardTitle>
-            <CardDescription>
-              A quick look at your latest transactions.
-            </CardDescription>
-          </div>
+          <CardTitle>{t("my_recent_sales")}</CardTitle>
           <Button variant="outline" size="sm" asChild>
-            <Link href="/dashboard/sales">View All My Sales</Link>
+            <Link href="/dashboard/sales">{t("view_all_sales")}</Link>
           </Button>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Order ID</TableHead>
-                <TableHead>Items</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Payment Mode</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {stats.recentSales.length > 0 ? (
-                stats.recentSales.map((sale) => (
+          {isLoadingSales ? (
+            <RecentSalesSkeleton />
+          ) : recentSales.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("order_id")}</TableHead>
+                  <TableHead>{t("amount")}</TableHead>
+                  <TableHead>{t("payment_mode")}</TableHead>
+                  <TableHead>{t("date")}</TableHead>
+                  <TableHead>{t("status")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentSales.map((sale) => (
                   <TableRow key={sale.id}>
                     <TableCell className="font-medium">
                       {sale.id.substring(0, 8)}...
                     </TableCell>
-                    <TableCell>{sale.items.length}</TableCell>
-                    <TableCell>${sale.totalAmount.toFixed(2)}</TableCell>
+                    <TableCell>{formatCurrency(sale.totalAmount)}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{sale.paymentMode}</Badge>
+                    </TableCell>
                     <TableCell>
                       {new Date(sale.timestamp).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{sale.paymentMode}</Badge>
+                      <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-white">
+                        {t("completed")}
+                      </Badge>
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={5}
-                    className="text-center text-muted-foreground"
-                  >
-                    You haven't recorded any sales yet.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              {t("no_recent_sales")}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

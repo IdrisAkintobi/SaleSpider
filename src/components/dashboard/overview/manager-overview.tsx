@@ -32,6 +32,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useSalesStats } from "@/hooks/use-sales-stats";
 import { useSalesMonthly } from "@/hooks/use-sales-monthly";
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
+import { useFormatCurrency } from "@/lib/currency";
+import { useVatPercentage } from "@/lib/vat";
+import { useTranslation } from "@/lib/i18n";
+import { RecentSalesSkeleton } from "./recent-sales-skeleton";
 
 interface DailySalesData {
   name: string;
@@ -66,6 +70,9 @@ async function fetchProductsData() {
 
 export function ManagerOverview({ period }: ManagerOverviewProps) {
   const { toast } = useToast();
+  const formatCurrency = useFormatCurrency();
+  const vatPercentage = useVatPercentage();
+  const t = useTranslation();
 
   // All hooks must be called in the same order every render
   const { data: salesData, isLoading: isLoadingSales, error: salesError } = useSales();
@@ -246,29 +253,29 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatsCard
-          title="Total Revenue"
-          value={`$${stats?.totalSales?.toFixed(2) ?? "0.00"}`}
+          title={t("total_revenue")}
+          value={formatCurrency(stats?.totalSales ?? 0)}
           icon={DollarSign}
-          description={period === "today" ? "Today's sales" : period === "week" ? "This week's sales" : period === "month" ? "This month's sales" : period === "year" ? "This year's sales" : "All-time sales"}
+          description={period === "today" ? t("today") + "'s sales" : period === "week" ? t("this_week") + "'s sales" : period === "month" ? t("this_month") + "'s sales" : period === "year" ? t("this_year") + "'s sales" : "All-time sales"}
         />
         <StatsCard
-          title="Total Orders"
+          title={t("total_orders")}
           value={stats?.totalOrders ?? 0}
           icon={ShoppingCart}
-          description={period === "today" ? "Today's orders" : period === "week" ? "This week's orders" : period === "month" ? "This month's orders" : period === "year" ? "This year's orders" : "All-time orders"}
+          description={period === "today" ? t("today") + "'s orders" : period === "week" ? t("this_week") + "'s orders" : period === "month" ? t("this_month") + "'s orders" : period === "year" ? t("this_year") + "'s orders" : "All-time orders"}
         />
         <StatsCard
-          title="Active Cashiers"
+          title={t("active_cashiers")}
           value={statsMemo.activeStaff}
           icon={Users}
-          description="Currently active staff"
+          description={t("currently_active_staff")}
         />
         <StatsCard
-          title="Low Stock Items"
+          title={t("low_stock_items")}
           value={statsMemo.lowStockItems}
           icon={statsMemo.lowStockItems > 0 ? AlertTriangle : PackageCheck}
           description={
-            statsMemo.lowStockItems > 0 ? "Needs attention" : "All items well stocked"
+            statsMemo.lowStockItems > 0 ? t("needs_attention") : t("all_items_well_stocked")
           }
           iconClassName={
             statsMemo.lowStockItems > 0 ? "text-destructive" : "text-green-500"
@@ -279,43 +286,43 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
       <div className="grid gap-6 md:grid-cols-2">
         <PerformanceChart
           data={dailySalesData}
-          title="Daily Sales (Last 7 Days)"
-          description="Revenue generated per day."
+          title={t("daily_sales_last_7_days")}
+          description={t("revenue_generated_per_day")}
         />
         {comparisonType === 'weekly' && (
           <PerformanceChart
             data={weeklySalesData}
-            title="Weekly Sales Comparison"
-            description="This week vs. last week."
+            title={t("weekly_sales_comparison")}
+            description={t("this_week_vs_last_week")}
             xAxisDataKey="name"
             barDataKey="thisWeek"
             extraBarDataKey="lastWeek"
-            barLabels={{ thisWeek: 'This Week', lastWeek: 'Last Week' }}
+            barLabels={{ thisWeek: t("this_week"), lastWeek: t("last_week") }}
             comparisonType={comparisonType}
             onComparisonTypeChange={v => setComparisonType(v as 'weekly' | 'monthly')}
             comparisonOptions={[
-              { value: 'weekly', label: 'Weekly' },
-              { value: 'monthly', label: 'Monthly (Last 6 Months)' },
+              { value: 'weekly', label: t("weekly") },
+              { value: 'monthly', label: t("monthly_last_6_months") },
             ]}
           />
         )}
         {comparisonType === 'monthly' && (
           isLoadingMonthly ? (
-            <div className="flex items-center justify-center h-[300px]">Loading monthly data...</div>
+            <div className="flex items-center justify-center h-[300px]">{t("loading_data")}</div>
           ) : monthlyError ? (
             <div className="flex items-center justify-center h-[300px] text-destructive">Failed to fetch monthly sales: {monthlyError.message}</div>
           ) : (
             <PerformanceChart
               data={monthlyChartData}
-              title="Monthly Sales Comparison"
-              description="Total sales per month."
+              title={t("monthly_sales_comparison")}
+              description={t("total_sales_per_month")}
               xAxisDataKey="name"
               barDataKey="sales"
               comparisonType={comparisonType}
               onComparisonTypeChange={v => setComparisonType(v as 'weekly' | 'monthly')}
               comparisonOptions={[
-                { value: 'weekly', label: 'Weekly' },
-                { value: 'monthly', label: 'Monthly (Last 6 Months)' },
+                { value: 'weekly', label: t("weekly") },
+                { value: 'monthly', label: t("monthly_last_6_months") },
               ]}
             />
           )
@@ -324,51 +331,48 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
 
       <Card className="shadow-lg">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Recent Sales</CardTitle>
+          <CardTitle>{t("recent_sales")}</CardTitle>
           <Button variant="outline" size="sm" asChild>
-            <Link href="/dashboard/sales">View All Sales</Link>
+            <Link href="/dashboard/sales">{t("view_all_sales")}</Link>
           </Button>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Order ID</TableHead>
-                <TableHead>Cashier</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {recentSales.length > 0 ? (
-                recentSales.map((sale) => (
+          {isLoadingSales ? (
+            <RecentSalesSkeleton />
+          ) : recentSales.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("order_id")}</TableHead>
+                  <TableHead>{t("cashier")}</TableHead>
+                  <TableHead>{t("amount")}</TableHead>
+                  <TableHead>{t("date")}</TableHead>
+                  <TableHead>{t("status")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentSales.map((sale) => (
                   <TableRow key={sale.id}>
                     <TableCell className="font-medium">
                       {sale.id.substring(0, 8)}...
                     </TableCell>
                     <TableCell>{sale.cashierName}</TableCell>
-                    <TableCell>${sale.totalAmount.toFixed(2)}</TableCell>
+                    <TableCell>{formatCurrency(sale.totalAmount)}</TableCell>
                     <TableCell>
                       {new Date(sale.timestamp).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="default">Completed</Badge>
+                      <Badge variant="default">{t("completed")}</Badge>
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={5}
-                    className="text-center text-muted-foreground"
-                  >
-                    No recent sales.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              {t("no_recent_sales")}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

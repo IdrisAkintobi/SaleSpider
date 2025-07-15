@@ -25,6 +25,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
 import { SidebarNav } from "./sidebar-nav";
+import { useTranslation } from "@/lib/i18n";
 
 // Helper for theme toggle, assuming next-themes
 function ThemeToggle() {
@@ -62,7 +63,8 @@ function ThemeToggle() {
 export function DashboardHeader() {
   const { user, logout } = useAuth();
   const pathname = usePathname();
-  const breadcrumbs = generateBreadcrumbs(pathname); // Placeholder for breadcrumb logic
+  const t = useTranslation();
+  const breadcrumbs = generateBreadcrumbs(pathname, t);
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-4 md:px-6">
@@ -112,7 +114,7 @@ export function DashboardHeader() {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search..."
+              placeholder={t("search_general")}
               className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
             />
           </div> */}
@@ -139,13 +141,13 @@ export function DashboardHeader() {
               <Link href="/dashboard/settings">
                 {" "}
                 <Settings className="mr-2 h-4 w-4" />
-                <span>Settings</span>
+                <span>{t("settings")}</span>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={logout}>
               <LogOut className="mr-2 h-4 w-4" />
-              <span>Log out</span>
+              <span>{t("logout")}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -155,16 +157,18 @@ export function DashboardHeader() {
 }
 
 // Example breadcrumb generation (can be more sophisticated)
-function generateBreadcrumbs(pathname: string) {
+function generateBreadcrumbs(pathname: string, t: (key: string) => string) {
   const paths = pathname.split("/").filter((p) => p);
-  const crumbs = [{ href: "/dashboard/overview", label: "Dashboard" }];
+  const crumbs = [{ href: "/dashboard/overview", label: t("dashboard") }];
   let currentPath = "/dashboard";
   paths.slice(1).forEach((part) => {
     if (part === "dashboard") return;
     currentPath += `/${part}`;
+    // Map path segments to translation keys
+    const labelKey = part.replace(/-/g, "_");
     crumbs.push({
       href: currentPath,
-      label: part.charAt(0).toUpperCase() + part.slice(1).replace(/-/g, " "),
+      label: t(labelKey) || part.charAt(0).toUpperCase() + part.slice(1).replace(/-/g, " "),
     });
   });
   return crumbs;

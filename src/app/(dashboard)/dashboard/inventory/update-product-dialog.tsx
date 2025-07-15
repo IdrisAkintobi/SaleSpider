@@ -16,6 +16,7 @@ import { ProductCategory } from "@prisma/client";
 import { useEffect } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import * as z from "zod";
+import { useCurrencySettings } from "@/lib/currency";
 
 const updateProductSchema = z.object({
   name: z.string().min(1, "Product name is required"),
@@ -43,6 +44,8 @@ export function UpdateProductDialog({
   onOpenChange,
   product,
 }: Readonly<UpdateProductDialogProps>) {
+  const { currencySymbol } = useCurrencySettings();
+  
   const {
     register,
     handleSubmit,
@@ -132,7 +135,7 @@ export function UpdateProductDialog({
             error={errors.category?.message}
           />
           <FormInput
-            label="Price ($)"
+            label={`Price (${currencySymbol})`}
             name="price"
             type="number"
             step="0.01"

@@ -33,23 +33,28 @@ import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { useSales } from "@/hooks/use-sales";
 import type { Sale } from "@/lib/types";
-import { CalendarDays, Filter, UserCircle, Eye, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUp, ArrowDown, DollarSign } from "lucide-react";
+import { CalendarDays, Filter, UserCircle, Eye, ArrowUp, ArrowDown, DollarSign, Search } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format, addDays } from "date-fns";
+import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DateRange } from "react-day-picker";
 import { useTableControls } from "@/hooks/use-table-controls";
-import { TablePagination } from "@/components/ui/table-pagination";
-import { GenericTable, GenericTableColumn } from "@/components/ui/generic-table";
+import { GenericTable } from "@/components/ui/generic-table";
 import { SalesTableSkeleton } from "@/components/dashboard/sales/sales-table-skeleton";
 import Link from "next/link";
+import { useFormatCurrency } from "@/lib/currency";
+import { useVatPercentage } from "@/lib/vat";
+import { useTranslation } from "@/lib/i18n";
 
 export default function SalesPage() {
   const { user, userIsManager, userIsCashier } = useAuth();
   const { toast } = useToast();
+  const formatCurrency = useFormatCurrency();
+  const vatPercentage = useVatPercentage();
+  const t = useTranslation();
   
   // Use shared table controls
   const {
@@ -140,7 +145,7 @@ export default function SalesPage() {
   const recordSaleAction = !userIsManager ? (
     <Button size="lg" asChild>
       <Link href="/dashboard/record-sale">
-        <DollarSign className="mr-2 h-5 w-5" /> Record New Sale
+        <DollarSign className="mr-2 h-5 w-5" /> {t("record_new_sale")}
       </Link>
     </Button>
   ) : null;
@@ -149,38 +154,37 @@ export default function SalesPage() {
     return (
       <>
         <PageHeader
-          title="Sales History"
-          description="View and filter sales transactions."
-          actions={recordSaleAction}
+          title={t("sales")}
+          description={t("sales_history_description")}
         />
         <div className="mb-6 space-y-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <Input
-              placeholder={userIsCashier ? "Search sales by product or payment mode..." : "Search sales by cashier, product, or payment mode..."}
+              placeholder={userIsCashier ? t("search_sales_product") : t("search_sales_cashier")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1"
-              icon={<Filter className="h-4 w-4 text-muted-foreground" />}
+              className="max-w-sm"
+              icon={<Search className="h-4 w-4 text-muted-foreground" />}
             />
             {userIsManager && (
               <Select value={filterCashier} onValueChange={handleCashierFilter}>
                 <SelectTrigger className="w-full sm:w-[200px]">
-                  <SelectValue placeholder="Filter by cashier" />
+                  <SelectValue placeholder={t("filter_by_cashier")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Cashiers</SelectItem>
+                  <SelectItem value="all">{t("all_cashiers")}</SelectItem>
                 </SelectContent>
               </Select>
             )}
             <Select value={filterDateRange} onValueChange={handleDateRangeFilter}>
               <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder="Filter by date" />
+                <SelectValue placeholder={t("filter_by_date")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Time</SelectItem>
-                <SelectItem value="today">Today</SelectItem>
-                <SelectItem value="week">This Week</SelectItem>
-                <SelectItem value="month">This Month</SelectItem>
+                <SelectItem value="all">{t("all_time")}</SelectItem>
+                <SelectItem value="today">{t("today")}</SelectItem>
+                <SelectItem value="week">{t("this_week")}</SelectItem>
+                <SelectItem value="month">{t("this_month")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -190,18 +194,32 @@ export default function SalesPage() {
     );
   }
 
+  if (error) {
+    return (
+      <>
+        <PageHeader
+          title={t("sales")}
+          description={t("sales_history_description")}
+        />
+        <div className="flex flex-col items-center justify-center h-64 text-center">
+          <p className="text-destructive">Failed to load sales data: {error instanceof Error ? error.message : String(error)}</p>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <PageHeader
-        title="Sales History"
-        description="View and filter sales transactions."
+        title={t("sales")}
+        description={t("sales_history_description")}
         actions={recordSaleAction}
       />
 
       <div className="mb-6 space-y-4">
         <div className="flex flex-col sm:flex-row gap-4">
           <Input
-            placeholder={userIsCashier ? "Search sales by product or payment mode..." : "Search sales by cashier, product, or payment mode..."}
+            placeholder={userIsCashier ? t("search_sales_product") : t("search_sales_cashier")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="flex-1"
@@ -210,7 +228,7 @@ export default function SalesPage() {
           {userIsManager && (
             <Select value={filterCashier} onValueChange={handleCashierFilter}>
               <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder="Filter by cashier" />
+                <SelectValue placeholder={t("filter_by_cashier")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Cashiers</SelectItem>
@@ -224,7 +242,7 @@ export default function SalesPage() {
           )}
           <Select value={filterDateRange} onValueChange={handleDateRangeFilter}>
             <SelectTrigger className="w-full sm:w-[200px]">
-              <SelectValue placeholder="Filter by date" />
+              <SelectValue placeholder={t("filter_by_date")} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Time</SelectItem>
@@ -249,7 +267,7 @@ export default function SalesPage() {
                     {format(dateRange.to, "LLL dd, y")}
                   </>
                 ) : (
-                  "Pick a date range"
+                  t("pick_date_range")
                 )}
               </Button>
             </PopoverTrigger>
@@ -270,7 +288,7 @@ export default function SalesPage() {
               size="sm"
               onClick={() => setDateRange(undefined)}
             >
-              Clear Range
+              {t("clear_range")}
             </Button>
           )}
         </div>
@@ -279,11 +297,11 @@ export default function SalesPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Revenue</p>
-                <p className="text-2xl font-bold">${totalRevenue.toFixed(2)}</p>
+                <p className="text-sm text-muted-foreground">{t("total_revenue")}</p>
+                <p className="text-2xl font-bold">{formatCurrency(totalRevenue)}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Total Sales</p>
+                <p className="text-sm text-muted-foreground">{t("total_sales_count")}</p>
                 <p className="text-2xl font-bold">{sales.length}</p>
               </div>
             </div>
@@ -311,7 +329,7 @@ export default function SalesPage() {
                 sortable: true,
                 onSort: () => handleSort("cashierName"),
               },
-              { key: "itemsCount", label: "Items Count" },
+              { key: "itemsCount", label: t("items_count") },
               {
                 key: "totalAmount",
                 label: (
@@ -328,7 +346,7 @@ export default function SalesPage() {
                 sortable: true,
                 onSort: () => handleSort("paymentMode"),
               },
-              { key: "actions", label: <span className="text-right">Actions</span>, align: "right" },
+              { key: "actions", label: <span className="text-right">{t("actions")}</span>, align: "right" },
             ]}
             data={sales.map(sale => ({ ...sale, itemsCount: sale.items.length }))}
             rowKey={row => row.id}
@@ -351,7 +369,7 @@ export default function SalesPage() {
                 case "itemsCount":
                   return `${sale.items.length} item${sale.items.length !== 1 ? 's' : ''}`;
                 case "totalAmount":
-                  return <span className="font-medium">${sale.totalAmount.toFixed(2)}</span>;
+                  return <span className="font-medium">{formatCurrency(sale.totalAmount)}</span>;
                 case "paymentMode":
                   return <Badge variant="outline">{sale.paymentMode}</Badge>;
                 case "actions":
@@ -413,9 +431,9 @@ export default function SalesPage() {
                                           <TableRow key={index}>
                                             <TableCell>{item.productName}</TableCell>
                                             <TableCell>{item.quantity}</TableCell>
-                                            <TableCell>${item.price.toFixed(2)}</TableCell>
+                                            <TableCell>{formatCurrency(item.price)}</TableCell>
                                             <TableCell className="text-right">
-                                              ${(item.quantity * item.price).toFixed(2)}
+                                              {formatCurrency(item.quantity * item.price)}
                                             </TableCell>
                                           </TableRow>
                                         ))}
@@ -426,15 +444,15 @@ export default function SalesPage() {
                                 <div className="border-t pt-4 space-y-2">
                                   <div className="flex justify-between items-center">
                                     <span className="text-sm text-muted-foreground">Subtotal</span>
-                                    <span className="text-sm">${(selectedSale.totalAmount / 1.15).toFixed(2)}</span>
+                                    <span className="text-sm">{formatCurrency(selectedSale.totalAmount / (1 + vatPercentage / 100))}</span>
                                   </div>
                                   <div className="flex justify-between items-center">
-                                    <span className="text-sm text-muted-foreground">VAT (15%)</span>
-                                    <span className="text-sm">${(selectedSale.totalAmount - (selectedSale.totalAmount / 1.15)).toFixed(2)}</span>
+                                    <span className="text-sm text-muted-foreground">VAT ({vatPercentage}%)</span>
+                                    <span className="text-sm">{formatCurrency(selectedSale.totalAmount - (selectedSale.totalAmount / (1 + vatPercentage / 100)))}</span>
                                   </div>
                                   <div className="flex justify-between items-center border-t pt-2">
                                     <span className="text-lg font-semibold">Total Amount</span>
-                                    <span className="text-lg font-bold">${selectedSale.totalAmount.toFixed(2)}</span>
+                                    <span className="text-lg font-bold">{formatCurrency(selectedSale.totalAmount)}</span>
                                   </div>
                                 </div>
                               </div>

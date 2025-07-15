@@ -1,38 +1,43 @@
 "use client";
 
-import type {
-  InventoryRecommendationsInput,
-  InventoryRecommendationsOutput,
-} from "@/ai/flows/inventory-recommendations";
-import { getInventoryRecommendations } from "@/ai/flows/inventory-recommendations";
-import { AIRecommendationsDisplay } from "@/components/dashboard/ai/recommendations-display";
-import { AIRecommendationsForm } from "@/components/dashboard/ai/recommendations-form";
 import { PageHeader } from "@/components/shared/page-header";
-import { Button } from "@/components/ui/button";
+import { AIRecommendationsForm } from "@/components/dashboard/ai/recommendations-form";
+import { AIRecommendationsDisplay } from "@/components/dashboard/ai/recommendations-display";
 import { useAuth } from "@/contexts/auth-context";
-import { useToast } from "@/hooks/use-toast";
-import { isCashier } from "@/lib/utils";
-import { Bot } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useTranslation } from "@/lib/i18n";
 import { useState } from "react";
+import type { InventoryRecommendationsInput } from "@/ai/flows/inventory-recommendations";
+import type { InventoryRecommendationData } from "@/lib/types";
+import { getInventoryRecommendations } from "@/ai/flows/inventory-recommendations";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AIRecommendationsPage() {
   const { user } = useAuth();
-  const router = useRouter();
-  const [recommendations, setRecommendations] =
-    useState<InventoryRecommendationsOutput | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
+  const t = useTranslation();
+  const [recommendations, setRecommendations] = useState<InventoryRecommendationData | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  // Check if user has permission to access AI recommendations
+  if (!user || (user.role !== "SUPER_ADMIN" && user.role !== "MANAGER")) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-center">
+        <h2 className="text-2xl font-semibold mb-2">{t("access_denied")}</h2>
+        <p className="text-muted-foreground">
+          {t("super_admin_only")}
+        </p>
+      </div>
+    );
+  }
 
   const handleSubmit = async (data: InventoryRecommendationsInput) => {
-    setIsGenerating(true);
-    setRecommendations(null);
     try {
+      setIsGenerating(true);
       const result = await getInventoryRecommendations(data);
       setRecommendations(result);
       toast({
-        title: "Recommendations Generated!",
-        description: "AI insights are ready for review.",
+        title: "Recommendations Generated",
+        description: "AI recommendations have been generated successfully.",
       });
     } catch (error) {
       console.error("Error generating recommendations:", error);
@@ -41,51 +46,24 @@ export default function AIRecommendationsPage() {
         description: "Failed to generate recommendations. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsGenerating(false);
     }
-    setIsGenerating(false);
   };
-
-  if (isCashier(user)) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full text-center">
-        <Bot className="w-16 h-16 text-muted-foreground mb-4" />
-        <h2 className="text-2xl font-semibold mb-2">Access Denied</h2>
-        <p className="text-muted-foreground">
-          Only Managers can access AI recommendations.
-        </p>
-        <Button
-          onClick={() => router.push("/dashboard/overview")}
-          className="mt-4"
-        >
-          Go to Overview
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <>
       <PageHeader
-        title="AI Inventory Recommendations"
-        description="Leverage AI to optimize your stock levels, identify promotional opportunities, and plan reorders."
+        title={t("ai_insights")}
+        description={t("ai_recommendations_description")}
       />
-      <div className="grid grid-cols-1 gap-6">
-        <AIRecommendationsForm
+      <div className="grid gap-6">
+        <AIRecommendationsForm 
           onSubmit={handleSubmit}
           isGenerating={isGenerating}
-          defaultStoreName="SaleSpider Demo Store"
+          defaultStoreName="SaleSpider Store"
         />
-        {isGenerating && (
-          <div className="flex items-center justify-center p-8 rounded-md border border-dashed">
-            <Bot className="h-8 w-8 mr-2 animate-pulse text-primary" />
-            <p className="text-muted-foreground">
-              Generating recommendations, please wait...
-            </p>
-          </div>
-        )}
-        {recommendations && (
-          <AIRecommendationsDisplay recommendations={recommendations} />
-        )}
+        {recommendations && <AIRecommendationsDisplay recommendations={recommendations} />}
       </div>
     </>
   );

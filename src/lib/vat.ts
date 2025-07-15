@@ -2,20 +2,31 @@
  * VAT (Value Added Tax) utility functions
  */
 
+import { useSettingsContext } from "@/contexts/settings-context";
+import { DEFAULT_SETTINGS } from "./constants";
+
 /**
- * Get VAT percentage from environment variable
- * Defaults to 0% if not set
+ * Get VAT percentage from settings context
+ * Falls back to default if not available
  */
 export function getVatPercentage(): number {
-  const vatPercentage = process.env.VAT_PERCENTAGE ?? "13.5";
-  
-  const parsed = parseFloat(vatPercentage);
-  if (isNaN(parsed) || parsed < 0) {
-    console.warn('Invalid VAT_PERCENTAGE in environment, defaulting to 0%');
-    return 0;
+  // This function is used in server-side contexts where context is not available
+  // It will use the default value
+  return DEFAULT_SETTINGS.vatPercentage;
+}
+
+/**
+ * Hook to get VAT percentage from settings context
+ * Use this in client-side components
+ */
+export function useVatPercentage(): number {
+  try {
+    const { settings } = useSettingsContext();
+    return settings?.vatPercentage ?? DEFAULT_SETTINGS.vatPercentage;
+  } catch {
+    // If context is not available, return default
+    return DEFAULT_SETTINGS.vatPercentage;
   }
-  
-  return parsed;
 }
 
 /**

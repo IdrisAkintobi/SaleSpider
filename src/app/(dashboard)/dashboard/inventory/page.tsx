@@ -6,7 +6,6 @@ import type { Product } from "@/lib/types";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import { AddProductDialog } from "./add-product-dialog";
-import { TablePagination } from "@/components/ui/table-pagination";
 import { ProductTable, type SortField, type SortOrder } from "./product-table";
 import { ProductTableSkeleton } from "./product-table-skeleton";
 import { SearchInput } from "./search-input";
@@ -15,6 +14,7 @@ import { UpdateStockDialog } from "./update-stock-dialog";
 import { DollarSign } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/lib/i18n";
 
 // Define the expected API response structure
 interface ProductsResponse {
@@ -24,6 +24,7 @@ interface ProductsResponse {
 
 export default function InventoryPage() {
   const { userIsManager } = useAuth();
+  const t = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [page, setPage] = useState(1); // 1-based for TablePagination
@@ -116,7 +117,7 @@ export default function InventoryPage() {
   const recordSaleAction = !userIsManager ? (
     <Button size="lg" asChild>
       <Link href="/dashboard/record-sale">
-        <DollarSign className="mr-2 h-5 w-5" /> Record New Sale
+        <DollarSign className="mr-2 h-5 w-5" /> {t("record_sale")}
       </Link>
     </Button>
   ) : null;
@@ -126,8 +127,8 @@ export default function InventoryPage() {
   return (
     <>
       <PageHeader
-        title="Inventory Management"
-        description="View, add, and manage your product stock."
+        title={t("inventory")}
+        description={t("inventory_management_description")}
         actions={
           <>
             {recordSaleAction}

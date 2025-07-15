@@ -11,13 +11,15 @@ import {
   Package,
   ShoppingCart,
   Users,
+  Settings,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslation } from "@/lib/i18n";
 
 interface NavItem {
   href: string;
-  label: string;
+  labelKey: string;
   icon: LucideIcon;
   roles: Role[];
 }
@@ -25,47 +27,52 @@ interface NavItem {
 const navItems: NavItem[] = [
   {
     href: "/dashboard/overview",
-    label: "Overview",
+    labelKey: "overview",
     icon: LayoutDashboard,
     roles: ["SUPER_ADMIN", "MANAGER", "CASHIER"],
   },
   {
     href: "/dashboard/inventory",
-    label: "Inventory",
+    labelKey: "inventory",
     icon: Package,
     roles: ["SUPER_ADMIN", "MANAGER", "CASHIER"],
   },
   {
     href: "/dashboard/sales",
-    label: "Sales History",
+    labelKey: "sales",
     icon: ShoppingCart,
     roles: ["SUPER_ADMIN", "MANAGER", "CASHIER"],
   },
   {
     href: "/dashboard/record-sale",
-    label: "Record Sale",
+    labelKey: "record_sale",
     icon: DollarSign,
     roles: ["CASHIER"],
   },
   {
     href: "/dashboard/staff",
-    label: "Staff Management",
+    labelKey: "staff_management",
     icon: Users,
     roles: ["SUPER_ADMIN", "MANAGER"],
   },
   {
+    href: "/dashboard/settings",
+    labelKey: "settings",
+    icon: Settings,
+    roles: ["SUPER_ADMIN"],
+  },
+  {
     href: "/dashboard/ai-recommendations",
-    label: "AI Insights",
+    labelKey: "ai_insights",
     icon: Bot,
     roles: ["SUPER_ADMIN", "MANAGER"],
   },
-  // { href: "/dashboard/reports", label: "Reports", icon: ScrollText, roles: ["Manager"] }, // Example for future
-  // { href: "/dashboard/settings", label: "Settings", icon: Settings, roles: ["MANAGER", "CASHIER"] }, // Example for future
 ];
 
 export function SidebarNav() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const t = useTranslation();
 
   if (!user) return null;
 
@@ -89,7 +96,7 @@ export function SidebarNav() {
           )}
         >
           <item.icon className="h-4 w-4" />
-          {item.label}
+          {t(item.labelKey)}
         </Link>
       ))}
     </nav>

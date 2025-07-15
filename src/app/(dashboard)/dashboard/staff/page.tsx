@@ -10,18 +10,9 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { useSales } from "@/hooks/use-sales";
@@ -30,14 +21,6 @@ import { Role } from "@prisma/client";
 import type { User, UserStatus } from "@/lib/types";
 import {
   Search,
-  SlidersHorizontal,
-  UserCheck,
-  Users,
-  UserX,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
   ArrowUp,
   ArrowDown,
   Pencil,
@@ -48,9 +31,9 @@ import { AddStaffDialog } from "./add-staff-dialog";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTableControls } from "@/hooks/use-table-controls";
-import { TablePagination } from "@/components/ui/table-pagination";
-import { GenericTable, GenericTableColumn } from "@/components/ui/generic-table";
+import { GenericTable } from "@/components/ui/generic-table";
 import { StaffTableSkeleton } from "@/components/dashboard/staff/staff-table-skeleton";
+import { useTranslation } from "@/lib/i18n";
 
 interface StaffPerformance extends User {
   totalSalesValue: number;
@@ -72,6 +55,7 @@ export default function StaffPage() {
   const { user: currentUser, userIsManager, userIsCashier } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const t = useTranslation();
 
   // Use shared table controls
   const {
@@ -177,20 +161,14 @@ export default function StaffPage() {
     },
   });
 
-  if (userIsCashier) {
+  // Check if user has permission to view staff
+  if (!currentUser || (currentUser.role !== "SUPER_ADMIN" && currentUser.role !== "MANAGER")) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center">
-        <Users className="w-16 h-16 text-muted-foreground mb-4" />
-        <h2 className="text-2xl font-semibold mb-2">Access Denied</h2>
+        <h2 className="text-2xl font-semibold mb-2">{t("access_denied")}</h2>
         <p className="text-muted-foreground">
-          Only Managers can access this page.
+          {t("super_admin_only")}
         </p>
-        <Button
-          onClick={() => router.push("/dashboard/overview")}
-          className="mt-4"
-        >
-          Go to Overview
-        </Button>
       </div>
     );
   }
@@ -199,17 +177,8 @@ export default function StaffPage() {
     return (
       <>
         <PageHeader
-          title="Staff Management"
-          description="View staff details, performance, and manage their status."
-          actions={
-            (currentUser?.role === "SUPER_ADMIN" || currentUser?.role === "MANAGER") && (
-              <AddStaffDialog
-                isOpen={isAddDialogOpen}
-                onOpenChange={setIsAddDialogOpen}
-                onStaffAdded={() => {}}
-              />
-            )
-          }
+          title={t("staff_management")}
+          description={t("staff_management_description")}
         />
         <div className="mb-4">
           <Input
@@ -228,10 +197,10 @@ export default function StaffPage() {
   return (
     <>
       <PageHeader
-        title="Staff Management"
-        description="View staff details, performance, and manage their status."
+        title={t("staff_management")}
+        description={t("staff_management_description")}
         actions={
-          (currentUser?.role === "SUPER_ADMIN" || currentUser?.role === "MANAGER") && (
+          userIsManager && (
             <AddStaffDialog
               isOpen={isAddDialogOpen}
               onOpenChange={setIsAddDialogOpen}
@@ -242,7 +211,7 @@ export default function StaffPage() {
       />
       <div className="mb-4">
         <Input
-          placeholder="Search staff by name, username, or role..."
+          placeholder={t("search_staff")}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-sm"
@@ -277,8 +246,8 @@ export default function StaffPage() {
                 sortable: true,
                 onSort: () => handleSort("role"),
               },
-              { key: "totalSalesValue", label: "Total Sales" },
-              { key: "numberOfSales", label: "# Orders" },
+              { key: "totalSalesValue", label: t("total_sales") },
+              { key: "numberOfSales", label: t("number_of_orders") },
               {
                 key: "status",
                 label: (
@@ -287,7 +256,7 @@ export default function StaffPage() {
                 sortable: true,
                 onSort: () => handleSort("status"),
               },
-              { key: "actions", label: <span className="text-right">Actions</span>, align: "right" },
+              { key: "actions", label: <span className="text-right">{t("actions")}</span>, align: "right" },
             ]}
             data={filteredStaff}
             rowKey={row => row.id}
@@ -326,7 +295,7 @@ export default function StaffPage() {
                   return (staff as any)[col.key];
               }
             }}
-            emptyMessage="No staff found."
+            emptyMessage={t("no_staff_found")}
             paginationProps={{
               page,
               pageSize,

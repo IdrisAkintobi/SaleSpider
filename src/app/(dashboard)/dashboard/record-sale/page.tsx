@@ -39,6 +39,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useFormatCurrency } from "@/lib/currency";
+import { useTranslation } from "@/lib/i18n";
 
 async function fetchProducts(): Promise<Product[]> {
   const res = await fetch("/api/products");
@@ -79,6 +81,8 @@ export default function RecordSalePage() {
   const { toast } = useToast();
   const createSaleMutation = useCreateSale();
   const router = useRouter();
+  const formatCurrency = useFormatCurrency();
+  const t = useTranslation();
 
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -297,7 +301,7 @@ export default function RecordSalePage() {
         description: `Sale ID: ${recordedSale.id.substring(
           0,
           8
-        )}... Total: $${cartTotal.toFixed(2)}`,
+        )}... Total: ${formatCurrency(cartTotal)}`,
       });
       setCart([]);
       setSelectedProductId("");
@@ -334,8 +338,8 @@ export default function RecordSalePage() {
   return (
     <>
       <PageHeader
-        title="Record New Sale"
-        description="Add products to the cart and complete the transaction."
+        title={t("record_sale")}
+        description={t("record_sale_description")}
       />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Product Selection Column */}
@@ -373,7 +377,7 @@ export default function RecordSalePage() {
                 <PackageSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-20 pointer-events-none" />
                 <Input
                   id="product-search"
-                  placeholder="Search by ID, name, description, category, GTIN, price, range (10-50), min (>10), max (<50)"
+                  placeholder={t("search_products_advanced")}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 mb-2"
@@ -407,7 +411,7 @@ export default function RecordSalePage() {
                         value={product.id}
                         disabled={product.quantity === 0}
                       >
-                        {product.name} (${product.price.toFixed(2)})
+                        {product.name} ({formatCurrency(product.price)})
                         <div className="text-xs text-muted-foreground mt-0.5">
                           ID: {product.id.substring(0, 8)}... | {product.category}
                           {product.gtin && ` | GTIN: ${product.gtin}`}
@@ -483,7 +487,7 @@ export default function RecordSalePage() {
                       <TableCell className="font-medium">
                         {item.productName}
                       </TableCell>
-                      <TableCell>${item.price.toFixed(2)}</TableCell>
+                      <TableCell>{formatCurrency(item.price)}</TableCell>
                       <TableCell>
                         <Input
                           type="number"
@@ -500,7 +504,7 @@ export default function RecordSalePage() {
                         />
                       </TableCell>
                       <TableCell>
-                        ${(item.price * item.quantity).toFixed(2)}
+                        {formatCurrency(item.price * item.quantity)}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button
@@ -523,7 +527,7 @@ export default function RecordSalePage() {
             <CardFooter className="flex flex-col items-stretch gap-4 pt-4 border-t">
               <div className="flex justify-between items-center font-semibold text-lg">
                 <span>Total:</span>
-                <span>${cartTotal.toFixed(2)}</span>
+                <span>{formatCurrency(cartTotal)}</span>
               </div>
               <div>
                 <Label htmlFor="payment-mode-select">Payment Mode</Label>

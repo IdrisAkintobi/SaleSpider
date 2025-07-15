@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import React from "react";
+import { useFormatCurrency } from "@/lib/currency";
+import { useTranslation } from "@/lib/i18n";
 
 export type SortField = "name" | "price" | "quantity" | "updatedAt";
 export type SortOrder = "asc" | "desc";
@@ -45,6 +47,9 @@ export function ProductTable({
   onPageChange,
   onPageSizeChange,
 }: Readonly<ProductTableProps>) {
+  const formatCurrency = useFormatCurrency();
+  const t = useTranslation();
+
   // Define columns for the generic table
   const columns: GenericTableColumn<Product>[] = [
     {
@@ -123,7 +128,7 @@ export function ProductTable({
                   </span>
                 );
               case "price":
-                return `$${product.price.toFixed(2)}`;
+                return formatCurrency(product.price);
               case "quantity":
                 return product.quantity;
               case "status":
@@ -145,14 +150,14 @@ export function ProductTable({
                     size="sm"
                     onClick={() => onUpdateStock(product)}
                   >
-                    <Edit3 className="mr-2 h-3 w-3" /> Update Stock
+                    <Edit3 className="mr-2 h-3 w-3" /> {t("update_stock")}
                   </Button>
                 ) : null;
               default:
                 return (product as any)[col.key];
             }
           }}
-          emptyMessage="No products found."
+          emptyMessage={t("no_products_found")}
           paginationProps={
             typeof page === "number" && typeof pageSize === "number" && typeof total === "number" && onPageChange && onPageSizeChange
               ? { page, pageSize, total, onPageChange, onPageSizeChange }

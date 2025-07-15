@@ -17,6 +17,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PlusCircle } from "lucide-react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import * as z from "zod";
+import { useCurrencySettings } from "@/lib/currency";
 
 const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
@@ -47,6 +48,7 @@ export function AddProductDialog({
 }: Readonly<AddProductDialogProps>) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { currencySymbol } = useCurrencySettings();
 
   const {
     register,
@@ -140,7 +142,7 @@ export function AddProductDialog({
             error={errors.category?.message}
           />
           <FormInput
-            label="Price ($)"
+            label={`Price (${currencySymbol})`}
             name="price"
             type="number"
             step="0.01"

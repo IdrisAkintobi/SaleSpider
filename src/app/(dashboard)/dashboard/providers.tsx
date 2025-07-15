@@ -3,7 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useState, type ReactNode, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { SettingsProvider } from "@/contexts/settings-context";
 
 interface ProvidersProps {
   children: ReactNode;
@@ -51,9 +51,11 @@ export function Providers({ children }: Readonly<ProvidersProps>) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Global401Handler>
-      {children}
-      </Global401Handler>
+      <SettingsProvider>
+        <Global401Handler>
+          {children}
+        </Global401Handler>
+      </SettingsProvider>
       {process.env.NODE_ENV === "development" && (
         <ReactQueryDevtools initialIsOpen={false} />
       )}
