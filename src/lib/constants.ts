@@ -15,17 +15,17 @@ export const DEFAULT_SETTINGS = {
   dateFormat: "dd/MM/yyyy",
   timeFormat: "HH:mm",
   language: "en",
-  theme: "light" as const,
+  theme: "light",
   maintenanceMode: false,
-} as const;
+};
 
 export const CURRENCY_OPTIONS = [
   { code: "NGN", symbol: "₦", name: "Nigerian Naira" },
   { code: "USD", symbol: "$", name: "US Dollar" },
   { code: "EUR", symbol: "€", name: "Euro" },
   { code: "GBP", symbol: "£", name: "British Pound" },
-  { code: "CAD", symbol: "C$", name: "Canadian Dollar" },
-  { code: "AUD", symbol: "A$", name: "Australian Dollar" },
+  { code: "CAD", symbol: "$", name: "Canadian Dollar" },
+  { code: "AUD", symbol: "$", name: "Australian Dollar" },
   { code: "JPY", symbol: "¥", name: "Japanese Yen" },
   { code: "CHF", symbol: "CHF", name: "Swiss Franc" },
   { code: "CNY", symbol: "¥", name: "Chinese Yuan" },

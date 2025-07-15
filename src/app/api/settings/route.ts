@@ -12,10 +12,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check if user is super admin
-    if (!isSuperAdmin(user)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    // Removed: Check if user is super admin
+    // All authenticated users can fetch settings
 
     // Get settings from database
     let settings = await prisma.appSettings.findFirst();

@@ -8,11 +8,16 @@ export interface UseSalesParams {
   sort?: string;
   order?: string;
   searchTerm?: string;
+  cashierId?: string;
+  from?: string; // ISO date string
+  to?: string;   // ISO date string
 }
 
 export interface SaleQueryResult {
   data: Sale[];
   total: number;
+  paymentMethodTotals?: Record<string, number>;
+  totalSalesValue?: number;
 }
 
 async function fetchSalesData(params: UseSalesParams = {}) {
@@ -22,6 +27,9 @@ async function fetchSalesData(params: UseSalesParams = {}) {
   if (params.sort) query.set("sort", params.sort);
   if (params.order) query.set("order", params.order);
   if (params.searchTerm) query.set("search", params.searchTerm);
+  if (params.cashierId && params.cashierId !== "all") query.set("cashierId", params.cashierId);
+  if (params.from) query.set("from", params.from);
+  if (params.to) query.set("to", params.to);
   const res = await fetch(`/api/sales?${query.toString()}`);
   if (!res.ok) {
     const error = await res.json();

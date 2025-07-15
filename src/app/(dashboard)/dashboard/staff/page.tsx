@@ -225,7 +225,7 @@ export default function StaffPage() {
               {
                 key: "name",
                 label: (
-                  <span className="cursor-pointer" onClick={() => handleSort("name")}>Name {sort === "name" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</span>
+                  <span className="cursor-pointer" onClick={() => handleSort("name")}>{t("name")} {sort === "name" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</span>
                 ),
                 sortable: true,
                 onSort: () => handleSort("name"),
@@ -233,7 +233,7 @@ export default function StaffPage() {
               {
                 key: "username",
                 label: (
-                  <span className="cursor-pointer" onClick={() => handleSort("username")}>Username {sort === "username" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</span>
+                  <span className="cursor-pointer" onClick={() => handleSort("username")}>{t("username")} {sort === "username" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</span>
                 ),
                 sortable: true,
                 onSort: () => handleSort("username"),
@@ -241,7 +241,7 @@ export default function StaffPage() {
               {
                 key: "role",
                 label: (
-                  <span className="cursor-pointer" onClick={() => handleSort("role")}>Role {sort === "role" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</span>
+                  <span className="cursor-pointer" onClick={() => handleSort("role")}>{t("role")} {sort === "role" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</span>
                 ),
                 sortable: true,
                 onSort: () => handleSort("role"),
@@ -251,7 +251,7 @@ export default function StaffPage() {
               {
                 key: "status",
                 label: (
-                  <span className="cursor-pointer" onClick={() => handleSort("status")}>Status {sort === "status" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</span>
+                  <span className="cursor-pointer" onClick={() => handleSort("status")}>{t("status")} {sort === "status" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</span>
                 ),
                 sortable: true,
                 onSort: () => handleSort("status"),
@@ -267,7 +267,7 @@ export default function StaffPage() {
                 case "username":
                   return staff.username;
                 case "role":
-                  return <Badge variant={userIsManager ? "default" : "secondary"}>{staff.role}</Badge>;
+                  return <Badge variant={userIsManager ? "default" : "secondary"}>{t(staff.role.toLowerCase())}</Badge>;
                 case "totalSalesValue":
                   return `$${staff.totalSalesValue.toFixed(2)}`;
                 case "numberOfSales":
@@ -277,7 +277,7 @@ export default function StaffPage() {
                     checked={staff.status === "ACTIVE"}
                     onCheckedChange={checked => handleStatusChange(staff, checked)}
                     disabled={currentUser?.role !== "SUPER_ADMIN" && (currentUser?.role !== "MANAGER" || staff.role !== "CASHIER")}
-                  /><span className="ml-2">{staff.status}</span></>;
+                  /><span className="ml-2">{t(staff.status.toLowerCase())}</span></>;
                 case "actions":
                   return (
                     <div className="text-right space-x-2">
@@ -287,7 +287,7 @@ export default function StaffPage() {
                         onClick={() => setEditStaff(staff)}
                         disabled={currentUser?.role !== "SUPER_ADMIN" && (currentUser?.role !== "MANAGER" || staff.role !== "CASHIER")}
                           >
-                        <Pencil className="mr-2 h-3 w-3" /> Edit
+                        <Pencil className="mr-2 h-3 w-3" /> {t("edit")}
                           </Button>
                             </div>
                   );
@@ -310,8 +310,8 @@ export default function StaffPage() {
         <Dialog open={!!editStaff} onOpenChange={open => setEditStaff(open ? editStaff : null)}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Edit Staff: {editStaff?.name}</DialogTitle>
-              <DialogDescription>Update staff details below.</DialogDescription>
+              <DialogTitle>{t("edit_staff") + ': ' + editStaff?.name}</DialogTitle>
+              <DialogDescription>{t("update_staff_details")}</DialogDescription>
             </DialogHeader>
             <form
               onSubmit={async (e) => {
@@ -359,9 +359,9 @@ export default function StaffPage() {
                 </SelectContent>
               </Select>
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setEditStaff(null)}>Cancel</Button>
+                <Button type="button" variant="outline" onClick={() => setEditStaff(null)}>{t("cancel")}</Button>
                 <Button type="submit" variant="default" disabled={editMutation.isPending}>
-                  {editMutation.isPending ? "Saving..." : "Save"}
+                  {editMutation.isPending ? t("saving") : t("save")}
                 </Button>
               </div>
             </form>

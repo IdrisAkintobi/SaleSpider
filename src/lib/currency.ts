@@ -5,14 +5,24 @@
 import { useSettingsContext } from "@/contexts/settings-context";
 import { DEFAULT_SETTINGS } from "./constants";
 
+// List of all dollar currencies
+const DOLLAR_CURRENCIES = [
+  "USD", "CAD", "AUD", "NZD", "SGD", "HKD", "BMD", "BZD", "FJD", "GYD", "JMD", "LRD", "NAD", "SBD", "SRD", "TTD", "TWD", "ZWD"
+];
+
 /**
  * Get currency settings from context
  * Falls back to default if not available
  */
 export function getCurrencySettings() {
+  const currency = DEFAULT_SETTINGS.currency;
+  let currencySymbol = DEFAULT_SETTINGS.currencySymbol;
+  if (DOLLAR_CURRENCIES.includes(currency)) {
+    currencySymbol = "$";
+  }
   return {
-    currency: DEFAULT_SETTINGS.currency,
-    currencySymbol: DEFAULT_SETTINGS.currencySymbol,
+    currency,
+    currencySymbol,
   };
 }
 
@@ -23,16 +33,18 @@ export function getCurrencySettings() {
 export function useCurrencySettings() {
   try {
     const { settings } = useSettingsContext();
+    const currency = settings?.currency ?? DEFAULT_SETTINGS.currency;
+    let currencySymbol = settings?.currencySymbol ?? DEFAULT_SETTINGS.currencySymbol;
+    if (DOLLAR_CURRENCIES.includes(currency)) {
+      currencySymbol = "$";
+    }
     return {
-      currency: settings?.currency ?? DEFAULT_SETTINGS.currency,
-      currencySymbol: settings?.currencySymbol ?? DEFAULT_SETTINGS.currencySymbol,
+      currency,
+      currencySymbol,
     };
   } catch {
     // If context is not available, return default
-    return {
-      currency: DEFAULT_SETTINGS.currency,
-      currencySymbol: DEFAULT_SETTINGS.currencySymbol,
-    };
+    return getCurrencySettings();
   }
 }
 

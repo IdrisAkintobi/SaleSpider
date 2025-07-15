@@ -48,6 +48,7 @@ import Link from "next/link";
 import { useFormatCurrency } from "@/lib/currency";
 import { useVatPercentage } from "@/lib/vat";
 import { useTranslation } from "@/lib/i18n";
+import { startOfToday, endOfToday, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 
 export default function SalesPage() {
   const { user, userIsManager, userIsCashier } = useAuth();
@@ -85,10 +86,21 @@ export default function SalesPage() {
     sort,
     order,
     searchTerm,
+    cashierId: filterCashier,
+    from: dateRange?.from ? dateRange.from.toISOString() : undefined,
+    to: dateRange?.to ? dateRange.to.toISOString() : undefined,
   });
   const sales = data?.data || [];
   const total = data?.total || 0;
   const totalPages = Math.ceil(total / pageSize);
+  const paymentMethodTotals = data?.paymentMethodTotals || {};
+  const paymentMethods = ["ALL", ...Object.keys(paymentMethodTotals)];
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("ALL");
+  // Use backend totals, not paginated sum
+  const backendTotalRevenue = data?.totalSalesValue ?? 0;
+  const displayedTotal = selectedPaymentMethod === "ALL"
+    ? backendTotalRevenue
+    : paymentMethodTotals[selectedPaymentMethod] || 0;
 
   // Handle query errors
   useEffect(() => {
@@ -111,11 +123,6 @@ export default function SalesPage() {
     );
   }, [sales]);
 
-  const totalRevenue = useMemo(
-    () => sales.reduce((sum, sale) => sum + sale.totalAmount, 0),
-    [sales]
-  );
-
   const formatDate = (timestamp: number) => {
     try {
       return new Date(timestamp).toLocaleDateString();
@@ -130,14 +137,29 @@ export default function SalesPage() {
     setPage(1);
   };
 
+  // Sync quick date filter to dateRange
+  useEffect(() => {
+    if (filterDateRange === "today") {
+      setDateRange({ from: startOfToday(), to: endOfToday() });
+    } else if (filterDateRange === "week") {
+      setDateRange({ from: startOfWeek(new Date(), { weekStartsOn: 1 }), to: endOfWeek(new Date(), { weekStartsOn: 1 }) });
+    } else if (filterDateRange === "month") {
+      setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) });
+    } else if (filterDateRange === "all") {
+      setDateRange(undefined);
+    }
+  }, [filterDateRange]);
+
   // For date range filter
   const handleDateRangeFilter = (value: string) => {
     setFilterDateRange(value);
     setPage(1);
   };
 
+  // For custom date range picker
   const handleDateRangeSelect = (range: DateRange | undefined) => {
     setDateRange(range);
+    setFilterDateRange(""); // Clear quick filter when custom range is picked
     setPage(1);
   };
 
@@ -231,7 +253,7 @@ export default function SalesPage() {
                 <SelectValue placeholder={t("filter_by_cashier")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Cashiers</SelectItem>
+                <SelectItem value="all">{t('all_cashiers')}</SelectItem>
                 {uniqueCashiers.map((cashier) => (
                   <SelectItem key={cashier.id} value={cashier.id}>
                     {cashier.name}
@@ -245,10 +267,10 @@ export default function SalesPage() {
               <SelectValue placeholder={t("filter_by_date")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Time</SelectItem>
-              <SelectItem value="today">Today</SelectItem>
-              <SelectItem value="week">This Week</SelectItem>
-              <SelectItem value="month">This Month</SelectItem>
+              <SelectItem value="all">{t('all_time')}</SelectItem>
+              <SelectItem value="today">{t('today')}</SelectItem>
+              <SelectItem value="week">{t('this_week')}</SelectItem>
+              <SelectItem value="month">{t('this_month')}</SelectItem>
             </SelectContent>
           </Select>
           <Popover>
@@ -295,14 +317,27 @@ export default function SalesPage() {
 
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-8 flex-wrap">
               <div>
                 <p className="text-sm text-muted-foreground">{t("total_revenue")}</p>
-                <p className="text-2xl font-bold">{formatCurrency(totalRevenue)}</p>
+                <div className="flex items-center gap-4">
+                  <p className="text-2xl font-bold">{formatCurrency(displayedTotal)}</p>
+                  <Select value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue>{selectedPaymentMethod === "ALL" ? t("all_payment_method") : selectedPaymentMethod}</SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">{t("all_payment_method")}</SelectItem>
+                      {Object.keys(paymentMethodTotals).map(method => (
+                        <SelectItem key={method} value={method}>{method}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">{t("total_sales_count")}</p>
-                <p className="text-2xl font-bold">{sales.length}</p>
+                <p className="text-2xl font-bold">{total}</p>
               </div>
             </div>
           </CardContent>
@@ -316,7 +351,7 @@ export default function SalesPage() {
               {
                 key: "createdAt",
                 label: (
-                  <span className="cursor-pointer" onClick={() => handleSort("createdAt")}>Date {sort === "createdAt" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</span>
+                  <span className="cursor-pointer" onClick={() => handleSort("createdAt")}>{t('date')} {sort === "createdAt" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</span>
                 ),
                 sortable: true,
                 onSort: () => handleSort("createdAt"),
@@ -324,7 +359,7 @@ export default function SalesPage() {
               {
                 key: "cashierName",
                 label: (
-                  <span className="cursor-pointer" onClick={() => handleSort("cashierName")}>Cashier {sort === "cashierName" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</span>
+                  <span className="cursor-pointer" onClick={() => handleSort("cashierName")}>{t('cashier')} {sort === "cashierName" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</span>
                 ),
                 sortable: true,
                 onSort: () => handleSort("cashierName"),
@@ -333,7 +368,7 @@ export default function SalesPage() {
               {
                 key: "totalAmount",
                 label: (
-                  <span className="cursor-pointer" onClick={() => handleSort("totalAmount")}>Total {sort === "totalAmount" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</span>
+                  <span className="cursor-pointer" onClick={() => handleSort("totalAmount")}>{t('total_amount')} {sort === "totalAmount" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</span>
                 ),
                 sortable: true,
                 onSort: () => handleSort("totalAmount"),
@@ -341,7 +376,7 @@ export default function SalesPage() {
               {
                 key: "paymentMode",
                 label: (
-                  <span className="cursor-pointer" onClick={() => handleSort("paymentMode")}>Payment {sort === "paymentMode" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</span>
+                  <span className="cursor-pointer" onClick={() => handleSort("paymentMode")}>{t('payment_mode')} {sort === "paymentMode" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</span>
                 ),
                 sortable: true,
                 onSort: () => handleSort("paymentMode"),
@@ -383,14 +418,14 @@ export default function SalesPage() {
                             onClick={() => setSelectedSale(sale)}
                           >
                             <Eye className="mr-2 h-3 w-3" />
-                            View Details
+                            {t('view_details')}
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-2xl max-h-[80vh]">
                           <DialogHeader>
-                            <DialogTitle>Sale Details</DialogTitle>
+                            <DialogTitle>{t('sale_details')}</DialogTitle>
                             <DialogDescription>
-                              Complete transaction information
+                              {t('complete_transaction_information')}
                             </DialogDescription>
                           </DialogHeader>
                           {selectedSale && (
@@ -398,32 +433,32 @@ export default function SalesPage() {
                               <div className="space-y-4 pr-4">
                                 <div className="grid grid-cols-2 gap-4">
                                   <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Sale ID</p>
+                                    <p className="text-sm font-medium text-muted-foreground">{t('sale_id')}</p>
                                     <p className="text-sm">{selectedSale.id}</p>
                                   </div>
                                   <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Date</p>
+                                    <p className="text-sm font-medium text-muted-foreground">{t('date')}</p>
                                     <p className="text-sm">{formatDate(selectedSale.timestamp)}</p>
                                   </div>
                                   <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Cashier</p>
+                                    <p className="text-sm font-medium text-muted-foreground">{t('cashier')}</p>
                                     <p className="text-sm">{selectedSale.cashierName}</p>
                                   </div>
                                   <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Payment Method</p>
+                                    <p className="text-sm font-medium text-muted-foreground">{t('payment_method')}</p>
                                     <p className="text-sm">{selectedSale.paymentMode}</p>
                                   </div>
                                 </div>
                                 <div>
-                                  <p className="text-sm font-medium text-muted-foreground mb-2">Items</p>
+                                  <p className="text-sm font-medium text-muted-foreground mb-2">{t('items')}</p>
                                   <div className="border rounded-lg">
                                     <Table>
                                       <TableHeader>
                                         <TableRow>
-                                          <TableHead>Product</TableHead>
-                                          <TableHead>Quantity</TableHead>
-                                          <TableHead>Price</TableHead>
-                                          <TableHead className="text-right">Total</TableHead>
+                                          <TableHead>{t('product')}</TableHead>
+                                          <TableHead>{t('quantity')}</TableHead>
+                                          <TableHead>{t('price')}</TableHead>
+                                          <TableHead className="text-right">{t('total_amount')}</TableHead>
                                         </TableRow>
                                       </TableHeader>
                                       <TableBody>
@@ -443,15 +478,15 @@ export default function SalesPage() {
                                 </div>
                                 <div className="border-t pt-4 space-y-2">
                                   <div className="flex justify-between items-center">
-                                    <span className="text-sm text-muted-foreground">Subtotal</span>
+                                    <span className="text-sm text-muted-foreground">{t('subtotal')}</span>
                                     <span className="text-sm">{formatCurrency(selectedSale.totalAmount / (1 + vatPercentage / 100))}</span>
                                   </div>
                                   <div className="flex justify-between items-center">
-                                    <span className="text-sm text-muted-foreground">VAT ({vatPercentage}%)</span>
+                                    <span className="text-sm text-muted-foreground">{t('vat')} ({vatPercentage}%)</span>
                                     <span className="text-sm">{formatCurrency(selectedSale.totalAmount - (selectedSale.totalAmount / (1 + vatPercentage / 100)))}</span>
                                   </div>
                                   <div className="flex justify-between items-center border-t pt-2">
-                                    <span className="text-lg font-semibold">Total Amount</span>
+                                    <span className="text-lg font-semibold">{t('total_amount')}</span>
                                     <span className="text-lg font-bold">{formatCurrency(selectedSale.totalAmount)}</span>
                                   </div>
                                 </div>

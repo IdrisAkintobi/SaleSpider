@@ -140,8 +140,9 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
       .map((_, i) => {
         const d = new Date(today);
         d.setDate(today.getDate() - i);
-        const dayName = d.toLocaleDateString("en-US", { weekday: "short" });
-        return { name: dayName, sales: 0 };
+        const dayNameKey = d.toLocaleDateString("en-US", { weekday: "short" }).toLowerCase();
+        const translatedDay = t(dayNameKey);
+        return { name: translatedDay, sales: 0 };
       })
       .reverse();
 
@@ -159,8 +160,9 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
     });
 
     return dailyData.map((d) => ({ ...d, sales: parseFloat(d.sales.toFixed(2)) }));
-  }, [sales]);
+  }, [sales, t]);
 
+  // For weeklySalesData, map day.name to translation keys (e.g., t(dayNameKey))
   const weeklySalesData = useMemo(() => {
     const today = new Date();
     const days = Array(7)
@@ -168,9 +170,10 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
       .map((_, i) => {
         const d = new Date(today);
         d.setDate(today.getDate() - (6 - i));
+        const dayNameKey = d.toLocaleDateString("en-US", { weekday: "short" }).toLowerCase();
         return {
           date: new Date(d.getFullYear(), d.getMonth(), d.getDate()),
-          name: d.toLocaleDateString("en-US", { weekday: "short" }),
+          name: t(dayNameKey),
         };
       });
 
@@ -207,19 +210,26 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
     });
 
     return weeklyData;
-  }, [sales]);
+  }, [sales, t]);
 
   const recentSales = useMemo(() => {
     return sales.slice(0, 5);
   }, [sales]);
 
+  // For monthlyChartData, map month names to translation keys (e.g., t('jan'), t('feb'), etc.)
   const monthlyChartData = useMemo(() => {
     if (!monthlyData) return [];
-    return monthlyData.map(m => ({ 
-      name: new Date(m.month + '-01').toLocaleString('en-US', { month: 'short' }), 
-      sales: m.sales 
-    }));
-  }, [monthlyData]);
+    return monthlyData.map(m => {
+      const monthDate = new Date(m.month + '-01');
+      const monthKey = monthDate.toLocaleString('en-US', { month: 'short' }).toLowerCase();
+      const translated = t(monthKey);
+      const capitalized = translated.charAt(0).toUpperCase() + translated.slice(1);
+      return {
+        name: capitalized,
+        sales: m.sales
+      };
+    });
+  }, [monthlyData, t]);
 
   // Loading state
   const isLoading = isLoadingSales || isLoadingUsers || isLoadingProducts || isLoadingStats || isLoadingMonthly;

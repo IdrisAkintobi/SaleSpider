@@ -8,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useTranslation } from "@/lib/i18n";
 
 interface StaffTableSkeletonProps {
   rows?: number;
@@ -18,20 +19,21 @@ export function StaffTableSkeleton({
   rows = 10, 
   userIsManager = true 
 }: StaffTableSkeletonProps) {
+  const t = useTranslation();
   return (
     <Card className="shadow-lg">
       <CardContent className="p-0">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Username</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Total Sales Value</TableHead>
-              <TableHead>Number of Sales</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>{t("name")}</TableHead>
+              <TableHead>{t("username")}</TableHead>
+              <TableHead>{t("role")}</TableHead>
+              <TableHead>{t("total_sales_value")}</TableHead>
+              <TableHead>{t("number_of_sales")}</TableHead>
+              <TableHead>{t("status")}</TableHead>
               {userIsManager && (
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="text-right">{t("actions")}</TableHead>
               )}
             </TableRow>
           </TableHeader>

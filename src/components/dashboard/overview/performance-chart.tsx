@@ -21,6 +21,7 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
+import { useCurrencySettings } from "@/lib/currency";
 
 interface PerformanceChartProps {
   data: Array<{ name: string; [key: string]: any }>;
@@ -61,6 +62,9 @@ export function PerformanceChart({
   comparisonOptions,
 }: PerformanceChartProps) {
   const hasExtraBar = !!extraBarDataKey;
+  const { currency, currencySymbol } = useCurrencySettings();
+  // List of all dollar currencies
+  const dollarCurrencies = ["USD", "CAD", "AUD", "NZD", "SGD", "HKD", "BMD", "BZD", "FJD", "GYD", "JMD", "LRD", "NAD", "SBD", "SRD", "TTD", "TWD", "ZWD"];
   return (
     <Card className={cn("shadow-lg", className)}>
       <CardHeader className="flex flex-row items-center justify-between gap-2">
@@ -100,7 +104,7 @@ export function PerformanceChart({
               axisLine={false}
               stroke="hsl(var(--muted-foreground))"
               fontSize={12}
-              tickFormatter={(value) => `$${value}`}
+              tickFormatter={(value) => `${dollarCurrencies.includes(currency) ? '$' : currencySymbol}${value}`}
             />
             <ChartTooltip
               cursor={false}

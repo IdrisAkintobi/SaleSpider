@@ -18,6 +18,7 @@ import { PlusCircle } from "lucide-react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import * as z from "zod";
 import { useCurrencySettings } from "@/lib/currency";
+import { useTranslation } from "@/lib/i18n";
 
 const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
@@ -49,6 +50,7 @@ export function AddProductDialog({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { currencySymbol } = useCurrencySettings();
+  const t = useTranslation();
 
   const {
     register,
@@ -107,14 +109,14 @@ export function AddProductDialog({
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button {...triggerButtonProps}>
-          <PlusCircle className="mr-2 h-4 w-4" /> Add Product
+          <PlusCircle className="mr-2 h-4 w-4" /> {t('add_product')}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New Product</DialogTitle>
+          <DialogTitle>{t('add_new_product')}</DialogTitle>
           <DialogDescription>
-            Fill in the details for the new product.
+            {t('add_product_description')}
           </DialogDescription>
         </DialogHeader>
         <form
@@ -122,19 +124,19 @@ export function AddProductDialog({
           className="grid gap-4 py-4"
         >
           <FormInput
-            label="Product Name"
+            label={t('product_name')}
             name="name"
             register={register}
             error={errors.name?.message}
           />
           <FormInput
-            label="Product Description"
+            label={t('product_description')}
             name="description"
             register={register}
             error={errors.description?.message}
           />
           <FormInput
-            label="Product Category"
+            label={t('product_category')}
             name="category"
             type="select"
             control={control}
@@ -142,7 +144,7 @@ export function AddProductDialog({
             error={errors.category?.message}
           />
           <FormInput
-            label={`Price (${currencySymbol})`}
+            label={`${t('price')} (${currencySymbol})`}
             name="price"
             type="number"
             step="0.01"
@@ -151,7 +153,7 @@ export function AddProductDialog({
             error={errors.price?.message}
           />
           <FormInput
-            label="New Quantity"
+            label={t('new_quantity')}
             name="quantity"
             control={control}
             error={errors.quantity?.message}
@@ -159,21 +161,21 @@ export function AddProductDialog({
             type="number"
           />
           <FormInput
-            label="Low Stock Margin"
+            label={t('low_stock_margin')}
             name="lowStockMargin"
             type="number"
             control={control}
             error={errors.lowStockMargin?.message}
           />
           <FormInput
-            label="Image URL (Optional)"
+            label={t('image_url_optional')}
             name="imageUrl"
             register={register}
             placeholder="https://placehold.co/300x300.png"
             error={errors.imageUrl?.message}
           />
           <FormInput
-            label="GTIN (Optional)"
+            label={t('gtin_optional')}
             name="gtin"
             register={register}
             error={errors.gtin?.message}
@@ -182,11 +184,11 @@ export function AddProductDialog({
           <DialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="outline">
-                Cancel
+                {t('cancel')}
               </Button>
             </DialogClose>
             <Button type="submit" disabled={addProductMutation.isPending}>
-              {addProductMutation.isPending ? "Adding..." : "Add Product"}
+              {addProductMutation.isPending ? t('adding') : t('add_product')}
             </Button>
           </DialogFooter>
         </form>

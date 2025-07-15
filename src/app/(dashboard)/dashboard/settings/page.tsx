@@ -74,7 +74,7 @@ export default function SettingsPage() {
       dateFormat: DEFAULT_SETTINGS.dateFormat,
       timeFormat: DEFAULT_SETTINGS.timeFormat,
       language: DEFAULT_SETTINGS.language,
-      theme: DEFAULT_SETTINGS.theme,
+      theme: DEFAULT_SETTINGS.theme as "light" | "dark" | "auto",
       maintenanceMode: DEFAULT_SETTINGS.maintenanceMode,
     },
   });
@@ -346,20 +346,6 @@ export default function SettingsPage() {
                   {form.formState.errors.currency && (
                     <p className="text-sm text-destructive">
                       {form.formState.errors.currency.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="currencySymbol">Currency Symbol</Label>
-                  <Input
-                    id="currencySymbol"
-                    {...form.register("currencySymbol")}
-                    placeholder="₦"
-                  />
-                  {form.formState.errors.currencySymbol && (
-                    <p className="text-sm text-destructive">
-                      {form.formState.errors.currencySymbol.message}
                     </p>
                   )}
                 </div>

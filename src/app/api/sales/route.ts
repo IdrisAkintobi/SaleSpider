@@ -41,6 +41,9 @@ export async function GET(req: NextRequest) {
   const pageSize = parseInt(searchParams.get("pageSize") || "20", 10);
   const sort = searchParams.get("sort") || "createdAt";
   const order = (searchParams.get("order") || "desc").toLowerCase() === "asc" ? "asc" : "desc";
+  const cashierId = searchParams.get("cashierId");
+  const from = searchParams.get("from");
+  const to = searchParams.get("to");
 
   // Map sort field to Prisma
   let orderBy: any = {};
@@ -60,9 +63,40 @@ export async function GET(req: NextRequest) {
     if (user.role === Role.CASHIER) {
       where.cashierId = userId;
     }
+    // Manager filter by cashier
+    if (cashierId && cashierId !== "all") {
+      where.cashierId = cashierId;
+    }
+    // Date range filter
+    if (from && to) {
+      where.createdAt = { gte: new Date(from), lte: new Date(to) };
+    } else if (from) {
+      where.createdAt = { gte: new Date(from) };
+    } else if (to) {
+      where.createdAt = { lte: new Date(to) };
+    }
 
     // Get total count for pagination
     const total = await prisma.sale.count({ where });
+
+    // Get total sales value for all filtered sales
+    const totalSalesValueAgg = await prisma.sale.aggregate({
+      _sum: { totalAmount: true },
+      where,
+    });
+    const totalSalesValue = Number(totalSalesValueAgg._sum.totalAmount || 0);
+
+    // Aggregate total sales by payment method
+    const paymentMethodTotalsRaw = await prisma.sale.groupBy({
+      by: ['paymentMode'],
+      _sum: { totalAmount: true },
+      where,
+    });
+    // Convert to object: { Cash: 1000, Card: 500, ... }
+    const paymentMethodTotals = paymentMethodTotalsRaw.reduce((acc, row) => {
+      acc[row.paymentMode] = Number(row._sum.totalAmount || 0);
+      return acc;
+    }, {});
 
     // Fetch paginated, sorted sales
     const sales = await prisma.sale.findMany({
@@ -107,7 +141,7 @@ export async function GET(req: NextRequest) {
       })),
     }));
 
-    return NextResponse.json({ data: transformedSales, total });
+    return NextResponse.json({ data: transformedSales, total, paymentMethodTotals, totalSalesValue });
   } catch (error) {
     console.error("Error fetching sales:", error);
     return NextResponse.json(

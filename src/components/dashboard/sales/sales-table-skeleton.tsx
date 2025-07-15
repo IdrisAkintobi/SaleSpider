@@ -8,25 +8,27 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useTranslation } from "@/lib/i18n";
 
 interface SalesTableSkeletonProps {
   rows?: number;
 }
 
 export function SalesTableSkeleton({ rows = 10 }: SalesTableSkeletonProps) {
+  const t = useTranslation();
   return (
     <Card className="shadow-lg">
       <CardContent className="p-0">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Order ID</TableHead>
-              <TableHead>Cashier</TableHead>
-              <TableHead>Items</TableHead>
-              <TableHead>Total Amount</TableHead>
-              <TableHead>Payment Mode</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>{t("order_id")}</TableHead>
+              <TableHead>{t("cashier")}</TableHead>
+              <TableHead>{t("items")}</TableHead>
+              <TableHead>{t("total_amount")}</TableHead>
+              <TableHead>{t("payment_mode")}</TableHead>
+              <TableHead>{t("date")}</TableHead>
+              <TableHead className="text-right">{t("actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

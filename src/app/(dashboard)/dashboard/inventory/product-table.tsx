@@ -54,13 +54,13 @@ export function ProductTable({
   const columns: GenericTableColumn<Product>[] = [
     {
       key: "imageUrl",
-      label: "Image",
+      label: t("image"),
       align: "left",
     },
     {
       key: "name",
       label: (
-        <div className="flex items-center cursor-pointer" onClick={() => onSort?.("name")}>Name {sortField === "name" && (sortOrder === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}</div>
+        <div className="flex items-center cursor-pointer" onClick={() => onSort?.("name")}>{t("name")} {sortField === "name" && (sortOrder === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}</div>
       ),
       sortable: true,
       onSort: () => onSort?.("name"),
@@ -68,7 +68,7 @@ export function ProductTable({
     {
       key: "price",
       label: (
-        <div className="flex items-center cursor-pointer" onClick={() => onSort?.("price")}>Price {sortField === "price" && (sortOrder === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}</div>
+        <div className="flex items-center cursor-pointer" onClick={() => onSort?.("price")}>{t("price")} {sortField === "price" && (sortOrder === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}</div>
       ),
       sortable: true,
       onSort: () => onSort?.("price"),
@@ -76,19 +76,19 @@ export function ProductTable({
     {
       key: "quantity",
       label: (
-        <div className="flex items-center cursor-pointer" onClick={() => onSort?.("quantity")}>Stock {sortField === "quantity" && (sortOrder === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}</div>
+        <div className="flex items-center cursor-pointer" onClick={() => onSort?.("quantity")}>{t("stock")} {sortField === "quantity" && (sortOrder === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}</div>
       ),
       sortable: true,
       onSort: () => onSort?.("quantity"),
     },
     {
       key: "status",
-      label: "Status",
+      label: t("status"),
     },
     {
       key: "updatedAt",
       label: (
-        <div className="flex items-center cursor-pointer" onClick={() => onSort?.("updatedAt")}>Date Updated {sortField === "updatedAt" && (sortOrder === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}</div>
+        <div className="flex items-center cursor-pointer" onClick={() => onSort?.("updatedAt")}>{t("date_updated")} {sortField === "updatedAt" && (sortOrder === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}</div>
       ),
       sortable: true,
       onSort: () => onSort?.("updatedAt"),
@@ -97,7 +97,7 @@ export function ProductTable({
   if (userIsManager) {
     columns.push({
       key: "actions",
-      label: <span className="text-right">Actions</span>,
+      label: <span className="text-right">{t("actions")}</span>,
       align: "right",
     });
   }
