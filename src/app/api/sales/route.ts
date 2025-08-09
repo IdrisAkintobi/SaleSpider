@@ -1,6 +1,7 @@
 import { PrismaClient, Role, PaymentMode } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { calculateSaleTotals } from "@/lib/vat";
+import { startOfDay, endOfDay } from "date-fns";
 
 const prisma = new PrismaClient();
 
@@ -67,13 +68,16 @@ export async function GET(req: NextRequest) {
     if (cashierId && cashierId !== "all") {
       where.cashierId = cashierId;
     }
-    // Date range filter
+    // Date range filter with proper time boundaries
     if (from && to) {
-      where.createdAt = { gte: new Date(from), lte: new Date(to) };
+      where.createdAt = { 
+        gte: startOfDay(new Date(from)), 
+        lte: endOfDay(new Date(to)) 
+      };
     } else if (from) {
-      where.createdAt = { gte: new Date(from) };
+      where.createdAt = { gte: startOfDay(new Date(from)) };
     } else if (to) {
-      where.createdAt = { lte: new Date(to) };
+      where.createdAt = { lte: endOfDay(new Date(to)) };
     }
 
     // Get total count for pagination
