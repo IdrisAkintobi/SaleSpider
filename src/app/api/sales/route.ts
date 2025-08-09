@@ -100,7 +100,7 @@ export async function GET(req: NextRequest) {
     const paymentMethodTotals = paymentMethodTotalsRaw.reduce((acc, row) => {
       acc[row.paymentMode] = Number(row._sum.totalAmount || 0);
       return acc;
-    }, {});
+    }, {} as Record<PaymentMode, number>);
 
     // Fetch paginated, sorted sales
     const sales = await prisma.sale.findMany({

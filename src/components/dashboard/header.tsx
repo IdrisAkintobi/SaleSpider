@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/auth-context";
 import {
   LogOut,
@@ -64,11 +64,17 @@ export function DashboardHeader() {
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const t = useTranslation();
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+
   const breadcrumbs = generateBreadcrumbs(pathname, t);
+
+  const handleCloseSheet = () => {
+    setIsSheetOpen(false);
+  };
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-4 md:px-6">
-      <Sheet>
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetTrigger asChild>
           <Button variant="outline" size="icon" className="shrink-0 md:hidden">
             <PanelLeft className="h-5 w-5" />
@@ -79,11 +85,15 @@ export function DashboardHeader() {
           side="left"
           className="flex flex-col p-0 bg-sidebar text-sidebar-foreground border-sidebar-border"
         >
+          <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+          <SheetDescription className="sr-only">
+            Access navigation links and menu options
+          </SheetDescription>
           <div className="p-4 border-b border-sidebar-border bg-sidebar">
             <Logo className="text-sidebar-foreground" />
           </div>
           <nav className="flex-1 overflow-y-auto p-4 bg-sidebar">
-            <SidebarNav />
+            <SidebarNav onNavigate={handleCloseSheet} />
           </nav>
         </SheetContent>
       </Sheet>

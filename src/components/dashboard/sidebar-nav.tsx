@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/contexts/auth-context";
+import { useSidebarCollapse } from "@/contexts/sidebar-context";
 import { cn } from "@/lib/utils";
 import { Role } from "@prisma/client";
 import type { LucideIcon } from "lucide-react";
@@ -16,6 +17,12 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslation } from "@/lib/i18n";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface NavItem {
   href: string;
@@ -69,9 +76,14 @@ const navItems: NavItem[] = [
   },
 ];
 
-export function SidebarNav() {
+interface SidebarNavProps {
+  onNavigate?: () => void;
+}
+
+export function SidebarNav({ onNavigate }: SidebarNavProps) {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { isCollapsed } = useSidebarCollapse();
   const t = useTranslation();
 
   if (!user) return null;
@@ -81,24 +93,51 @@ export function SidebarNav() {
   );
 
   return (
-    <nav className="grid items-start gap-2 text-sm font-medium">
-      {filteredNavItems.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
-          className={cn(
-            "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-            pathname === item.href ||
-              (pathname.startsWith(item.href) &&
-                item.href !== "/dashboard/overview")
-              ? "bg-sidebar-primary text-sidebar-primary-foreground"
-              : "text-sidebar-foreground"
-          )}
-        >
-          <item.icon className="h-4 w-4" />
-          {t(item.labelKey)}
-        </Link>
-      ))}
-    </nav>
+    <TooltipProvider>
+      <nav className="grid items-start gap-2 text-sm font-medium px-2">
+        {filteredNavItems.map((item) => {
+          const isActive = pathname === item.href ||
+            (pathname.startsWith(item.href) && item.href !== "/dashboard/overview");
+          
+          const linkContent = (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={onNavigate}
+              className={cn(
+                "flex items-center rounded-lg px-3 py-2 transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                isCollapsed ? "justify-center" : "gap-3",
+                isActive
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                  : "text-sidebar-foreground"
+              )}
+            >
+              <item.icon className="h-4 w-4 flex-shrink-0" />
+              <span className={cn(
+                "transition-opacity duration-300",
+                isCollapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100"
+              )}>
+                {t(item.labelKey)}
+              </span>
+            </Link>
+          );
+
+          if (isCollapsed) {
+            return (
+              <Tooltip key={item.href}>
+                <TooltipTrigger asChild>
+                  {linkContent}
+                </TooltipTrigger>
+                <TooltipContent side="right" className="ml-2">
+                  {t(item.labelKey)}
+                </TooltipContent>
+              </Tooltip>
+            );
+          }
+
+          return linkContent;
+        })}
+      </nav>
+    </TooltipProvider>
   );
 }
