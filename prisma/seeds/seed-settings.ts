@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { DEFAULT_SETTINGS } from "../../src/lib/constants";
+import { DEFAULT_SETTINGS } from "@/lib/constants";
 
 const prisma = new PrismaClient();
 

@@ -70,4 +70,35 @@ SaleSpider is a modern, Next.js-based application designed for small and medium-
 - AI-related flows using Genkit are in `src/ai/flows/`.
 - Core data structures and mock data logic are in `src/lib/`.
 
+### Path Aliases
+
+This project uses TypeScript path aliases for clean, maintainable imports:
+
+```typescript
+// Instead of relative imports like this:
+import { Button } from "../../../components/ui/button";
+
+// Use clean path aliases like this:
+import { Button } from "@/components/ui/button";
+```
+
+Available aliases:
+- `@/*` - Root src directory
+- `@/components/*` - UI components
+- `@/lib/*` - Utility libraries
+- `@/hooks/*` - React hooks
+- `@/contexts/*` - React contexts
+- `@/app/*` - Next.js app directory
+- `@/ai/*` - AI-related code
+- `@/prisma/*` - Prisma schema and seeds
+- `@/types/*` - TypeScript type definitions
+
+See [`docs/PATH_ALIASES.MD`](docs/PATH_ALIASES.MD) for detailed usage guide.
+
+## Documentation
+
+- [`docs/BLUEPRINT.MD`](docs/BLUEPRINT.MD) - Project architecture and design
+- [`docs/SETTINGS.MD`](docs/SETTINGS.MD) - Application settings configuration
+- [`docs/PATH_ALIASES.MD`](docs/PATH_ALIASES.MD) - TypeScript path aliases guide
+
 Feel free to explore and modify the code to fit your specific needs!

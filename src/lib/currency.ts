@@ -49,11 +49,14 @@ export function useCurrencySettings() {
 }
 
 /**
- * Format currency amount with symbol
+ * Format currency amount with symbol (always 2 decimal places)
  */
 export function formatCurrency(amount: number, currencySymbol?: string): string {
   const symbol = currencySymbol ?? getCurrencySettings().currencySymbol;
-  return `${symbol}${amount.toLocaleString()}`;
+  return `${symbol}${amount.toLocaleString(undefined, { 
+    minimumFractionDigits: 2, 
+    maximumFractionDigits: 2 
+  })}`;
 }
 
 /**

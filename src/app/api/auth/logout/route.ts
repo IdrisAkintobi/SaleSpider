@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { clearAuthToken } from "../lib/cookie-handler";
+import { clearAuthToken } from "@/app/api/auth/lib/cookie-handler";
 
 // Function to logout
 export async function POST() {

@@ -26,6 +26,30 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@/components/*": [
+        "./src/components/*"
+      ],
+      "@/lib/*": [
+        "./src/lib/*"
+      ],
+      "@/hooks/*": [
+        "./src/hooks/*"
+      ],
+      "@/contexts/*": [
+        "./src/contexts/*"
+      ],
+      "@/app/*": [
+        "./src/app/*"
+      ],
+      "@/ai/*": [
+        "./src/ai/*"
+      ],
+      "@/prisma/*": [
+        "./prisma/*"
+      ],
+      "@/types/*": [
+        "./src/types/*"
       ]
     }
   },

@@ -2,7 +2,7 @@
 import { jwtVerify } from "jose";
 import { JWTExpired } from "jose/errors";
 import { NextRequest, NextResponse } from "next/server";
-import { clearAuthToken } from "../lib/cookie-handler";
+import { clearAuthToken } from "@/app/api/auth/lib/cookie-handler";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
