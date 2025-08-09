@@ -1,5 +1,5 @@
 import { PrismaClient, PaymentMode } from "@prisma/client";
-import { calculateSaleTotals } from "../../src/lib/vat.ts";
+import { calculateSaleTotals } from "@/lib/vat";
 
 export async function seedSales(client: PrismaClient) {
   // Get existing users and products for reference
