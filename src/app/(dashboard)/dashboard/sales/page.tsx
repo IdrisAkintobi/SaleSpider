@@ -73,10 +73,8 @@ export default function SalesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCashier, setFilterCashier] = useState<string>("all");
   const [filterDateRange, setFilterDateRange] = useState<string>("all");
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: undefined,
-    to: undefined,
-  });
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
 
   // Use custom hook for sales data
@@ -87,8 +85,8 @@ export default function SalesPage() {
     order,
     searchTerm,
     cashierId: filterCashier,
-    from: dateRange?.from ? dateRange.from.toISOString() : undefined,
-    to: dateRange?.to ? dateRange.to.toISOString() : undefined,
+    from: dateRange?.from && dateRange?.to ? dateRange.from.toISOString() : undefined,
+    to: dateRange?.from && dateRange?.to ? dateRange.to.toISOString() : undefined,
   });
   const sales = data?.data || [];
   const total = data?.total || 0;
@@ -159,8 +157,13 @@ export default function SalesPage() {
   // For custom date range picker
   const handleDateRangeSelect = (range: DateRange | undefined) => {
     setDateRange(range);
-    setFilterDateRange(""); // Clear quick filter when custom range is picked
-    setPage(1);
+    
+    // Only trigger data refetch and reset page when both dates are selected (complete range)
+    if (range?.from && range?.to) {
+      setFilterDateRange(""); // Clear quick filter when custom range is picked
+      setPage(1);
+      setIsDatePickerOpen(false);
+    }
   };
 
   // Record New Sale button for cashiers
@@ -273,7 +276,7 @@ export default function SalesPage() {
               <SelectItem value="month">{t('this_month')}</SelectItem>
             </SelectContent>
           </Select>
-          <Popover>
+          <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
@@ -301,6 +304,7 @@ export default function SalesPage() {
                 selected={dateRange}
                 onSelect={handleDateRangeSelect}
                 numberOfMonths={1}
+                disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
               />
             </PopoverContent>
           </Popover>
@@ -308,7 +312,10 @@ export default function SalesPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setDateRange(undefined)}
+              onClick={() => {
+                setDateRange(undefined);
+                setIsDatePickerOpen(false);
+              }}
             >
               {t("clear_range")}
             </Button>
