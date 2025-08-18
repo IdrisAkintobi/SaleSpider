@@ -33,7 +33,6 @@ import { useSalesStats } from "@/hooks/use-sales-stats";
 import { useSalesMonthly } from "@/hooks/use-sales-monthly";
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { useFormatCurrency } from "@/lib/currency";
-import { useVatPercentage } from "@/lib/vat";
 import { useTranslation } from "@/lib/i18n";
 import { RecentSalesSkeleton } from "./recent-sales-skeleton";
 
@@ -71,7 +70,6 @@ async function fetchProductsData() {
 export function ManagerOverview({ period }: ManagerOverviewProps) {
   const { toast } = useToast();
   const formatCurrency = useFormatCurrency();
-  const vatPercentage = useVatPercentage();
   const t = useTranslation();
 
   // All hooks must be called in the same order every render

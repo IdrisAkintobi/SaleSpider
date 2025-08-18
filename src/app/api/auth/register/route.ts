@@ -7,9 +7,6 @@ const prisma = new PrismaClient();
 // Function to register a new user
 export async function POST(req: NextRequest) {
   try {
-    // TODO: Implement super admin authentication
-    // If not authenticated as super admin, return unauthorized response
-
     const { email, username, name, password, role } = await req.json();
 
     if (!email || !username || !name || !password || !role) {

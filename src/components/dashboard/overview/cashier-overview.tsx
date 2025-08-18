@@ -79,7 +79,7 @@ export function CashierOverview() {
 
   // Calculate stats using useMemo
   const stats = useMemo(() => {
-    console.log({mySales})
+
     const sortedSales = [...mySales].sort((a, b) => b.timestamp - a.timestamp);
     const totalValue = sortedSales.reduce((sum, sale) => sum + sale.totalAmount, 0);
     const totalOrders = sortedSales.length;

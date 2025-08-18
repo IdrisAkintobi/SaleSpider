@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     const total = await prisma.user.count({ where });
 
     // Map sort field
-    let orderBy: any = {};
+    const orderBy: any = {};
     if (["name", "username", "status", "role", "createdAt"].includes(sort)) {
       orderBy[sort] = order;
     } else {

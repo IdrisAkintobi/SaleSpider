@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     const from = searchParams.get("from") ? new Date(searchParams.get("from")!) : undefined;
     const to = searchParams.get("to") ? new Date(searchParams.get("to")!) : undefined;
 
-    let aggregateWhere: any = { deletedAt: null };
+    const aggregateWhere: any = { deletedAt: null };
     if (from && to) {
       aggregateWhere.createdAt = { gte: from, lte: to };
     } else if (from) {

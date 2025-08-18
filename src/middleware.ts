@@ -31,8 +31,8 @@ export async function middleware(request: NextRequest) {
     const response = NextResponse.next();
     response.headers.set("X-User-Id", userId);
     return response;
-  } catch (error) {
-    console.log("Token verification failed:", (error as Error).message);
+  } catch (_error) {
+    // Token verification failed - redirect to login
 
     if (request.nextUrl.pathname.startsWith("/api")) {
       // For API routes, return 401 JSON

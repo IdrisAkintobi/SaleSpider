@@ -12,7 +12,7 @@ import { ColorPicker } from "@/components/ui/color-picker";
 import { useAuth } from "@/contexts/auth-context";
 import { useSettingsContext } from "@/contexts/settings-context";
 import { useToast } from "@/hooks/use-toast";
-import { useSettings, useUpdateSettings, type UpdateSettingsData } from "@/hooks/use-settings";
+import { useSettings, useUpdateSettings } from "@/hooks/use-settings";
 import { 
   DEFAULT_SETTINGS, 
   CURRENCY_OPTIONS, 
@@ -26,7 +26,7 @@ import { useTranslation } from "@/lib/i18n";
 import { applyDynamicStyles } from "@/lib/dynamic-styles";
 import { Settings, Palette, Globe, CreditCard, Monitor, Save, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";

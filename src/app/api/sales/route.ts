@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
 
   try {
     // Build where clause
-    let where: any = { deletedAt: null };
+    const where: any = { deletedAt: null };
     if (user.role === Role.CASHIER) {
       where.cashierId = userId;
     }

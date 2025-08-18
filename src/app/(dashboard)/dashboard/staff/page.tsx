@@ -60,9 +60,7 @@ export default function StaffPage() {
   // Use shared table controls
   const {
     page,
-    setPage,
     pageSize,
-    setPageSize,
     sort,
     order,
     handleSort,
@@ -71,9 +69,6 @@ export default function StaffPage() {
   } = useTableControls({ initialSort: "name", initialOrder: "asc" });
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedStaff, setSelectedStaff] = useState<StaffPerformance | null>(
-    null
-  );
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editStaff, setEditStaff] = useState<StaffPerformance | null>(null);
 
