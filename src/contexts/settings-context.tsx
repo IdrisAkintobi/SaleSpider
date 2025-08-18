@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { useSettings } from "@/hooks/use-settings";
 import { DEFAULT_SETTINGS } from "@/lib/constants";
 import { applyDynamicStyles } from "@/lib/dynamic-styles";
+import { useThemeSync } from "@/hooks/use-theme-sync";
 
 export interface AppSettings {
   id: string;
@@ -62,6 +63,9 @@ const SettingsContext = createContext<SettingsContextType>({
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const { data: settings, isLoading, error } = useSettings();
   const [currentSettings, setCurrentSettings] = useState<AppSettings>(defaultSettings);
+
+  // Sync theme with next-themes
+  useThemeSync(settings || defaultSettings);
 
   useEffect(() => {
     if (settings) {

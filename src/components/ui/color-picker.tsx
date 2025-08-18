@@ -17,7 +17,7 @@ interface ColorPickerProps {
 
 const PRESET_COLORS = [
   "#0f172a", "#1e293b", "#334155", "#475569", "#64748b", // Grays
-  "#3b82f6", "#1d4ed8", "#1e40af", "#1e3a8a", "#1e293b", // Blues
+  "#3b82f6", "#1d4ed8", "#1e40af", "#1e3a8a", "#172554", // Blues
   "#10b981", "#059669", "#047857", "#065f46", "#064e3b", // Greens
   "#f59e0b", "#d97706", "#b45309", "#92400e", "#78350f", // Ambers
   "#ef4444", "#dc2626", "#b91c1c", "#991b1b", "#7f1d1d", // Reds

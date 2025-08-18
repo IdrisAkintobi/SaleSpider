@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useSettingsContext } from "@/contexts/settings-context";
 import { useToast } from "@/hooks/use-toast";
 import { useSettings, useUpdateSettings } from "@/hooks/use-settings";
+import { useTheme } from "next-themes";
 import { 
   DEFAULT_SETTINGS, 
   CURRENCY_OPTIONS, 
@@ -58,25 +59,35 @@ export default function SettingsPage() {
   const { settings: currentSettings } = useSettingsContext();
   const updateSettingsMutation = useUpdateSettings();
   const t = useTranslation();
+  const { setTheme } = useTheme();
 
-  const form = useForm<SettingsFormData>({
+  const getDefaultFormValues = () => ({
+    appName: DEFAULT_SETTINGS.appName,
+    appLogo: DEFAULT_SETTINGS.appLogo,
+    primaryColor: DEFAULT_SETTINGS.primaryColor,
+    secondaryColor: DEFAULT_SETTINGS.secondaryColor,
+    accentColor: DEFAULT_SETTINGS.accentColor,
+    currency: DEFAULT_SETTINGS.currency,
+    currencySymbol: DEFAULT_SETTINGS.currencySymbol,
+    vatPercentage: DEFAULT_SETTINGS.vatPercentage,
+    timezone: DEFAULT_SETTINGS.timezone,
+    dateFormat: DEFAULT_SETTINGS.dateFormat,
+    timeFormat: DEFAULT_SETTINGS.timeFormat,
+    language: DEFAULT_SETTINGS.language,
+    theme: DEFAULT_SETTINGS.theme as "light" | "dark" | "auto",
+    maintenanceMode: DEFAULT_SETTINGS.maintenanceMode,
+  });
+
+  const getDefaultSettingsWithMeta = () => ({
+    ...DEFAULT_SETTINGS,
+    id: "",
+    createdAt: "",
+    updatedAt: "",
+  });
+
+  const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
-    defaultValues: {
-      appName: DEFAULT_SETTINGS.appName,
-      appLogo: DEFAULT_SETTINGS.appLogo,
-      primaryColor: DEFAULT_SETTINGS.primaryColor,
-      secondaryColor: DEFAULT_SETTINGS.secondaryColor,
-      accentColor: DEFAULT_SETTINGS.accentColor,
-      currency: DEFAULT_SETTINGS.currency,
-      currencySymbol: DEFAULT_SETTINGS.currencySymbol,
-      vatPercentage: DEFAULT_SETTINGS.vatPercentage,
-      timezone: DEFAULT_SETTINGS.timezone,
-      dateFormat: DEFAULT_SETTINGS.dateFormat,
-      timeFormat: DEFAULT_SETTINGS.timeFormat,
-      language: DEFAULT_SETTINGS.language,
-      theme: DEFAULT_SETTINGS.theme as "light" | "dark" | "auto",
-      maintenanceMode: DEFAULT_SETTINGS.maintenanceMode,
-    },
+    defaultValues: getDefaultFormValues(),
   });
 
   // Update form when settings load
@@ -177,6 +188,54 @@ export default function SettingsPage() {
     }
   };
 
+  const handleReset = () => {
+    // Reset to application default settings
+    form.reset(getDefaultFormValues());
+    
+    // Reset theme to default value
+    const themeValue = DEFAULT_SETTINGS.theme === "auto" ? "system" : DEFAULT_SETTINGS.theme;
+    setTheme(themeValue);
+    
+    // Apply default dynamic styles
+    applyDynamicStyles(getDefaultSettingsWithMeta());
+  };
+
+  const handleSectionReset = (section: string) => {
+    const defaults = getDefaultFormValues();
+    
+    switch (section) {
+      case 'general':
+        form.setValue("appName", defaults.appName);
+        form.setValue("appLogo", defaults.appLogo);
+        form.setValue("vatPercentage", defaults.vatPercentage);
+        break;
+      case 'appearance':
+        form.setValue("primaryColor", defaults.primaryColor);
+        form.setValue("secondaryColor", defaults.secondaryColor);
+        form.setValue("accentColor", defaults.accentColor);
+        form.setValue("theme", defaults.theme);
+        // Reset theme immediately
+        const themeValue = DEFAULT_SETTINGS.theme === "auto" ? "system" : DEFAULT_SETTINGS.theme;
+        setTheme(themeValue);
+        // Apply default colors
+        applyDynamicStyles(getDefaultSettingsWithMeta());
+        break;
+      case 'currency':
+        form.setValue("currency", defaults.currency);
+        form.setValue("currencySymbol", defaults.currencySymbol);
+        break;
+      case 'localization':
+        form.setValue("language", defaults.language);
+        form.setValue("timezone", defaults.timezone);
+        form.setValue("dateFormat", defaults.dateFormat);
+        form.setValue("timeFormat", defaults.timeFormat);
+        break;
+      case 'system':
+        form.setValue("maintenanceMode", defaults.maintenanceMode);
+        break;
+    }
+  };
+
   return (
     <>
       <PageHeader
@@ -197,9 +256,19 @@ export default function SettingsPage() {
           <TabsContent value="general" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Monitor className="h-5 w-5" />
-                  {t("general")} {t("settings")}
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Monitor className="h-5 w-5" />
+                    {t("general")} {t("settings")}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleSectionReset('general')}
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
                 </CardTitle>
                 <CardDescription>
                   {t("general_settings_description")}
@@ -258,9 +327,19 @@ export default function SettingsPage() {
           <TabsContent value="appearance" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Palette className="h-5 w-5" />
-                  {t("appearance")}
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Palette className="h-5 w-5" />
+                    {t("appearance")}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleSectionReset('appearance')}
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
                 </CardTitle>
                 <CardDescription>
                   {t("appearance_settings_description")}
@@ -291,7 +370,12 @@ export default function SettingsPage() {
                   <Label htmlFor="theme">{t("theme")}</Label>
                   <Select
                     value={watchedValues.theme}
-                    onValueChange={(value) => form.setValue("theme", value as "light" | "dark" | "auto")}
+                    onValueChange={(value) => {
+                      form.setValue("theme", value as "light" | "dark" | "auto");
+                      // Apply theme immediately using next-themes
+                      const themeValue = value === "auto" ? "system" : value;
+                      setTheme(themeValue);
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select theme" />
@@ -317,9 +401,19 @@ export default function SettingsPage() {
           <TabsContent value="currency" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5" />
-                  {t("currency")} {t("settings")}
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-5 w-5" />
+                    {t("currency")} {t("settings")}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleSectionReset('currency')}
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
                 </CardTitle>
                 <CardDescription>
                   {t("currency_settings_description")}
@@ -356,9 +450,19 @@ export default function SettingsPage() {
           <TabsContent value="localization" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Globe className="h-5 w-5" />
-                  {t("localization")}
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-5 w-5" />
+                    {t("localization")}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleSectionReset('localization')}
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
                 </CardTitle>
                 <CardDescription>
                   {t("localization_settings_description")}
@@ -469,9 +573,19 @@ export default function SettingsPage() {
           <TabsContent value="system" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  {t("system")} {t("settings")}
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Settings className="h-5 w-5" />
+                    {t("system")} {t("settings")}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleSectionReset('system')}
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
                 </CardTitle>
                 <CardDescription>
                   {t("system_settings_description")}
@@ -501,11 +615,11 @@ export default function SettingsPage() {
           </TabsContent>
         </Tabs>
 
-        <div className="flex justify-end gap-4 pt-6">
+        <div className="flex justify-end gap-4 pt-6 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky bottom-0 pb-4">
           <Button
             type="button"
             variant="outline"
-            onClick={() => form.reset()}
+            onClick={handleReset}
             disabled={updateSettingsMutation.isPending}
           >
             <RotateCcw className="mr-2 h-4 w-4" />

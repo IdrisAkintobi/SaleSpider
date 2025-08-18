@@ -9,26 +9,32 @@ import { DEFAULT_SETTINGS } from "./constants";
  * Apply dynamic CSS variables to the document root
  */
 export function applyDynamicStyles(settings: AppSettings | null) {
+  // Only run in browser environment
+  if (typeof window === 'undefined') return;
+  
   const root = document.documentElement;
   const currentSettings = settings || DEFAULT_SETTINGS;
 
-  // Apply color scheme
+  // Convert hex colors to HSL for Tailwind CSS compatibility
+  const primaryHsl = hexToHsl(currentSettings.primaryColor);
+  const secondaryHsl = hexToHsl(currentSettings.secondaryColor);
+  const accentHsl = hexToHsl(currentSettings.accentColor);
+
+  // Apply Tailwind CSS variables in HSL format
+  if (primaryHsl) {
+    root.style.setProperty('--primary', `${primaryHsl.h} ${primaryHsl.s}% ${primaryHsl.l}%`);
+  }
+  if (secondaryHsl) {
+    root.style.setProperty('--secondary', `${secondaryHsl.h} ${secondaryHsl.s}% ${secondaryHsl.l}%`);
+  }
+  if (accentHsl) {
+    root.style.setProperty('--accent', `${accentHsl.h} ${accentHsl.s}% ${accentHsl.l}%`);
+  }
+
+  // Also keep hex format for direct usage
   root.style.setProperty('--primary-color', currentSettings.primaryColor);
   root.style.setProperty('--secondary-color', currentSettings.secondaryColor);
   root.style.setProperty('--accent-color', currentSettings.accentColor);
-
-  // Apply theme
-  if (currentSettings.theme === 'auto') {
-    // Auto theme - let the system decide
-    root.removeAttribute('data-theme');
-  } else {
-    root.setAttribute('data-theme', currentSettings.theme);
-  }
-
-  // Apply custom CSS variables for colors
-  root.style.setProperty('--color-primary', currentSettings.primaryColor);
-  root.style.setProperty('--color-secondary', currentSettings.secondaryColor);
-  root.style.setProperty('--color-accent', currentSettings.accentColor);
 
   // Generate complementary colors
   const primaryRgb = hexToRgb(currentSettings.primaryColor);
@@ -64,6 +70,42 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
     g: parseInt(result[2], 16),
     b: parseInt(result[3], 16)
   } : null;
+}
+
+/**
+ * Convert hex color to HSL
+ */
+function hexToHsl(hex: string): { h: number; s: number; l: number } | null {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return null;
+
+  const r = rgb.r / 255;
+  const g = rgb.g / 255;
+  const b = rgb.b / 255;
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0;
+  let s = 0;
+  const l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
+  }
+
+  return {
+    h: Math.round(h * 360),
+    s: Math.round(s * 100),
+    l: Math.round(l * 100)
+  };
 }
 
 /**
