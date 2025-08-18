@@ -2,8 +2,10 @@ import { PrismaClient, Role, PaymentMode } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { calculateSaleTotals } from "@/lib/vat";
 import { startOfDay, endOfDay } from "date-fns";
+import { createChildLogger } from "@/lib/logger";
 
 const prisma = new PrismaClient();
+const logger = createChildLogger('sales-api');
 
 // Helper function to map payment mode string to enum
 function mapPaymentMode(paymentModeString: string): PaymentMode {
@@ -147,7 +149,11 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ data: transformedSales, total, paymentMethodTotals, totalSalesValue });
   } catch (error) {
-    console.error("Error fetching sales:", error);
+    logger.error({
+      error: error instanceof Error ? error.message : 'Unknown error',
+      userId,
+      filters: { cashierId, from, to, page, pageSize }
+    }, 'Error fetching sales');
     return NextResponse.json(
       { message: "Failed to fetch sales" },
       { status: 500 }
@@ -256,13 +262,23 @@ export async function POST(req: NextRequest) {
       return sale;
     });
 
+    logger.info({
+      saleId: result.id,
+      cashierId,
+      totalAmount: saleTotals.totalAmount,
+      itemCount: items.length,
+      paymentMode: mappedPaymentMode
+    }, 'Sale recorded successfully');
+
     return NextResponse.json({ 
       id: result.id,
       message: "Sale recorded successfully" 
     });
 
   } catch (error) {
-    console.error("Error recording sale:", error);
+    logger.error({
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, 'Error recording sale');
     return NextResponse.json(
       { message: "Failed to record sale" },
       { status: 500 }

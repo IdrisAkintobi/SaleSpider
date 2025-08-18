@@ -1,8 +1,10 @@
 import { Product } from "@/lib/types";
 import { Prisma, PrismaClient, ProductCategory, Role } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
+import { createChildLogger } from "@/lib/logger";
 
 const prisma = new PrismaClient();
+const logger = createChildLogger('products-api');
 
 // Function to get products
 export async function GET(req: NextRequest) {
@@ -52,7 +54,12 @@ export async function GET(req: NextRequest) {
       totalPages: Math.ceil(totalProducts / pageSize),
     });
   } catch (error) {
-    console.error("Error fetching products:", error);
+    logger.error({
+      error: error instanceof Error ? error.message : 'Unknown error',
+      searchQuery,
+      page,
+      pageSize
+    }, 'Error fetching products');
     return NextResponse.json(
       { message: "Failed to fetch products" },
       { status: 500 }
@@ -107,9 +114,18 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    logger.info({
+      productId: newProduct.id,
+      name: newProduct.name,
+      userId
+    }, 'Product created successfully');
+    
     return NextResponse.json(newProduct, { status: 201 });
   } catch (error) {
-    console.error("Error creating product:", error);
+    logger.error({
+      error: error instanceof Error ? error.message : 'Unknown error',
+      userId
+    }, 'Error creating product');
     return NextResponse.json(
       { message: "Failed to create product" },
       { status: 500 }
