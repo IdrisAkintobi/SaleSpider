@@ -1,8 +1,10 @@
 import { PrismaClient, Role } from "@prisma/client";
 import * as argon2 from "argon2";
 import { NextRequest, NextResponse } from "next/server";
+import { createChildLogger } from "@/lib/logger";
 
 const prisma = new PrismaClient();
+const logger = createChildLogger('api:auth:register');
 
 // Function to register a new user
 export async function POST(req: NextRequest) {
@@ -69,7 +71,7 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Registration error:", error);
+    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Registration error');
     return NextResponse.json(
       { message: "Internal server error" },
       { status: 500 }

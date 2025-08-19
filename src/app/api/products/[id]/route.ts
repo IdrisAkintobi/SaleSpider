@@ -3,8 +3,8 @@ import { PrismaClient, Role } from "@prisma/client";
 import { createChildLogger } from "@/lib/logger";
 import { SoftDeleteService } from "@/lib/soft-delete";
 import { AuditTrailService } from "@/lib/audit-trail";
-const prisma = new PrismaClient();
 
+const prisma = new PrismaClient();
 const logger = createChildLogger('api:products:id');
 
 // Function to get product by ID
@@ -113,7 +113,7 @@ export async function PATCH(
       data: updatePayload,
     });
 
-    // Log audit trail with only changed fields (more efficient)
+    // Log audit trail
     await AuditTrailService.logProductUpdate(
       id,
       changedFields,
