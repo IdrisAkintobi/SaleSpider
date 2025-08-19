@@ -28,9 +28,14 @@ export async function middleware(request: NextRequest) {
 
     if (!userId) throw new Error("Invalid token");
 
-    const response = NextResponse.next();
-    response.headers.set("X-User-Id", userId);
-    return response;
+    // Forward the user id as a request header to downstream handlers
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set("X-User-Id", userId);
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
   } catch (_error) {
     // Token verification failed - redirect to login
 
