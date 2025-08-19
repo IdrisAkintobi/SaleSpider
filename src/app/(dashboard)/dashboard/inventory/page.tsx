@@ -10,6 +10,7 @@ import { ProductTable, type SortField, type SortOrder } from "./product-table";
 import { ProductTableSkeleton } from "./product-table-skeleton";
 import { SearchInput } from "./search-input";
 import { UpdateProductDialog } from "./update-product-dialog";
+import { ProductDetailsDialog } from "./product-details-dialog";
 import { UpdateStockDialog } from "./update-stock-dialog";
 import { DollarSign } from "lucide-react";
 import Link from "next/link";
@@ -36,6 +37,8 @@ export default function InventoryPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedProductForEdit, setSelectedProductForEdit] =
     useState<Product | null>(null);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [selectedProductForDetails, setSelectedProductForDetails] = useState<Product | null>(null);
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
 
@@ -113,6 +116,16 @@ export default function InventoryPage() {
     setSelectedProductForEdit(null);
   }, []);
 
+  const handleOpenDetailsDialog = useCallback((product: Product) => {
+    setSelectedProductForDetails(product);
+    setIsDetailsDialogOpen(true);
+  }, []);
+
+  const handleCloseDetailsDialog = useCallback(() => {
+    setIsDetailsDialogOpen(false);
+    setSelectedProductForDetails(null);
+  }, []);
+
   // Record New Sale button for cashiers
   const recordSaleAction = !userIsManager ? (
     <Button size="lg" asChild>
@@ -157,6 +170,7 @@ export default function InventoryPage() {
           userIsManager={userIsManager}
           onUpdateStock={handleOpenUpdateDialog}
           onUpdateProduct={handleOpenUpdateProductDialog}
+          onShowDetails={handleOpenDetailsDialog}
           sortField={sortField}
           sortOrder={sortOrder}
           onSort={handleSort}
@@ -178,6 +192,12 @@ export default function InventoryPage() {
         isOpen={isUpdateProductDialogOpen}
         onOpenChange={handleCloseUpdateProductDialog}
         product={selectedProductForEdit}
+      />
+
+      <ProductDetailsDialog
+        isOpen={isDetailsDialogOpen}
+        onOpenChange={handleCloseDetailsDialog}
+        product={selectedProductForDetails}
       />
     </>
   );

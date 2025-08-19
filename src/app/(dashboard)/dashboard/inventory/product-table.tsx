@@ -38,6 +38,7 @@ interface ProductTableProps {
   userIsManager: boolean;
   onUpdateStock: (product: Product) => void;
   onUpdateProduct: (product: Product) => void;
+  onShowDetails?: (product: Product) => void;
   sortField?: SortField;
   sortOrder?: SortOrder;
   onSort?: (field: SortField) => void;
@@ -53,6 +54,7 @@ export function ProductTable({
   userIsManager,
   onUpdateStock,
   onUpdateProduct,
+  onShowDetails,
   sortField,
   sortOrder,
   onSort,
@@ -144,7 +146,7 @@ export function ProductTable({
                         "font-medium cursor-pointer",
                         product.deletedAt && "line-through text-muted-foreground"
                       )} 
-                      onClick={() => onUpdateProduct(product)}
+                      onClick={() => (onShowDetails ? onShowDetails(product) : onUpdateProduct(product))}
                     >
                       {product.name}
                     </span>
