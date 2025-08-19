@@ -111,18 +111,18 @@ export class SalesAnalyticsService {
         totalRevenue: item._sum?.price || 0,
       }));
 
-      // Get low stock products using raw query for proper comparison
+      // Get low stock products (use quoted identifiers to match Prisma table/columns)
       const lowStockProducts = await prisma.$queryRaw<Array<{
         id: string;
         name: string;
         quantity: number;
         lowStockMargin: number;
       }>>`
-        SELECT id, name, quantity, low_stock_margin as "lowStockMargin"
-        FROM products 
-        WHERE deleted_at IS NULL 
-        AND quantity <= low_stock_margin
-        ORDER BY quantity ASC
+        SELECT "id", "name", "quantity", "lowStockMargin" as "lowStockMargin"
+        FROM "Product"
+        WHERE "deletedAt" IS NULL
+          AND "quantity" <= "lowStockMargin"
+        ORDER BY "quantity" ASC
         LIMIT 10
       `;
 
@@ -133,12 +133,12 @@ export class SalesAnalyticsService {
         totalRevenue: number;
       }>>`
         SELECT 
-          DATE(created_at) as date,
-          COUNT(*)::bigint as totalSales,
-          SUM(total_amount) as totalRevenue
-        FROM sales 
-        WHERE created_at >= ${startDate}
-        GROUP BY DATE(created_at)
+          DATE("createdAt") as date,
+          COUNT(*)::bigint as "totalSales",
+          SUM("totalAmount") as "totalRevenue"
+        FROM "Sale"
+        WHERE "createdAt" >= ${startDate}
+        GROUP BY DATE("createdAt")
         ORDER BY date ASC
         LIMIT ${maxRecords}
       `;
@@ -192,22 +192,22 @@ export class SalesAnalyticsService {
         lastSaleDate: Date | null;
       }>>`
         SELECT 
-          p.id as productId,
-          p.name as productName,
-          COALESCE(SUM(si.quantity), 0)::bigint as totalQuantitySold,
-          COALESCE(SUM(si.total_price), 0) as totalRevenue,
+          p."id" as "productId",
+          p."name" as "productName",
+          COALESCE(SUM(si."quantity"), 0)::bigint as "totalQuantitySold",
+          COALESCE(SUM(si."price" * si."quantity"), 0) as "totalRevenue",
           CASE 
-            WHEN SUM(si.quantity) > 0 
-            THEN SUM(si.total_price) / SUM(si.quantity)
+            WHEN SUM(si."quantity") > 0 
+            THEN SUM(si."price" * si."quantity") / SUM(si."quantity")
             ELSE 0 
-          END as averageSellingPrice,
-          MAX(s.created_at) as lastSaleDate
-        FROM products p
-        LEFT JOIN sale_items si ON p.id = si.product_id
-        LEFT JOIN sales s ON si.sale_id = s.id AND s.created_at >= ${startDate}
-        WHERE p.deleted_at IS NULL
-        GROUP BY p.id, p.name
-        ORDER BY totalQuantitySold DESC
+          END as "averageSellingPrice",
+          MAX(s."createdAt") as "lastSaleDate"
+        FROM "Product" p
+        LEFT JOIN "SaleItem" si ON p."id" = si."productId"
+        LEFT JOIN "Sale" s ON si."saleId" = s."id" AND s."createdAt" >= ${startDate}
+        WHERE p."deletedAt" IS NULL
+        GROUP BY p."id", p."name"
+        ORDER BY "totalQuantitySold" DESC
         LIMIT ${maxRecords}
       `;
 
