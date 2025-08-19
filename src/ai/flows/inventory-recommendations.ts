@@ -1,4 +1,3 @@
-// src/ai/flows/inventory-recommendations.ts
 'use server';
 
 /**
@@ -33,17 +32,17 @@ const InventoryRecommendationsOutputSchema = z.object({
   optimalLevels: z
     .string()
     .describe(
-      'Recommended optimal inventory levels for each product, with reasoning. Must be in a clear, parseable format, such as JSON or CSV.'
+      'Strategic summary of inventory level recommendations focusing on overall patterns, categories, and turnover optimization for store management.'
     ),
   promotionalOpportunities: z
     .string()
     .describe(
-      'Suggested promotional opportunities to maximize sales, including specific products and timing. Must be in a clear, parseable format, such as JSON or CSV.'
+      'High-level promotional strategy recommendations based on sales trends and inventory movement for physical store operations.'
     ),
   reorderAmounts: z
     .string()
     .describe(
-      'Recommended amounts to reorder for each product, considering lead times and demand. Must be in a clear, parseable format, such as JSON or CSV.'
+      'Strategic purchasing guidance focusing on category priorities, budget allocation, and supplier management for store inventory.'
     ),
 });
 export type InventoryRecommendationsOutput = z.infer<
@@ -60,19 +59,39 @@ const prompt = ai.definePrompt({
   name: 'inventoryRecommendationsPrompt',
   input: {schema: InventoryRecommendationsInputSchema},
   output: {schema: InventoryRecommendationsOutputSchema},
-  prompt: `You are an expert inventory management consultant for retail stores.
+  prompt: `You are an expert inventory management consultant/auditor for physical retail stores. This is a store management system for tracking sales and inventory, not an e-commerce platform.
 
-  Based on the sales data and current inventory levels provided, generate recommendations for optimal inventory levels, promotional opportunities, and reorder amounts for {{storeName}}.
+  Based on the sales data and current inventory levels provided, generate high-level strategic insights and recommendations for {{storeName}}.
 
   Sales Data: {{{salesData}}}
   Current Inventory Levels: {{{currentInventory}}}
 
-  Consider factors such as seasonality, product popularity, and lead times when making your recommendations. Format your output in a parseable format such as JSON or CSV.
+  IMPORTANT: Even if sales data is limited or sparse, provide valuable insights based on the inventory data and general retail best practices. Do not start responses with phrases like "Given the lack of sales data" or "Without sales data". Instead, focus on what can be analyzed and provide actionable recommendations.
 
-  Specifically:
-  *   Determine the optimal inventory levels for each product, explaining your reasoning.
-  *   Identify promotional opportunities to maximize sales, including specific products and timing.
-  *   Calculate recommended reorder amounts for each product, considering lead times and demand.
+  Provide summary-level insights and actionable recommendations that help store managers make informed decisions. Focus on overall trends, patterns, and strategic guidance rather than individual product details.
+
+  **Inventory Level Strategy:**
+  Analyze overall inventory health and provide strategic guidance on:
+  - General inventory turnover patterns
+  - Categories that may be overstocked or understocked
+  - Seasonal trends affecting inventory decisions
+  - Storage space optimization recommendations
+  
+  **Sales & Promotion Strategy:**
+  Provide strategic insights on:
+  - Current inventory composition and potential promotional opportunities
+  - Product categories that could benefit from targeted marketing
+  - Seasonal considerations for promotional timing
+  - Strategies to improve inventory turnover based on current stock levels
+  
+  **Purchasing & Reorder Strategy:**
+  Offer high-level guidance on:
+  - Inventory balance assessment and reordering priorities
+  - Budget allocation recommendations based on current stock levels
+  - Risk management for overstocked or slow-moving categories
+  - Optimization strategies for storage space and cash flow
+  
+  Always provide positive, actionable recommendations that help store managers optimize their operations. Focus on inventory optimization, cash flow improvement, and operational efficiency based on the available data.
   `,
 });
 
