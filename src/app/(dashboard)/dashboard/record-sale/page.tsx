@@ -30,7 +30,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateSale } from "@/hooks/use-sales";
 import type { PaymentMode, Product, SaleItem } from "@/lib/types";
-import { DollarSign, PlusCircle, ShoppingCart, XCircle, Search, HelpCircle, PackageSearch } from "lucide-react";
+import { PlusCircle, ShoppingCart, XCircle, HelpCircle, PackageSearch } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -52,26 +52,6 @@ async function fetchProducts(): Promise<Product[]> {
   return data.products as Product[];
 }
 
-async function recordSale(saleData: {
-  cashierId: string;
-  items: SaleItem[];
-  totalAmount: number;
-  paymentMode: PaymentMode;
-}): Promise<any> {
-  const res = await fetch("/api/sales", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(saleData),
-  });
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || "Failed to record sale");
-  }
-  return res.json();
-}
-
 interface CartItem extends SaleItem {
   stock: number; // Available stock for validation
 }
@@ -89,13 +69,11 @@ export default function RecordSalePage() {
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   const [selectedQuantity, setSelectedQuantity] = useState<number>(1);
   const [paymentMode, setPaymentMode] = useState<PaymentMode>("Cash");
-  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        setIsLoading(true);
         const products = await fetchProducts();
         setAllProducts(products.filter((p: Product) => p.quantity > 0)); // Only show products in stock
       } catch (error) {
@@ -104,8 +82,6 @@ export default function RecordSalePage() {
           description: error instanceof Error ? error.message : "Failed to load products",
           variant: "destructive",
         });
-      } finally {
-        setIsLoading(false);
       }
     };
     loadProducts();
@@ -561,7 +537,7 @@ export default function RecordSalePage() {
                   </>
                 ) : (
                   <>
-                    <DollarSign className="mr-2 h-5 w-5" /> Complete Sale
+                    Complete Sale
                   </>
                 )}
               </Button>

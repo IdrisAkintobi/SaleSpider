@@ -5,7 +5,7 @@ import { ManagerOverview } from "@/components/dashboard/overview/manager-overvie
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
-import { DollarSign } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
@@ -24,7 +24,7 @@ export default function OverviewPage() {
   const recordSaleAction = !userIsManager ? (
     <Button size="lg" asChild>
       <Link href="/dashboard/record-sale">
-        <DollarSign className="mr-2 h-5 w-5" /> {t("record_sale")}
+        <ShoppingCart className="mr-2 h-5 w-5" /> {t("record_sale")}
       </Link>
     </Button>
   ) : (

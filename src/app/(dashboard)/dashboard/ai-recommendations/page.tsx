@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { AIRecommendationsDisplay } from "@/components/dashboard/ai/recommendations-display";
 import { useAuth } from "@/contexts/auth-context";
 import { useTranslation } from "@/lib/i18n";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Lightbulb } from "lucide-react";

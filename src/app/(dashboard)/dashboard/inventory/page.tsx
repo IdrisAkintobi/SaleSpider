@@ -12,7 +12,6 @@ import { SearchInput } from "./search-input";
 import { UpdateProductDialog } from "./update-product-dialog";
 import { ProductDetailsDialog } from "./product-details-dialog";
 import { UpdateStockDialog } from "./update-stock-dialog";
-import { DollarSign } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
@@ -130,7 +129,7 @@ export default function InventoryPage() {
   const recordSaleAction = !userIsManager ? (
     <Button size="lg" asChild>
       <Link href="/dashboard/record-sale">
-        <DollarSign className="mr-2 h-5 w-5" /> {t("record_sale")}
+        {t("record_sale")}
       </Link>
     </Button>
   ) : null;

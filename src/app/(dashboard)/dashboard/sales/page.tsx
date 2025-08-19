@@ -33,7 +33,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { useSales } from "@/hooks/use-sales";
 import type { Sale } from "@/lib/types";
-import { CalendarDays, Filter, UserCircle, Eye, ArrowUp, ArrowDown, DollarSign, Search } from "lucide-react";
+import { CalendarDays, Filter, UserCircle, Eye, ArrowUp, ArrowDown, ShoppingCart, Search } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -51,7 +51,7 @@ import { useTranslation } from "@/lib/i18n";
 import { startOfToday, endOfToday, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 
 export default function SalesPage() {
-  const { user, userIsManager, userIsCashier } = useAuth();
+  const { userIsManager, userIsCashier } = useAuth();
   const { toast } = useToast();
   const formatCurrency = useFormatCurrency();
   const vatPercentage = useVatPercentage();
@@ -62,7 +62,6 @@ export default function SalesPage() {
     page,
     setPage,
     pageSize,
-    setPageSize,
     sort,
     order,
     handleSort,
@@ -90,9 +89,7 @@ export default function SalesPage() {
   });
   const sales = data?.data || [];
   const total = data?.total || 0;
-  const totalPages = Math.ceil(total / pageSize);
   const paymentMethodTotals = data?.paymentMethodTotals || {};
-  const paymentMethods = ["ALL", ...Object.keys(paymentMethodTotals)];
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("ALL");
   // Use backend totals, not paginated sum
   const backendTotalRevenue = data?.totalSalesValue ?? 0;
@@ -170,7 +167,7 @@ export default function SalesPage() {
   const recordSaleAction = !userIsManager ? (
     <Button size="lg" asChild>
       <Link href="/dashboard/record-sale">
-        <DollarSign className="mr-2 h-5 w-5" /> {t("record_new_sale")}
+        <ShoppingCart className="mr-2 h-5 w-5" /> {t("record_new_sale")}
       </Link>
     </Button>
   ) : null;

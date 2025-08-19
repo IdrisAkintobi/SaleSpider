@@ -25,7 +25,6 @@ import {
   ArrowDown,
   Pencil,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { AddStaffDialog } from "./add-staff-dialog";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -52,8 +51,7 @@ async function editUser(update: Partial<User> & { id: string }) {
 }
 
 export default function StaffPage() {
-  const { user: currentUser, userIsManager, userIsCashier } = useAuth();
-  const router = useRouter();
+  const { user: currentUser, userIsManager } = useAuth();
   const { toast } = useToast();
   const t = useTranslation();
 
@@ -82,11 +80,10 @@ export default function StaffPage() {
   }, userIsManager);
   const users = data?.data ?? [];
   const total = data?.total || 0;
-  const totalPages = Math.ceil(total / pageSize);
   const updateStatusMutation = useUpdateUserStatus();
 
   // Add after useStaff and before staffList
-  const { data: salesData, isLoading: isLoadingSales } = useSales();
+  const { data: salesData } = useSales();
   const sales = salesData?.data ?? [];
 
   // Combine users and sales data to create performance data

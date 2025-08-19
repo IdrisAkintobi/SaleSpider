@@ -9,7 +9,6 @@ import {
   Edit3,
   ArrowDown,
   ArrowUp,
-  XCircle,
   Trash2,
   RotateCcw,
   MoreHorizontal,

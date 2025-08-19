@@ -86,7 +86,7 @@ export function useUpdateUserStatus() {
   return useMutation({
     mutationFn: ({ userId, status }: { userId: string; status: UserStatus }) =>
       updateUserStatus(userId, status),
-    onSuccess: (updatedUser) => {
+    onSuccess: () => {
       // Invalidate and refetch staff data
       queryClient.invalidateQueries({ queryKey: ["staff"] });
     },

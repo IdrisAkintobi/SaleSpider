@@ -9,7 +9,7 @@ const logger = createChildLogger('api:products:id');
 
 // Function to get product by ID
 export async function GET(
-  request: Request,
+  _: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;

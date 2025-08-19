@@ -1,5 +1,5 @@
 // Prisma client extension for automatic soft delete filtering
-import { Prisma, PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 // Create extended Prisma client with soft delete filtering
 export const createPrismaWithSoftDelete = () => {

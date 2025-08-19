@@ -91,6 +91,15 @@ const translations: Record<string, Record<string, string>> = {
     update_stock: "Update Stock",
     inventory_management_description:
       "View, add, and manage your product stock.",
+    add_new_product: "Add New Product",
+    add_product_description:
+      "Enter the product details. Image URL and GTIN are optional.",
+    product_description: "Product Description",
+    product_category: "Product Category",
+    new_quantity: "Initial Quantity",
+    low_stock_margin: "Low Stock Threshold",
+    image_url_optional: "Image URL (optional)",
+    gtin_optional: "GTIN (optional)",
     inventory: "Inventory",
     no_products_found: "No products found.",
     // Staff
@@ -314,6 +323,15 @@ const translations: Record<string, Record<string, string>> = {
     update_stock: "Mettre à jour le stock",
     inventory_management_description:
       "Afficher, ajouter et gérer votre stock de produits.",
+    add_new_product: "Ajouter un nouveau produit",
+    add_product_description:
+      "Saisissez les détails du produit. L'URL de l'image et le GTIN sont facultatifs.",
+    product_description: "Description du produit",
+    product_category: "Catégorie de produit",
+    new_quantity: "Quantité initiale",
+    low_stock_margin: "Seuil de stock faible",
+    image_url_optional: "URL de l'image (facultatif)",
+    gtin_optional: "GTIN (facultatif)",
     inventory: "Inventaire",
     no_products_found: "Aucun produit trouvé.",
     // Personnel
@@ -542,6 +560,15 @@ const translations: Record<string, Record<string, string>> = {
     update_stock: "Actualizar stock",
     inventory_management_description:
       "Ver, agregar y administrar su stock de productos.",
+    add_new_product: "Agregar nuevo producto",
+    add_product_description:
+      "Ingrese los detalles del producto. La URL de la imagen y el GTIN son opcionales.",
+    product_description: "Descripción del producto",
+    product_category: "Categoría del producto",
+    new_quantity: "Cantidad inicial",
+    low_stock_margin: "Umbral de stock bajo",
+    image_url_optional: "URL de la imagen (opcional)",
+    gtin_optional: "GTIN (opcional)",
     inventory: "Inventario",
     no_products_found: "No se encontraron productos.",
     // Personal
@@ -768,6 +795,15 @@ const translations: Record<string, Record<string, string>> = {
     update_stock: "Bestand aktualisieren",
     inventory_management_description:
       "Anzeigen, Hinzufügen und Verwalten Ihres Produktbestands.",
+    add_new_product: "Neues Produkt hinzufügen",
+    add_product_description:
+      "Geben Sie die Produktdetails ein. Bild-URL und GTIN sind optional.",
+    product_description: "Produktbeschreibung",
+    product_category: "Produktkategorie",
+    new_quantity: "Anfangsmenge",
+    low_stock_margin: "Schwellenwert für niedrigen Bestand",
+    image_url_optional: "Bild-URL (optional)",
+    gtin_optional: "GTIN (optional)",
     inventory: "Inventar",
     no_products_found: "Keine Produkte gefunden.",
     // Personal

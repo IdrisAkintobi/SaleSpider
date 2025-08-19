@@ -21,7 +21,7 @@ export function SearchInput({ value, onChange, isLoading }: SearchInputProps) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="pl-10"
-        disabled={isLoading}
+        aria-busy={isLoading}
       />
     </div>
   );
