@@ -1,8 +1,11 @@
 import { PrismaClient, Role } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
+import { createChildLogger } from "@/lib/logger";
+import { AuditTrailService } from "@/lib/audit-trail";
 import * as argon2 from "argon2";
 
 const prisma = new PrismaClient();
+const logger = createChildLogger('api:users');
 
 // Function to get users
 export async function GET(request: NextRequest) {
@@ -60,7 +63,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ data: users, total });
   } catch (error) {
-    console.error("Error fetching users:", error);
+    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Error fetching users');
     return NextResponse.json(
       { message: "Failed to fetch users" },
       { status: 500 }
@@ -126,7 +129,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(newUser, { status: 201 });
   } catch (error) {
-    console.error("Error creating user:", error);
+    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Error creating user');
     return NextResponse.json(
       { message: "Failed to create user" },
       { status: 500 }
@@ -155,7 +158,10 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ message: "User ID is required" }, { status: 400 });
     }
     // Only super-admin can edit all, manager can only edit cashiers
-    const targetUser = await prisma.user.findUnique({ where: { id } });
+    const targetUser = await prisma.user.findUnique({ 
+      where: { id },
+      select: { id: true, role: true }
+    });
     if (!targetUser) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
@@ -165,16 +171,20 @@ export async function PATCH(request: NextRequest) {
     if (actingUser.role !== "SUPER_ADMIN" && actingUser.role !== "MANAGER") {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
+
+    // Prepare update data and track changed fields for audit trail
+    const updateData: any = {
+      ...(name && { name }),
+      ...(username && { username }),
+      ...(email && { email }),
+      ...(role && { role }),
+      ...(status && { status }),
+    }
+
     // Update user
     const updatedUser = await prisma.user.update({
       where: { id },
-      data: {
-        ...(name && { name }),
-        ...(username && { username }),
-        ...(email && { email }),
-        ...(role && { role }),
-        ...(status && { status }),
-      },
+      data: updateData,
       select: {
         id: true,
         name: true,
@@ -186,9 +196,24 @@ export async function PATCH(request: NextRequest) {
         updatedAt: true,
       },
     });
+
+    // Log audit trail with only changed fields (no DB fetch)
+    if (Object.keys(updateData).length > 0) {
+      await AuditTrailService.logUserUpdate(
+        id,
+        updateData,
+        userId,
+        actingUser.email,
+        {
+          ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+          userAgent: request.headers.get('user-agent'),
+        }
+      );
+    }
+
     return NextResponse.json(updatedUser);
   } catch (error) {
-    console.error("Error updating user:", error);
+    logger.error({ userId, error: error instanceof Error ? error.message : 'Unknown error' }, 'Error updating user');
     return NextResponse.json(
       { message: "Failed to update user" },
       { status: 500 }

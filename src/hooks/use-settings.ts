@@ -16,6 +16,7 @@ export interface AppSettings {
   language: string;
   theme: string;
   maintenanceMode: boolean;
+  showDeletedProducts: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -35,6 +36,7 @@ export interface UpdateSettingsData {
   language?: string;
   theme?: string;
   maintenanceMode?: boolean;
+  showDeletedProducts?: boolean;
 }
 
 // Fetch settings from API

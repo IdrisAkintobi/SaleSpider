@@ -47,6 +47,7 @@ const settingsSchema = z.object({
   language: z.string().min(1, "Language is required"),
   theme: z.enum(["light", "dark", "auto"]),
   maintenanceMode: z.boolean(),
+  showDeletedProducts: z.boolean(),
 });
 
 type SettingsFormData = z.infer<typeof settingsSchema>;
@@ -76,6 +77,7 @@ export default function SettingsPage() {
     language: DEFAULT_SETTINGS.language,
     theme: DEFAULT_SETTINGS.theme as "light" | "dark" | "auto",
     maintenanceMode: DEFAULT_SETTINGS.maintenanceMode,
+    showDeletedProducts: DEFAULT_SETTINGS.showDeletedProducts,
   });
 
   const getDefaultSettingsWithMeta = () => ({
@@ -108,6 +110,7 @@ export default function SettingsPage() {
         language: settings.language,
         theme: settings.theme as "light" | "dark" | "auto",
         maintenanceMode: settings.maintenanceMode,
+        showDeletedProducts: settings.showDeletedProducts,
       });
     }
   }, [settings, form]);
@@ -607,6 +610,25 @@ export default function SettingsPage() {
                   {form.formState.errors.maintenanceMode && (
                     <p className="text-sm text-destructive">
                       {form.formState.errors.maintenanceMode.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="showDeletedProducts">Show Deleted Products</Label>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="showDeletedProducts"
+                      checked={watchedValues.showDeletedProducts}
+                      onCheckedChange={(checked) => form.setValue("showDeletedProducts", checked)}
+                    />
+                    <Label htmlFor="showDeletedProducts" className="text-sm text-muted-foreground">
+                      Display soft-deleted products in inventory (Super Admin only)
+                    </Label>
+                  </div>
+                  {form.formState.errors.showDeletedProducts && (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.showDeletedProducts.message}
                     </p>
                   )}
                 </div>

@@ -17,6 +17,7 @@ export const DEFAULT_SETTINGS = {
   language: "en",
   theme: "light",
   maintenanceMode: false,
+  showDeletedProducts: false,
 };
 
 export const CURRENCY_OPTIONS = [
