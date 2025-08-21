@@ -179,6 +179,7 @@ const translations: Record<string, Record<string, string>> = {
     total_sales_count: "Total Sales",
     items_count: "Items Count",
     record_new_sale: "Record New Sale",
+    print_receipt: "Print Receipt",
     // Performance Chart
     target: "Target",
     mon: "Mon",
@@ -418,6 +419,7 @@ const translations: Record<string, Record<string, string>> = {
     total_sales_count: "Ventes totales",
     items_count: "Nombre d'articles",
     record_new_sale: "Enregistrer une nouvelle vente",
+    print_receipt: "Imprimer le reçu",
     // Performance Chart
     target: "Objectif",
     mon: "Lun",
@@ -660,6 +662,7 @@ const translations: Record<string, Record<string, string>> = {
     total_sales_count: "Ventas totales",
     items_count: "Cantidad de artículos",
     record_new_sale: "Registrar nueva venta",
+    print_receipt: "Imprimir recibo",
     // Performance Chart
     target: "Objetivo",
     mon: "Lun",
@@ -901,6 +904,7 @@ const translations: Record<string, Record<string, string>> = {
     total_sales_count: "Gesamtverkäufe",
     items_count: "Anzahl der Artikel",
     record_new_sale: "Neuen Verkauf aufzeichnen",
+    print_receipt: "Beleg drucken",
     // Performance Chart
     target: "Ziel",
     mon: "Mo",

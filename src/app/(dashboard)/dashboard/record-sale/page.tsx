@@ -29,6 +29,7 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateSale } from "@/hooks/use-sales";
+import { ReceiptPrinter } from "@/components/shared/receipt-printer";
 import type { PaymentMode, Product, SaleItem } from "@/lib/types";
 import { PlusCircle, ShoppingCart, XCircle, HelpCircle, PackageSearch } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -59,7 +60,7 @@ interface CartItem extends SaleItem {
 export default function RecordSalePage() {
   const { user, userIsManager } = useAuth();
   const { toast } = useToast();
-  const createSaleMutation = useCreateSale();
+  const createSale = useCreateSale();
   const router = useRouter();
   const formatCurrency = useFormatCurrency();
   const t = useTranslation();
@@ -69,7 +70,20 @@ export default function RecordSalePage() {
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   const [selectedQuantity, setSelectedQuantity] = useState<number>(1);
   const [paymentMode, setPaymentMode] = useState<PaymentMode>("Cash");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [completedSale, setCompletedSale] = useState<{
+    id: string;
+    cashierId: string;
+    items: Array<{
+      productId: string;
+      productName: string;
+      quantity: number;
+      price: number;
+    }>;
+    cashierName: string;
+    timestamp: number;
+    totalAmount: number;
+    paymentMode: PaymentMode;
+  } | null>(null);
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -86,6 +100,8 @@ export default function RecordSalePage() {
     };
     loadProducts();
   }, [toast]);
+
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
   // Filter products based on search term
   const filteredProducts = useMemo(() => {
@@ -229,23 +245,36 @@ export default function RecordSalePage() {
         paymentMode,
       };
 
-      const recordedSale = await createSaleMutation.mutateAsync(saleToRecord);
+      const recordedSale = await createSale.mutateAsync(saleToRecord);
+
+      // Set completed sale for receipt printing
+      setCompletedSale({
+        ...recordedSale,
+        cashierId: user!.id,
+        items: cart.map(item => ({
+          productId: item.productId,
+          productName: item.productName,
+          quantity: item.quantity,
+          price: item.price
+        })),
+        cashierName: user?.name || 'Unknown',
+        timestamp: Date.now()
+      });
 
       // Refresh products list to reflect new stock
       const products = await fetchProducts();
       setAllProducts(products.filter((p: Product) => p.quantity > 0));
 
       toast({
-        title: "Sale Recorded Successfully!",
-        description: `Sale ID: ${recordedSale.id.substring(
-          0,
-          8
-        )}... Total: ${formatCurrency(cartTotal)}`,
+        title: "Sale Recorded",
+        description: "Sale recorded successfully!",
       });
+      
+      // Reset form
       setCart([]);
+      setPaymentMode("Cash");
       setSelectedProductId("");
       setSelectedQuantity(1);
-      setPaymentMode("Cash");
       // Stay on the record sale page - no redirect needed
     } catch (error) {
       toast({
@@ -490,19 +519,22 @@ export default function RecordSalePage() {
                 size="lg"
                 onClick={handleRecordSale}
                 className="w-full"
-                disabled={cart.length === 0 || createSaleMutation.isPending}
+                disabled={cart.length === 0 || createSale.isPending}
               >
-                {createSaleMutation.isPending ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Recording Sale...
-                  </>
+                {createSale.isPending ? (
+                  "Recording Sale..."
                 ) : (
-                  <>
-                    Complete Sale
-                  </>
+                  "Record Sale"
                 )}
               </Button>
+              {completedSale && (
+                <ReceiptPrinter 
+                  sale={completedSale} 
+                  variant="default"
+                  size="default"
+                  className="ml-2"
+                />
+              )}
             </CardFooter>
           )}
         </Card>

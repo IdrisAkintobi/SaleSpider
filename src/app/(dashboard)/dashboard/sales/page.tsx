@@ -1,6 +1,7 @@
 "use client";
 
 import { PageHeader } from "@/components/shared/page-header";
+import { ReceiptPrinter } from "@/components/shared/receipt-printer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -526,6 +527,9 @@ export default function SalesPage() {
                                   <div className="flex justify-between items-center border-t pt-2">
                                     <span className="text-lg font-semibold">{t('total_amount')}</span>
                                     <span className="text-lg font-bold">{formatCurrency(selectedSale.totalAmount)}</span>
+                                  </div>
+                                  <div className="flex justify-center pt-4 border-t">
+                                    <ReceiptPrinter sale={selectedSale} />
                                   </div>
                                 </div>
                               </div>
