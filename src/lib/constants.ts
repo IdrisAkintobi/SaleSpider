@@ -77,3 +77,6 @@ export const THEME_OPTIONS = [
   { value: "dark", label: "Dark" },
   { value: "auto", label: "Auto (System)" },
 ] as const; 
+
+// Pagination
+export const PAGE_SIZE = 20;

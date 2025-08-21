@@ -31,13 +31,16 @@ import { useToast } from "@/hooks/use-toast";
 import { useCreateSale } from "@/hooks/use-sales";
 import { ReceiptPrinter } from "@/components/shared/receipt-printer";
 import type { PaymentMode, Product, SaleItem } from "@/lib/types";
-import { PackageSearch, ShoppingCart, XCircle } from "lucide-react";
+import { ShoppingCart, XCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useFormatCurrency } from "@/lib/currency";
 import { useTranslation } from "@/lib/i18n";
-import useDebounce from "@/hooks/use-debounce";
-import { useIntersectionObserver } from "@/hooks/use-intersection-observer";
+// IntersectionObserver is handled inside ProductGrid
+// import { useIntersectionObserver } from "@/hooks/use-intersection-observer";
+import { ProductSearch } from "@/components/dashboard/record-sale/product-search";
+import { ProductGrid } from "@/components/dashboard/record-sale/product-grid";
+import { useProducts } from "@/hooks/use-products";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,29 +53,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-const PAGE_SIZE = 20;
-
-async function fetchProducts(page: number = 1, pageSize: number = PAGE_SIZE, search?: string, signal?: AbortSignal): Promise<{
-  products: Product[];
-  totalCount: number;
-  totalPages: number;
-  hasMore: boolean;
-}> {
-  const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
-  if (search && search.trim()) params.set("search", search.trim());
-  const res = await fetch(`/api/products?${params.toString()}`, { signal });
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || "Failed to fetch products");
-  }
-  const data = await res.json();
-  return {
-    products: data.products,
-    totalCount: data.totalCount,
-    totalPages: data.totalPages,
-    hasMore: page < data.totalPages,
-  };
-}
+// Products fetching/search/pagination handled by useProducts
 
 interface CartItem extends SaleItem {
   stock: number; // Available stock for validation
@@ -86,12 +67,9 @@ export default function RecordSalePage() {
   const formatCurrency = useFormatCurrency();
   const t = useTranslation();
 
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const { products, hasMore, loading, searchTerm, setSearchTerm, loadMore, refresh } = useProducts();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [paymentMode, setPaymentMode] = useState<PaymentMode>("Cash");
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [hasMoreProducts, setHasMoreProducts] = useState<boolean>(true);
-  const [loadingProducts, setLoadingProducts] = useState<boolean>(false);
   const [completedSale, setCompletedSale] = useState<{
     id: string;
     cashierId: string;
@@ -107,90 +85,11 @@ export default function RecordSalePage() {
     paymentMode: PaymentMode;
   } | null>(null);
 
-  useEffect(() => {
-    const loadProducts = async () => {
-      const controller = new AbortController();
-      try {
-        setLoadingProducts(true);
-        const result = await fetchProducts(1, PAGE_SIZE, searchTerm, controller.signal);
-        setAllProducts(result.products.filter((p) => p.quantity > 0));
-        setHasMoreProducts(result.hasMore);
-        setCurrentPage(1);
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to load products",
-          variant: "destructive",
-        });
-      } finally {
-        setLoadingProducts(false);
-      }
-    };
-    loadProducts();
-  }, []);
+  // Products already server-filtered in hook
+  const filteredProducts = useMemo(() => products, [products]);
 
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const debouncedSearch = useDebounce(searchTerm, 300);
 
-  // Refetch products when search term changes (server-side filtering)
-  useEffect(() => {
-    const controller = new AbortController();
-    const run = async () => {
-      try {
-        setLoadingProducts(true);
-        const result = await fetchProducts(1, PAGE_SIZE, debouncedSearch, controller.signal);
-        setAllProducts(result.products.filter((p) => p.quantity > 0));
-        setHasMoreProducts(result.hasMore);
-        setCurrentPage(1);
-      } catch (error) {
-        toast({ title: "Error", description: "Failed to search products", variant: "destructive" });
-      } finally {
-        setLoadingProducts(false);
-      }
-    };
-    run();
-    return () => controller.abort();
-  }, [debouncedSearch]);
-
-  // Server-side filtered list (no client filtering required)
-  const filteredProducts = useMemo(() => allProducts, [allProducts]);
-
-  const loadMoreProducts = useCallback(async () => {
-    if (loadingProducts || !hasMoreProducts) return;
-    
-    try {
-      setLoadingProducts(true);
-      const nextPage = currentPage + 1;
-      const result = await fetchProducts(nextPage, PAGE_SIZE, debouncedSearch);
-      setAllProducts(prev => [...prev, ...result.products.filter((p) => p.quantity > 0)]);
-      setHasMoreProducts(result.hasMore);
-      setCurrentPage(nextPage);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load more products",
-        variant: "destructive",
-      });
-    } finally {
-      setLoadingProducts(false);
-    }
-  }, [loadingProducts, hasMoreProducts, currentPage, debouncedSearch, toast]);
-
-  // Infinite scroll via IntersectionObserver
-  const productsScrollRef = useRef<HTMLDivElement | null>(null);
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
-
-  const handleIntersect = useCallback(() => {
-    if (hasMoreProducts && !loadingProducts) {
-      loadMoreProducts();
-    }
-  }, [hasMoreProducts, loadingProducts, loadMoreProducts]);
-
-  useIntersectionObserver(
-    sentinelRef.current,
-    handleIntersect,
-    { root: productsScrollRef.current, rootMargin: "100px", threshold: 0.1 }
-  );
+  // ProductGrid now manages its own IntersectionObserver
 
   const handleAddProductToCart = (product: Product, quantity: number = 1) => {
     const productToAdd = product;
@@ -316,10 +215,7 @@ export default function RecordSalePage() {
         totalAmount: cartTotal,
         paymentMode,
       });
-      const result = await fetchProducts(1, PAGE_SIZE, debouncedSearch);
-      setAllProducts(result.products.filter((p) => p.quantity > 0));
-      setHasMoreProducts(result.hasMore);
-      setCurrentPage(1);
+      await refresh();
       toast({
         title: "Sale Recorded",
         description: "Sale recorded successfully!",
@@ -372,100 +268,23 @@ export default function RecordSalePage() {
           </CardHeader>
           <CardContent className={`space-y-4 ${completedSale ? 'opacity-50 pointer-events-none' : ''}`}>
             {/* Product Search */}
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Label htmlFor="product-search">Search Products</Label>
-              </div>
-              <div className="relative">
-                <PackageSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-20 pointer-events-none" />
-                <Input
-                  id="product-search"
-                  placeholder={t("search_products_advanced")}
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                  }}
-                  className="pl-10 mb-2"
-                />
-              </div>
-            </div>
+            <ProductSearch
+              value={searchTerm}
+              onChange={setSearchTerm}
+              disabled={!!completedSale}
+              placeholder={t("search_products_advanced")}
+            />
             {/* Product Grid */}
-            <div className="space-y-4">
-              <Label>Available Products</Label>
-              <div 
-                ref={productsScrollRef}
-                className="max-h-96 overflow-y-auto space-y-2 border rounded-md p-2"
-              >
-                {filteredProducts.length > 0 ? (
-                  filteredProducts.map((product) => (
-                    <div
-                      key={product.id}
-                      className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                        product.quantity === 0
-                          ? 'bg-muted/50 opacity-50 cursor-not-allowed'
-                          : 'hover:bg-accent hover:text-accent-foreground'
-                      }`}
-                      onClick={() => {
-                        if (product.quantity > 0) {
-                          handleAddProductToCart(product, 1);
-                        }
-                      }}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="font-medium text-sm">
-                            {product.name}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {product.category}
-                          </div>
-                          <div className="flex items-center gap-2 mt-2">
-                            <span className="text-sm font-semibold text-primary">
-                              {formatCurrency(product.price)}
-                            </span>
-                            <span className={`text-xs px-2 py-1 rounded-full ${
-                              product.quantity > 10 
-                                ? 'bg-green-100 text-green-800' 
-                                : product.quantity > 0 
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}>
-                              Stock: {product.quantity}
-                            </span>
-                          </div>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={product.quantity === 0}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (product.quantity > 0) {
-                              handleAddProductToCart(product, 1);
-                            }
-                          }}
-                        >
-                          Add
-                        </Button>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    {searchTerm ? "No products found matching your search." : "No products available."}
-                  </div>
-                )}
-                {loadingProducts && (
-                  <div className="text-center py-4">
-                    <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-                      <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
-                      Loading more products...
-                    </div>
-                  </div>
-                )}
-                <div ref={sentinelRef} />
-              </div>
-            </div>
+            <ProductGrid
+              products={filteredProducts}
+              loading={loading}
+              hasMore={hasMore}
+              onLoadMore={loadMore}
+              onSelectProduct={(p) => handleAddProductToCart(p, 1)}
+              formatCurrency={formatCurrency}
+              searchTerm={searchTerm}
+              disabled={!!completedSale}
+            />
           </CardContent>
         </Card>
 
