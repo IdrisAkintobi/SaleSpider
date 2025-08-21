@@ -60,7 +60,7 @@ const translations: Record<string, Record<string, string>> = {
       "Search sales by cashier, product, or payment mode...",
     search_sales_product: "Search sales by product or payment mode...",
     search_products_advanced:
-      "Search by ID, name, category, price, GTIN, or description...",
+      "Search by ID, name, category, GTIN, or description...",
     // Overview Components
     active_cashiers: "Active Cashiers",
     low_stock_items: "Low Stock Items",
@@ -295,7 +295,7 @@ const translations: Record<string, Record<string, string>> = {
     search_sales_product:
       "Rechercher des ventes par produit ou mode de paiement...",
     search_products_advanced:
-      "Rechercher par ID, nom, catégorie, prix, GTIN ou description...",
+      "Rechercher par ID, nom, catégorie, GTIN ou description...",
     // Overview Components
     active_cashiers: "Caissiers actifs",
     low_stock_items: "Articles en stock faible",
@@ -535,7 +535,7 @@ const translations: Record<string, Record<string, string>> = {
       "Buscar ventas por cajero, producto o modo de pago...",
     search_sales_product: "Buscar ventas por producto o modo de pago...",
     search_products_advanced:
-      "Buscar por ID, nombre, categoría, precio, GTIN o descripción...",
+      "Buscar por ID, nombre, categoría, GTIN o descripción...",
     // Overview Components
     active_cashiers: "Cajeros activos",
     low_stock_items: "Artículos con stock bajo",
@@ -773,7 +773,7 @@ const translations: Record<string, Record<string, string>> = {
       "Verkäufe nach Kassierer, Produkt oder Zahlungsart suchen...",
     search_sales_product: "Verkäufe nach Produkt oder Zahlungsart suchen...",
     search_products_advanced:
-      "Nach ID, Name, Kategorie, Preis, GTIN oder Beschreibung suchen...",
+      "Nach ID, Name, Kategorie, GTIN oder Beschreibung suchen...",
     // Overview Components
     active_cashiers: "Aktive Kassierer",
     low_stock_items: "Artikel mit niedrigem Bestand",

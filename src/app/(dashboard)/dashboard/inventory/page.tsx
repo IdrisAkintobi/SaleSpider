@@ -159,6 +159,7 @@ export default function InventoryPage() {
         value={searchTerm}
         onChange={handleSearchChange}
         isLoading={isFetching}
+        placeholderKey={"search_products_advanced"}
       />
 
       {isLoading ? (

@@ -108,44 +108,7 @@ export default function RecordSalePage() {
       // Search by GTIN
       const gtinMatch = product.gtin?.toLowerCase().includes(searchLower) || false;
       
-      // Search by exact price
-      const priceMatch = product.price.toString().includes(searchTerm);
-      
-      // Search by price range (e.g., "10-50")
-      let priceRangeMatch = false;
-      if (searchTerm.includes('-')) {
-        const parts = searchTerm.split('-');
-        if (parts.length === 2) {
-          const minPrice = parseFloat(parts[0]);
-          const maxPrice = parseFloat(parts[1]);
-          if (!isNaN(minPrice) && !isNaN(maxPrice)) {
-            priceRangeMatch = product.price >= minPrice && product.price <= maxPrice;
-          }
-        }
-      }
-      
-      // Search by minimum price (e.g., ">10" or "10+")
-      let minPriceMatch = false;
-      if (searchTerm.includes('>') || searchTerm.includes('+')) {
-        const priceStr = searchTerm.replace(/[>+]/g, '');
-        const minPrice = parseFloat(priceStr);
-        if (!isNaN(minPrice)) {
-          minPriceMatch = product.price >= minPrice;
-        }
-      }
-      
-      // Search by maximum price (e.g., "<50")
-      let maxPriceMatch = false;
-      if (searchTerm.includes('<')) {
-        const priceStr = searchTerm.replace('<', '');
-        const maxPrice = parseFloat(priceStr);
-        if (!isNaN(maxPrice)) {
-          maxPriceMatch = product.price <= maxPrice;
-        }
-      }
-      
-      return idMatch || nameMatch || descriptionMatch || categoryMatch || gtinMatch || 
-             priceMatch || priceRangeMatch || minPriceMatch || maxPriceMatch;
+      return idMatch || nameMatch || descriptionMatch || categoryMatch || gtinMatch;
     });
   }, [allProducts, searchTerm]);
 
@@ -340,7 +303,6 @@ export default function RecordSalePage() {
                           <li>• <strong>ID:</strong> "prod_123"</li>
                           <li>• <strong>Name:</strong> "laptop" or "gaming"</li>
                           <li>• <strong>Category:</strong> "electronics"</li>
-                          <li>• <strong>Price:</strong> "25.99" or "10-50"</li>
                           <li>• <strong>GTIN:</strong> "1234567890123"</li>
                           <li>• <strong>Description:</strong> "wireless" or "bluetooth"</li>
                         </ul>
@@ -365,7 +327,7 @@ export default function RecordSalePage() {
                     Found {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''}
                   </p>
                   <p className="text-xs">
-                    Searchable fields: ID, Name, Description, Category, GTIN, Price
+                    Searchable fields: ID, Name, Description, Category, GTIN
                   </p>
                 </div>
               )}
