@@ -2,7 +2,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { User } from "@/lib/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 
 // Fetch current user session
 async function fetchUserSession(): Promise<User | null> {
@@ -117,14 +117,14 @@ export function useAuth() {
   });
 
   // Login function
-  const login = async (username: string, password: string) => {
+  const login = useCallback((username: string, password: string) => {
     loginMutation.mutate({ username, password });
-  };
+  }, [loginMutation]);
 
   // Logout function
-  const logout = async () => {
+  const logout = useCallback(() => {
     logoutMutation.mutate();
-  };
+  }, [logoutMutation]);
 
   // Computed values
   const userIsManager =
@@ -142,7 +142,7 @@ export function useAuth() {
       });
       logout();
     }
-  }, [user]);
+  }, [user, toast, logout]);
 
   return {
     user,

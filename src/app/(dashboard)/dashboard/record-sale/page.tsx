@@ -31,27 +31,29 @@ import { useToast } from "@/hooks/use-toast";
 import { useCreateSale } from "@/hooks/use-sales";
 import { ReceiptPrinter } from "@/components/shared/receipt-printer";
 import type { PaymentMode, Product, SaleItem } from "@/lib/types";
-import { PlusCircle, ShoppingCart, XCircle, HelpCircle, PackageSearch } from "lucide-react";
+import { ShoppingCart, XCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { useCallback, useMemo, useState } from "react";
 import { useFormatCurrency } from "@/lib/currency";
 import { useTranslation } from "@/lib/i18n";
+// IntersectionObserver is handled inside ProductGrid
+// import { useIntersectionObserver } from "@/hooks/use-intersection-observer";
+import { ProductSearch } from "@/components/dashboard/record-sale/product-search";
+import { ProductGrid } from "@/components/dashboard/record-sale/product-grid";
+import { useProducts } from "@/hooks/use-products";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
-async function fetchProducts(): Promise<Product[]> {
-  const res = await fetch("/api/products");
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || "Failed to fetch products");
-  }
-  const data = await res.json();
-  return data.products as Product[];
-}
+// Products fetching/search/pagination handled by useProducts
 
 interface CartItem extends SaleItem {
   stock: number; // Available stock for validation
@@ -65,10 +67,8 @@ export default function RecordSalePage() {
   const formatCurrency = useFormatCurrency();
   const t = useTranslation();
 
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const { products, hasMore, loading, searchTerm, setSearchTerm, loadMore, refresh } = useProducts();
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [selectedProductId, setSelectedProductId] = useState<string>("");
-  const [selectedQuantity, setSelectedQuantity] = useState<number>(1);
   const [paymentMode, setPaymentMode] = useState<PaymentMode>("Cash");
   const [completedSale, setCompletedSale] = useState<{
     id: string;
@@ -85,61 +85,16 @@ export default function RecordSalePage() {
     paymentMode: PaymentMode;
   } | null>(null);
 
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        const products = await fetchProducts();
-        setAllProducts(products.filter((p: Product) => p.quantity > 0)); // Only show products in stock
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: error instanceof Error ? error.message : "Failed to load products",
-          variant: "destructive",
-        });
-      }
-    };
-    loadProducts();
-  }, [toast]);
+  // Products already server-filtered in hook
+  const filteredProducts = useMemo(() => products, [products]);
 
-  const [searchTerm, setSearchTerm] = useState<string>("");
 
-  // Filter products based on search term
-  const filteredProducts = useMemo(() => {
-    if (!searchTerm.trim()) return allProducts;
-    
-    const searchLower = searchTerm.toLowerCase();
-    return allProducts.filter((product) => {
-      // Search by product ID
-      const idMatch = product.id.toLowerCase().includes(searchLower);
-      
-      // Search by product name
-      const nameMatch = product.name.toLowerCase().includes(searchLower);
-      
-      // Search by description
-      const descriptionMatch = product.description.toLowerCase().includes(searchLower);
-      
-      // Search by category
-      const categoryMatch = product.category.toLowerCase().includes(searchLower);
-      
-      // Search by GTIN
-      const gtinMatch = product.gtin?.toLowerCase().includes(searchLower) || false;
-      
-      return idMatch || nameMatch || descriptionMatch || categoryMatch || gtinMatch;
-    });
-  }, [allProducts, searchTerm]);
+  // ProductGrid now manages its own IntersectionObserver
 
-  const selectedProductDetails = useMemo(() => {
-    return allProducts.find((p) => p.id === selectedProductId);
-  }, [allProducts, selectedProductId]);
+  const handleAddProductToCart = (product: Product, quantity: number = 1) => {
+    const productToAdd = product;
 
-  // Clear search when product is selected
-  const handleProductSelect = (productId: string) => {
-    setSelectedProductId(productId);
-    setSearchTerm(""); // Clear search when product is selected
-  };
-
-  const handleAddProductToCart = () => {
-    if (!selectedProductDetails || selectedQuantity <= 0) {
+    if (!productToAdd || quantity <= 0) {
       toast({
         title: "Invalid Selection",
         description: "Please select a product and enter a valid quantity.",
@@ -148,27 +103,27 @@ export default function RecordSalePage() {
       return;
     }
 
-    if (selectedQuantity > selectedProductDetails.quantity) {
+    if (quantity > productToAdd.quantity) {
       toast({
         title: "Insufficient Stock",
-        description: `Only ${selectedProductDetails.quantity} units of ${selectedProductDetails.name} available.`,
+        description: `Only ${productToAdd.quantity} units of ${productToAdd.name} available.`,
         variant: "destructive",
       });
       return;
     }
 
     const existingCartItemIndex = cart.findIndex(
-      (item) => item.productId === selectedProductDetails.id
+      (item) => item.productId === productToAdd.id
     );
     const newCart = [...cart];
 
     if (existingCartItemIndex !== -1) {
       const updatedQuantity =
-        newCart[existingCartItemIndex].quantity + selectedQuantity;
-      if (updatedQuantity > selectedProductDetails.quantity) {
+        newCart[existingCartItemIndex].quantity + quantity;
+      if (updatedQuantity > productToAdd.quantity) {
         toast({
           title: "Insufficient Stock",
-          description: `Cannot add ${selectedQuantity} more. Total would exceed available stock of ${selectedProductDetails.quantity}.`,
+          description: `Cannot add ${quantity} more. Total would exceed available stock of ${productToAdd.quantity}.`,
           variant: "destructive",
         });
         return;
@@ -176,16 +131,14 @@ export default function RecordSalePage() {
       newCart[existingCartItemIndex].quantity = updatedQuantity;
     } else {
       newCart.push({
-        productId: selectedProductDetails.id,
-        productName: selectedProductDetails.name,
-        price: selectedProductDetails.price,
-        quantity: selectedQuantity,
-        stock: selectedProductDetails.quantity,
+        productId: productToAdd.id,
+        productName: productToAdd.name,
+        price: productToAdd.price,
+        quantity: quantity,
+        stock: productToAdd.quantity,
       });
     }
     setCart(newCart);
-    setSelectedProductId("");
-    setSelectedQuantity(1);
   };
 
   const handleRemoveProductFromCart = (productId: string) => {
@@ -240,42 +193,35 @@ export default function RecordSalePage() {
     try {
       const saleToRecord = {
         cashierId: user!.id,
-        items: cart.map(({ stock, ...item }) => item),
+        items: cart.map(({ stock: _stock, ...item }) => item),
         totalAmount: cartTotal,
         paymentMode,
       };
 
       const recordedSale = await createSale.mutateAsync(saleToRecord);
 
-      // Set completed sale for receipt printing
       setCompletedSale({
-        ...recordedSale,
-        cashierId: user!.id,
-        items: cart.map(item => ({
+        id: recordedSale.id,
+        cashierId: recordedSale.cashierId,
+        // Use local cart snapshot to ensure receipt has items immediately
+        items: cart.map(({ stock: _stock, ...item }) => ({
           productId: item.productId,
           productName: item.productName,
           quantity: item.quantity,
-          price: item.price
+          price: item.price,
         })),
-        cashierName: user?.name || 'Unknown',
-        timestamp: Date.now()
+        cashierName: user!.name,
+        timestamp: Date.now(),
+        totalAmount: cartTotal,
+        paymentMode,
       });
-
-      // Refresh products list to reflect new stock
-      const products = await fetchProducts();
-      setAllProducts(products.filter((p: Product) => p.quantity > 0));
-
+      await refresh();
       toast({
         title: "Sale Recorded",
         description: "Sale recorded successfully!",
+        duration: 5000,
       });
       
-      // Reset form
-      setCart([]);
-      setPaymentMode("Cash");
-      setSelectedProductId("");
-      setSelectedQuantity(1);
-      // Stay on the record sale page - no redirect needed
     } catch (error) {
       toast({
         title: "Failed to Record Sale",
@@ -285,8 +231,13 @@ export default function RecordSalePage() {
     }
   };
 
+  const handleClearCart = useCallback(() => {
+    if (cart.length === 0) return;
+    setCart([]);
+  }, [cart]);
+
   if (userIsManager) {
-    return (
+  return (
       <div className="flex flex-col items-center justify-center h-full text-center">
         <ShoppingCart className="w-16 h-16 text-muted-foreground mb-4" />
         <h2 className="text-2xl font-semibold mb-2">Access Denied</h2>
@@ -315,121 +266,60 @@ export default function RecordSalePage() {
           <CardHeader>
             <CardTitle>Add Products to Cart</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className={`space-y-4 ${completedSale ? 'opacity-50 pointer-events-none' : ''}`}>
             {/* Product Search */}
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Label htmlFor="product-search">Search Products</Label>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-sm">
-                      <div className="space-y-2">
-                        <p className="font-medium">Search Examples:</p>
-                        <ul className="text-xs space-y-1">
-                          <li>• <strong>ID:</strong> "prod_123"</li>
-                          <li>• <strong>Name:</strong> "laptop" or "gaming"</li>
-                          <li>• <strong>Category:</strong> "electronics"</li>
-                          <li>• <strong>GTIN:</strong> "1234567890123"</li>
-                          <li>• <strong>Description:</strong> "wireless" or "bluetooth"</li>
-                        </ul>
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <div className="relative">
-                <PackageSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-20 pointer-events-none" />
-                <Input
-                  id="product-search"
-                  placeholder={t("search_products_advanced")}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 mb-2"
-                />
-              </div>
-              {searchTerm && (
-                <div className="text-xs text-muted-foreground space-y-1">
-                  <p>
-                    Found {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''}
-                  </p>
-                  <p className="text-xs">
-                    Searchable fields: ID, Name, Description, Category, GTIN
-                  </p>
-                </div>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="product-select">Product</Label>
-              <Select
-                value={selectedProductId}
-                onValueChange={handleProductSelect}
-              >
-                <SelectTrigger id="product-select">
-                  <SelectValue placeholder="Select a product" />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredProducts.length > 0 ? (
-                    filteredProducts.map((product) => (
-                      <SelectItem
-                        key={product.id}
-                        value={product.id}
-                        disabled={product.quantity === 0}
-                      >
-                        {product.name} ({formatCurrency(product.price)})
-                        <div className="text-xs text-muted-foreground mt-0.5">
-                          ID: {product.id.substring(0, 8)}... | {product.category}
-                          {product.gtin && ` | GTIN: ${product.gtin}`}
-                          <span className="ml-2">Stock: {product.quantity}</span>
-                        </div>
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                      No products found
-                    </div>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="quantity-input">Quantity</Label>
-              <Input
-                id="quantity-input"
-                type="number"
-                min="1"
-                value={selectedQuantity}
-                onChange={(e) =>
-                  setSelectedQuantity(
-                    Math.max(1, parseInt(e.target.value, 10) || 1)
-                  )
-                }
-                disabled={!selectedProductDetails}
-                max={selectedProductDetails?.quantity}
-              />
-              {selectedProductDetails &&
-                selectedQuantity > selectedProductDetails.quantity && (
-                  <p className="text-xs text-destructive mt-1">
-                    Max quantity: {selectedProductDetails.quantity}
-                  </p>
-                )}
-            </div>
-            <Button
-              onClick={handleAddProductToCart}
-              className="w-full"
-              disabled={!selectedProductDetails || selectedQuantity <= 0}
-            >
-              <PlusCircle className="mr-2 h-4 w-4" /> Add to Cart
-            </Button>
+            <ProductSearch
+              value={searchTerm}
+              onChange={setSearchTerm}
+              disabled={!!completedSale}
+              placeholder={t("search_products_advanced")}
+            />
+            {/* Product Grid */}
+            <ProductGrid
+              products={filteredProducts}
+              loading={loading}
+              hasMore={hasMore}
+              onLoadMore={loadMore}
+              onSelectProduct={(p) => handleAddProductToCart(p, 1)}
+              formatCurrency={formatCurrency}
+              searchTerm={searchTerm}
+              disabled={!!completedSale}
+            />
           </CardContent>
         </Card>
 
         {/* Cart Display Column */}
         <Card className="lg:col-span-2 shadow-lg">
           <CardHeader>
-            <CardTitle>Current Cart</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Current Cart</CardTitle>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Clear Cart"
+                    disabled={!!completedSale || cart.length === 0}
+                  >
+                    <XCircle className="h-5 w-5 text-destructive" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Clear cart?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will remove all items from the cart. You can&apos;t undo this action.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleClearCart} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Clear Cart
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </CardHeader>
           <CardContent>
             {cart.length === 0 ? (
@@ -468,6 +358,7 @@ export default function RecordSalePage() {
                           min="0"
                           max={item.stock}
                           className="w-20 h-8 text-center"
+                          disabled={!!completedSale}
                         />
                       </TableCell>
                       <TableCell>
@@ -480,6 +371,7 @@ export default function RecordSalePage() {
                           onClick={() =>
                             handleRemoveProductFromCart(item.productId)
                           }
+                          disabled={!!completedSale}
                         >
                           <XCircle className="h-4 w-4 text-destructive" />
                         </Button>
@@ -496,13 +388,15 @@ export default function RecordSalePage() {
                 <span>Total:</span>
                 <span>{formatCurrency(cartTotal)}</span>
               </div>
+              
               <div>
                 <Label htmlFor="payment-mode-select">Payment Mode</Label>
                 <Select
                   value={paymentMode}
-                  onValueChange={(value) =>
-                    setPaymentMode(value as PaymentMode)
+                  onValueChange={(value: PaymentMode) =>
+                    setPaymentMode(value)
                   }
+                  disabled={!!completedSale}
                 >
                   <SelectTrigger id="payment-mode-select">
                     <SelectValue placeholder="Select payment mode" />
@@ -515,25 +409,40 @@ export default function RecordSalePage() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button
-                size="lg"
-                onClick={handleRecordSale}
-                className="w-full"
-                disabled={cart.length === 0 || createSale.isPending}
-              >
-                {createSale.isPending ? (
-                  "Recording Sale..."
-                ) : (
-                  "Record Sale"
-                )}
-              </Button>
-              {completedSale && (
-                <ReceiptPrinter 
-                  sale={completedSale} 
-                  variant="default"
-                  size="default"
-                  className="ml-2"
-                />
+              {!completedSale ? (
+                <Button
+                  size="lg"
+                  onClick={handleRecordSale}
+                  className="w-full"
+                  disabled={cart.length === 0 || createSale.isPending}
+                >
+                  {createSale.isPending ? (
+                    "Recording Sale..."
+                  ) : (
+                    "Record Sale"
+                  )}
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <ReceiptPrinter 
+                    sale={completedSale} 
+                    variant="default"
+                    size="lg"
+                    className="flex-1"
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setCompletedSale(null);
+                      setCart([]);
+                      setPaymentMode("Cash");
+                      setSearchTerm("");
+                    }}
+                    className="flex-1"
+                  >
+                    New Sale
+                  </Button>
+                </div>
               )}
             </CardFooter>
           )}

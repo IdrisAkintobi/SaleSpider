@@ -986,15 +986,10 @@ export function getTranslation(key: string, language?: string): string {
  * Hook to get translation function for current language
  */
 export function useTranslation() {
-  try {
-    const { settings } = useSettingsContext();
-    const currentLanguage = settings?.language || DEFAULT_SETTINGS.language;
+  const { settings } = useSettingsContext();
+  const currentLanguage = settings?.language || DEFAULT_SETTINGS.language;
 
-    return (key: string) => getTranslation(key, currentLanguage);
-  } catch {
-    // If context is not available, return default translation function
-    return (key: string) => getTranslation(key);
-  }
+  return (key: string) => getTranslation(key, currentLanguage);
 }
 
 /**
@@ -1054,19 +1049,11 @@ export function formatTime(date: Date, timeFormat?: string): string {
  * Hook to get date/time formatting functions
  */
 export function useDateTimeFormat() {
-  try {
-    const { settings } = useSettingsContext();
+  const { settings } = useSettingsContext();
 
-    return {
-      formatDate: (date: Date) =>
-        formatDate(date, settings?.dateFormat, settings?.language),
-      formatTime: (date: Date) => formatTime(date, settings?.timeFormat),
-    };
-  } catch {
-    // If context is not available, return default formatting functions
-    return {
-      formatDate: (date: Date) => formatDate(date),
-      formatTime: (date: Date) => formatTime(date),
-    };
-  }
+  return {
+    formatDate: (date: Date) =>
+      formatDate(date, settings?.dateFormat, settings?.language),
+    formatTime: (date: Date) => formatTime(date, settings?.timeFormat),
+  };
 }

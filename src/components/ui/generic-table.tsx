@@ -71,7 +71,7 @@ export function GenericTable<T extends object>({
                 >
                   {renderCell
                     ? renderCell(row, col, rowIndex)
-                    : (row as any)[col.key]}
+                    : (row as unknown as Record<string, unknown>)[col.key as string] as React.ReactNode}
                 </TableCell>
               ))}
             </TableRow>

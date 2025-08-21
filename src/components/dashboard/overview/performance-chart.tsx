@@ -24,13 +24,13 @@ import {
 import { useCurrencySettings } from "@/lib/currency";
 
 interface PerformanceChartProps {
-  data: Array<{ name: string; [key: string]: any }>;
+  data: Array<{ name: string } & Record<string, number | string>>;
   title: string;
   description?: string;
   xAxisDataKey?: string;
   barDataKey?: string;
   extraBarDataKey?: string;
-  barLabels?: { [key: string]: string };
+  barLabels?: Record<string, string>;
   className?: string;
   comparisonType?: string;
   onComparisonTypeChange?: (type: string) => void;
@@ -110,13 +110,20 @@ export function PerformanceChart({
               cursor={false}
               content={<ChartTooltipContent indicator="dot" />}
             />
-            {(barLabels && (barDataKey || extraBarDataKey)) && <Legend payload={[
-              ...(barDataKey ? [{ value: barLabels[barDataKey] || barDataKey, type: "rect", color: "var(--color-sales)" }] : []),
-              ...(extraBarDataKey ? [{ value: barLabels[extraBarDataKey] || extraBarDataKey, type: "rect", color: "var(--color-target)" }] : []),
-            ] as any} />}
-            <Bar dataKey={barDataKey} fill="var(--color-sales)" radius={4} />
+            <Legend />
+            <Bar
+              dataKey={barDataKey}
+              fill="var(--color-sales)"
+              radius={4}
+              name={barLabels?.[barDataKey] ?? barDataKey}
+            />
             {hasExtraBar && (
-              <Bar dataKey={extraBarDataKey} fill="var(--color-target)" radius={4} />
+              <Bar
+                dataKey={extraBarDataKey}
+                fill="var(--color-target)"
+                radius={4}
+                name={extraBarDataKey ? (barLabels?.[extraBarDataKey] ?? extraBarDataKey) : undefined}
+              />
             )}
           </BarChart>
         </ChartContainer>

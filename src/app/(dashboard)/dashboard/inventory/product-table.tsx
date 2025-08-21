@@ -180,8 +180,16 @@ export function ProductTable({
                     onUpdateProduct={onUpdateProduct}
                   />
                 ) : null;
-              default:
-                return (product as any)[col.key];
+              default: {
+                const value = (product as unknown as Record<string, unknown>)[col.key as string];
+                if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+                  return String(value);
+                }
+                if (React.isValidElement(value)) {
+                  return value;
+                }
+                return null;
+              }
             }
           }}
           emptyMessage={t("no_products_found")}

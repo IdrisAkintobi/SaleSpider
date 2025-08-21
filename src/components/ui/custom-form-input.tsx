@@ -1,5 +1,5 @@
 import { ChangeEvent } from "react";
-import { Controller } from "react-hook-form";
+import { Controller, type Control, type UseFormRegister } from "react-hook-form";
 import { FormField } from "./custom-form-field";
 import { Input } from "./input";
 import {
@@ -14,13 +14,13 @@ interface FormInputProps {
   label: string;
   name: string;
   type?: "text" | "number" | "url" | "select";
-  control?: any;
-  register?: any;
+  control?: Control<any>;
+  register?: UseFormRegister<any>;
   error?: string;
   placeholder?: string;
   step?: string | number;
   options?: string[]; // Add options prop for select
-  onChange?: (value: any) => void;
+  onChange?: (value: string) => void;
 }
 
 export const FormInput = ({
@@ -80,7 +80,7 @@ export const FormInput = ({
   const renderRegularInput = () => (
     <Input
       id={name}
-      {...register(name)}
+      {...(register ? register(name) : {})}
       type={type}
       step={step}
       placeholder={placeholder}

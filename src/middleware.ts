@@ -36,7 +36,7 @@ export async function middleware(request: NextRequest) {
         headers: requestHeaders,
       },
     });
-  } catch (_error) {
+  } catch {
     // Token verification failed - redirect to login
 
     if (request.nextUrl.pathname.startsWith("/api")) {

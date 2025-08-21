@@ -2,6 +2,7 @@
 
 import { Activity } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useSettingsContext } from "@/contexts/settings-context";
 import { DEFAULT_SETTINGS } from "@/lib/constants";
 
@@ -18,25 +19,21 @@ export function Logo({
   textSize = "text-2xl",
   showText = true,
 }: Readonly<LogoProps>) {
-  let appName: string = DEFAULT_SETTINGS.appName;
-  let appLogo: string = DEFAULT_SETTINGS.appLogo;
-
-  try {
-    const { settings } = useSettingsContext();
-    appName = settings?.appName ?? DEFAULT_SETTINGS.appName;
-    appLogo = settings?.appLogo ?? DEFAULT_SETTINGS.appLogo;
-  } catch {
-    // If context is not available, use defaults
-  }
+  const { settings } = useSettingsContext();
+  const appName: string = settings?.appName ?? DEFAULT_SETTINGS.appName;
+  const appLogo: string = settings?.appLogo ?? DEFAULT_SETTINGS.appLogo;
 
   return (
     <Link href="/" className={`flex items-center gap-2 ${className}`}>
       {appLogo ? (
-        <img 
-          src={appLogo} 
+        <Image
+          src={appLogo}
           alt={appName}
+          width={Math.round(iconSize * 1.2) || 34}
+          height={iconSize}
           className="h-8 w-auto"
           style={{ maxHeight: iconSize }}
+          priority
         />
       ) : (
         <div className="p-1.5 bg-primary rounded-lg">

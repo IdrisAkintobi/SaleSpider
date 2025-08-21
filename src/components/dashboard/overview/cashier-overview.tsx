@@ -63,19 +63,7 @@ export function CashierOverview() {
     });
   }
 
-  // Show skeleton while loading
-  if (!mySales) {
-    return (
-      <div className="space-y-6">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <StatsCardSkeleton />
-          <StatsCardSkeleton />
-          <StatsCardSkeleton />
-        </div>
-        <RecentSalesSkeleton />
-      </div>
-    );
-  }
+  // Removed early return to keep hooks order consistent
 
   // Calculate stats using useMemo
   const stats = useMemo(() => {
@@ -98,24 +86,34 @@ export function CashierOverview() {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <StatsCard
-          title={t("my_total_sales_value")}
-          value={formatCurrency(stats.totalValue)}
-          icon={DollarSign}
-          description={t("all_sales_recorded")}
-        />
-        <StatsCard
-          title={t("my_total_orders")}
-          value={stats.totalOrders}
-          icon={ShoppingCart}
-          description={t("total_orders_processed")}
-        />
-        <StatsCard
-          title={t("my_average_sale_value")}
-          value={formatCurrency(stats.averageValue)}
-          icon={TrendingUp}
-          description={t("average_value_per_order")}
-        />
+        {isLoadingSales ? (
+          <>
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+          </>
+        ) : (
+          <>
+            <StatsCard
+              title={t("my_total_sales_value")}
+              value={formatCurrency(stats.totalValue)}
+              icon={DollarSign}
+              description={t("all_sales_recorded")}
+            />
+            <StatsCard
+              title={t("my_total_orders")}
+              value={stats.totalOrders}
+              icon={ShoppingCart}
+              description={t("total_orders_processed")}
+            />
+            <StatsCard
+              title={t("my_average_sale_value")}
+              value={formatCurrency(stats.averageValue)}
+              icon={TrendingUp}
+              description={t("average_value_per_order")}
+            />
+          </>
+        )}
       </div>
 
       <Card className="shadow-lg">

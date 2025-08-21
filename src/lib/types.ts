@@ -28,6 +28,14 @@ export interface Product {
   gtin?: string; // Optional GTIN (Global Trade Item Number)
 }
 
+// Strict input for updating product details from the UI
+export type ProductUpdatableFields = Pick<
+  Product,
+  "name" | "description" | "category" | "price" | "lowStockMargin" | "imageUrl" | "gtin"
+>;
+
+export type ProductUpdateInput = Partial<ProductUpdatableFields>;
+
 export interface SaleItem {
   productId: string;
   productName: string;

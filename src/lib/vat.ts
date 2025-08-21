@@ -20,13 +20,8 @@ export function getVatPercentage(): number {
  * Use this in client-side components
  */
 export function useVatPercentage(): number {
-  try {
-    const { settings } = useSettingsContext();
-    return settings?.vatPercentage ?? DEFAULT_SETTINGS.vatPercentage;
-  } catch {
-    // If context is not available, return default
-    return DEFAULT_SETTINGS.vatPercentage;
-  }
+  const { settings } = useSettingsContext();
+  return settings?.vatPercentage ?? DEFAULT_SETTINGS.vatPercentage;
 }
 
 /**
