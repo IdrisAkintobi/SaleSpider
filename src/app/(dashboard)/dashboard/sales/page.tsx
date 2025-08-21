@@ -36,7 +36,7 @@ import { useSales } from "@/hooks/use-sales";
 import { useQuery } from "@tanstack/react-query";
 import type { Sale } from "@/lib/types";
 import { CalendarDays, Filter, UserCircle, Eye, ArrowUp, ArrowDown, ShoppingCart, Search } from "lucide-react";
-import { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
@@ -541,7 +541,13 @@ export default function SalesPage() {
                   );
                 default: {
                   const value = (sale as unknown as Record<string, unknown>)[col.key as string];
-                  return value as React.ReactNode;
+                  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+                    return String(value);
+                  }
+                  if (React.isValidElement(value)) {
+                    return value;
+                  }
+                  return null;
                 }
               }
             }}

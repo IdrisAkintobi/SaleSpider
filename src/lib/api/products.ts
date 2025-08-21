@@ -15,7 +15,7 @@ export async function getProducts(
   signal?: AbortSignal
 ): Promise<GetProductsResponse> {
   const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
-  if (search && search.trim()) params.set("search", search.trim());
+  if (search?.trim()) params.set("search", search.trim());
 
   const res = await fetch(`/api/products?${params.toString()}`, { signal });
   if (!res.ok) {

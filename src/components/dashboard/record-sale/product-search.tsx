@@ -5,13 +5,13 @@ import { Input } from "@/components/ui/input";
 import { PackageSearch } from "lucide-react";
 
 interface ProductSearchProps {
-  value: string;
-  onChange: (value: string) => void;
-  disabled?: boolean;
-  placeholder?: string;
+  readonly value: string;
+  readonly onChange: (value: string) => void;
+  readonly disabled?: boolean;
+  readonly placeholder?: string;
 }
 
-export function ProductSearch({ value, onChange, disabled, placeholder }: ProductSearchProps) {
+export function ProductSearch({ value, onChange, disabled, placeholder }: Readonly<ProductSearchProps>) {
   return (
     <div>
       <div className="flex items-center gap-2 mb-2">

@@ -7,14 +7,14 @@ import { Label } from "@/components/ui/label";
 import { useIntersectionObserver } from "@/hooks/use-intersection-observer";
 
 interface ProductGridProps {
-  products: Product[];
-  loading: boolean;
-  hasMore: boolean;
-  onLoadMore: () => void;
-  onSelectProduct: (product: Product) => void;
-  formatCurrency: (value: number) => string;
-  searchTerm?: string;
-  disabled?: boolean;
+  readonly products: readonly Product[];
+  readonly loading: boolean;
+  readonly hasMore: boolean;
+  readonly onLoadMore: () => void;
+  readonly onSelectProduct: (product: Product) => void;
+  readonly formatCurrency: (value: number) => string;
+  readonly searchTerm?: string;
+  readonly disabled?: boolean;
 }
 
 export function ProductGrid({
@@ -26,7 +26,7 @@ export function ProductGrid({
   formatCurrency,
   searchTerm,
   disabled,
-}: ProductGridProps) {
+}: Readonly<ProductGridProps>) {
   const productsScrollRef = useRef<HTMLDivElement | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
@@ -48,19 +48,42 @@ export function ProductGrid({
         className={`max-h-96 overflow-y-auto space-y-2 border rounded-md p-2 ${disabled ? "opacity-50 pointer-events-none" : ""}`}
       >
         {products.length > 0 ? (
-          products.map((product) => (
+          products.map((product) => {
+            // Determine stock status styles without nested ternaries
+            let stockClass = "";
+            if (product.quantity > 10) {
+              stockClass = "bg-green-100 text-green-800";
+            } else if (product.quantity > 0) {
+              stockClass = "bg-yellow-100 text-yellow-800";
+            } else {
+              stockClass = "bg-red-100 text-red-800";
+            }
+
+            const isDisabled = product.quantity === 0;
+            const handleClick = () => {
+              if (!isDisabled) onSelectProduct(product);
+            };
+            const handleKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
+              if (isDisabled) return;
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onSelectProduct(product);
+              }
+            };
+
+            return (
             <div
               key={product.id}
               className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                product.quantity === 0
+                isDisabled
                   ? "bg-muted/50 opacity-50 cursor-not-allowed"
                   : "hover:bg-accent hover:text-accent-foreground"
               }`}
-              onClick={() => {
-                if (product.quantity > 0) {
-                  onSelectProduct(product);
-                }
-              }}
+              role="button"
+              tabIndex={isDisabled ? -1 : 0}
+              aria-disabled={isDisabled}
+              onClick={handleClick}
+              onKeyDown={handleKeyDown}
             >
               <div className="flex justify-between items-start">
                 <div className="flex-1">
@@ -72,15 +95,7 @@ export function ProductGrid({
                     <span className="text-sm font-semibold text-primary">
                       {formatCurrency(product.price)}
                     </span>
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        product.quantity > 10
-                          ? "bg-green-100 text-green-800"
-                          : product.quantity > 0
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
+                    <span className={`text-xs px-2 py-1 rounded-full ${stockClass}`}>
                       Stock: {product.quantity}
                     </span>
                   </div>
@@ -88,17 +103,18 @@ export function ProductGrid({
                 <Button
                   size="sm"
                   variant="outline"
-                  disabled={product.quantity === 0}
+                  disabled={isDisabled}
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (product.quantity > 0) onSelectProduct(product);
+                    if (!isDisabled) onSelectProduct(product);
                   }}
                 >
                   Add
                 </Button>
               </div>
             </div>
-          ))
+            );
+          })
         ) : (
           <div className="text-center py-8 text-muted-foreground">
             {searchTerm ? "No products found matching your search." : "No products available."}

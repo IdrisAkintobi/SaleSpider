@@ -129,7 +129,7 @@ export default function AIRecommendationsPage() {
               <Lightbulb className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <h3 className="text-lg font-semibold mb-2">Ready to Generate AI Insights</h3>
               <p className="text-muted-foreground mb-4">
-                Click the "Generate Insights" button above to analyze your store's performance and get strategic recommendations.
+                Click the &quot;Generate Insights&quot; button above to analyze your store&apos;s performance and get strategic recommendations.
               </p>
             </div>
           </div>

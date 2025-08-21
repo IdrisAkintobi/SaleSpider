@@ -182,7 +182,13 @@ export function ProductTable({
                 ) : null;
               default: {
                 const value = (product as unknown as Record<string, unknown>)[col.key as string];
-                return value as React.ReactNode;
+                if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+                  return String(value);
+                }
+                if (React.isValidElement(value)) {
+                  return value;
+                }
+                return null;
               }
             }
           }}

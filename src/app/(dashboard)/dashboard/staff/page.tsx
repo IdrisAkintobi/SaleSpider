@@ -19,7 +19,7 @@ import { useSales } from "@/hooks/use-sales";
 import { useStaff, useUpdateUserStatus } from "@/hooks/use-staff";
 import { Role } from "@prisma/client";
 import type { User, UserStatus, Sale } from "@/lib/types";
-import type { ReactNode } from "react";
+import React from "react";
 import {
   Search,
   ArrowUp,
@@ -286,7 +286,13 @@ export default function StaffPage() {
                   );
                 default: {
                   const value = (staff as unknown as Record<string, unknown>)[col.key as string];
-                  return (value as ReactNode) ?? null;
+                  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+                    return String(value);
+                  }
+                  if (React.isValidElement(value)) {
+                    return value;
+                  }
+                  return null;
                 }
               }
             }}
