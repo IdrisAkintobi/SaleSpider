@@ -4,8 +4,10 @@ import { JWTExpired } from "jose/errors";
 import { NextRequest, NextResponse } from "next/server";
 import { clearAuthToken } from "@/app/api/auth/lib/cookie-handler";
 import { PrismaClient } from "@prisma/client";
+import { createChildLogger } from "@/lib/logger";
 
 const prisma = new PrismaClient();
+const logger = createChildLogger('api:auth:session');
 
 // Function to get session
 export async function GET(req: NextRequest) {
@@ -32,7 +34,7 @@ export async function GET(req: NextRequest) {
     }
   } catch (error) {
     if (!(error instanceof JWTExpired)) {
-      console.error("Session API error:", (error as Error).message);
+      logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Session API error');
     }
   }
   const response = NextResponse.json(

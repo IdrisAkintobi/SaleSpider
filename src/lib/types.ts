@@ -24,6 +24,7 @@ export interface Product {
   imageUrl?: string; // Optional image URL
   createdAt?: Date; // Timestamp
   updatedAt?: Date; // Last updated timestamp
+  deletedAt?: Date | null; // Soft delete timestamp
   gtin?: string; // Optional GTIN (Global Trade Item Number)
 }
 

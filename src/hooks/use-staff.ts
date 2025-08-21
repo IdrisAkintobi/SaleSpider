@@ -1,5 +1,5 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { User, UserStatus } from "@/lib/types";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { usePaginatedQuery } from "./use-paginated-query";
 
 export interface UseStaffParams {
@@ -32,7 +32,7 @@ async function fetchStaffData(params: UseStaffParams = {}) {
 
 export function useStaff(params: UseStaffParams = {}, enabled: boolean = true) {
   return usePaginatedQuery<StaffQueryResult>({
-    queryKey: ['staff', params],
+    queryKey: ["staff", params],
     queryFn: () => fetchStaffData(params),
     enabled,
     staleTime: 10 * 60 * 1000, // 10 minutes
@@ -48,12 +48,12 @@ async function updateUserStatus(userId: string, status: UserStatus) {
     },
     body: JSON.stringify({ status }),
   });
-  
+
   if (!res.ok) {
     const error = await res.json();
     throw new Error(error.message || "Failed to update user status");
   }
-  
+
   return res.json() as Promise<User>;
 }
 
@@ -71,36 +71,36 @@ async function addStaff(staffData: {
     },
     body: JSON.stringify(staffData),
   });
-  
+
   if (!res.ok) {
     const error = await res.json();
     throw new Error(error.message || "Failed to add staff member");
   }
-  
+
   return res.json();
 }
 
 export function useUpdateUserStatus() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: ({ userId, status }: { userId: string; status: UserStatus }) =>
       updateUserStatus(userId, status),
-    onSuccess: (updatedUser) => {
+    onSuccess: () => {
       // Invalidate and refetch staff data
-      queryClient.invalidateQueries({ queryKey: ['staff'] });
+      queryClient.invalidateQueries({ queryKey: ["staff"] });
     },
   });
 }
 
 export function useAddStaff() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: addStaff,
     onSuccess: () => {
       // Invalidate staff queries to refetch data
-      queryClient.invalidateQueries({ queryKey: ['staff'] });
+      queryClient.invalidateQueries({ queryKey: ["staff"] });
     },
   });
-} 
+}

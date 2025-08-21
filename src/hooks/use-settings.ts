@@ -1,5 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { DEFAULT_SETTINGS } from "@/lib/constants";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export interface AppSettings {
   id: string;
@@ -17,6 +16,7 @@ export interface AppSettings {
   language: string;
   theme: string;
   maintenanceMode: boolean;
+  showDeletedProducts: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -36,6 +36,7 @@ export interface UpdateSettingsData {
   language?: string;
   theme?: string;
   maintenanceMode?: boolean;
+  showDeletedProducts?: boolean;
 }
 
 // Fetch settings from API
@@ -87,7 +88,7 @@ export function useUpdateSettings() {
     onSuccess: (updatedSettings) => {
       // Update the settings cache
       queryClient.setQueryData(["settings"], updatedSettings);
-      
+
       // Invalidate and refetch settings to ensure consistency
       queryClient.invalidateQueries({ queryKey: ["settings"] });
     },
@@ -95,4 +96,4 @@ export function useUpdateSettings() {
       console.error("Failed to update settings:", error);
     },
   });
-} 
+}

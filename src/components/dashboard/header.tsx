@@ -174,11 +174,22 @@ function generateBreadcrumbs(pathname: string, t: (key: string) => string) {
   paths.slice(1).forEach((part) => {
     if (part === "dashboard") return;
     currentPath += `/${part}`;
-    // Map path segments to translation keys
+    // Prefer i18n route labels under `routes.*`, fall back to humanized slug
     const labelKey = part.replace(/-/g, "_");
+    const routeKey = `routes.${labelKey}`;
+    const translated = t(routeKey);
+
+    const humanized = part
+      .split("-")
+      .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+      .join(" ");
+
+    // If translation returns the key itself (missing), use humanized fallback
+    const label = translated && translated !== routeKey ? translated : humanized;
+
     crumbs.push({
       href: currentPath,
-      label: t(labelKey) || part.charAt(0).toUpperCase() + part.slice(1).replace(/-/g, " "),
+      label,
     });
   });
   return crumbs;

@@ -52,7 +52,9 @@ model Product {
   saleItems      SaleItem[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  deletedAt DateTime? // Soft delete timestamp
+  
+  @@index([deletedAt]) // Index for efficient filtering
 }
 
 enum ProductCategory {
@@ -128,6 +130,26 @@ model AppSettings {
   language          String   @default("en")
   theme             String   @default("light") // light, dark, auto
   maintenanceMode   Boolean  @default(false)
+  showDeletedProducts Boolean @default(false) // Show deleted products in inventory
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  entityType  String   // "USER" or "PRODUCT"
+  entityId    String   // ID of the user or product
+  action      String   // "CREATE", "UPDATE", "DELETE", "RESTORE"
+  changes     Json?    // JSON object containing the changes made
+  oldValues   Json?    // Previous values before the change
+  newValues   Json?    // New values after the change
+  userId      String   // ID of the user who made the change
+  userEmail   String   // Email of the user who made the change
+  timestamp   DateTime @default(now())
+  metadata    Json?    // Additional metadata (IP address, user agent, etc.)
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([timestamp])
+  @@map("audit_logs")
 }

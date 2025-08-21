@@ -7,9 +7,9 @@ import { Role } from "@prisma/client";
 import type { LucideIcon } from "lucide-react";
 import {
   Bot,
-  DollarSign,
   LayoutDashboard,
   Package,
+  ReceiptText,
   ShoppingCart,
   Users,
   Settings,
@@ -47,13 +47,13 @@ const navItems: NavItem[] = [
   {
     href: "/dashboard/sales",
     labelKey: "sales",
-    icon: ShoppingCart,
+    icon: ReceiptText,
     roles: ["SUPER_ADMIN", "MANAGER", "CASHIER"],
   },
   {
     href: "/dashboard/record-sale",
     labelKey: "record_sale",
-    icon: DollarSign,
+    icon: ShoppingCart,
     roles: ["CASHIER"],
   },
   {

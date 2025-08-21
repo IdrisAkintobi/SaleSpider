@@ -1,8 +1,10 @@
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { getMonthlySales } from "@/lib/utils";
+import { createChildLogger } from "@/lib/logger";
 
 const prisma = new PrismaClient();
+const logger = createChildLogger('api:sales:stats');
 
 // Function to get sales stats
 export async function GET(req: NextRequest) {
@@ -19,7 +21,7 @@ export async function GET(req: NextRequest) {
     const from = searchParams.get("from") ? new Date(searchParams.get("from")!) : undefined;
     const to = searchParams.get("to") ? new Date(searchParams.get("to")!) : undefined;
 
-    let aggregateWhere: any = { deletedAt: null };
+    const aggregateWhere: any = { deletedAt: null };
     if (from && to) {
       aggregateWhere.createdAt = { gte: from, lte: to };
     } else if (from) {
@@ -128,7 +130,7 @@ export async function GET(req: NextRequest) {
       monthly,
     });
   } catch (error) {
-    console.error("Error fetching sales stats:", error);
+    logger.error({ userId, error: error instanceof Error ? error.message : 'Unknown error' }, 'Error fetching sales stats');
     return NextResponse.json(
       { message: "Failed to fetch sales stats" },
       { status: 500 }

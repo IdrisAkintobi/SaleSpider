@@ -23,10 +23,14 @@ import { useTranslation } from "@/lib/i18n";
 const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
   description: z.string().min(10, "Product description is required"),
-  price: z.number().min(0.01, "Price must be positive"),
+  // Coerce to number to accept string inputs from HTML inputs
+  price: z.coerce.number().min(0.01, "Price must be positive"),
   category: z.nativeEnum(ProductCategory),
-  quantity: z.number().int().min(1, "Quantity cannot be less than one"),
-  lowStockMargin: z
+  quantity: z.coerce
+    .number()
+    .int()
+    .min(1, "Quantity cannot be less than one"),
+  lowStockMargin: z.coerce
     .number()
     .int()
     .min(0, "Low stock margin cannot be negative"),
@@ -166,6 +170,9 @@ export function AddProductDialog({
             type="number"
             control={control}
             error={errors.lowStockMargin?.message}
+            onChange={(value) =>
+              setValue("lowStockMargin", parseInt(value, 10) || 0)
+            }
           />
           <FormInput
             label={t('image_url_optional')}

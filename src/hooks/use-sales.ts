@@ -9,6 +9,7 @@ export interface UseSalesParams {
   order?: string;
   searchTerm?: string;
   cashierId?: string;
+  paymentMethod?: string;
   from?: string; // ISO date string
   to?: string;   // ISO date string
 }
@@ -28,6 +29,7 @@ async function fetchSalesData(params: UseSalesParams = {}) {
   if (params.order) query.set("order", params.order);
   if (params.searchTerm) query.set("search", params.searchTerm);
   if (params.cashierId && params.cashierId !== "all") query.set("cashierId", params.cashierId);
+  if (params.paymentMethod && params.paymentMethod !== "all") query.set("paymentMethod", params.paymentMethod);
   if (params.from) query.set("from", params.from);
   if (params.to) query.set("to", params.to);
   const res = await fetch(`/api/sales?${query.toString()}`);

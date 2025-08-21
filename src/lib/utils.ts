@@ -24,7 +24,7 @@ export async function getMonthlySales(prisma: any, from?: Date, to?: Date) {
     // Range from start of 'from' month to end of 'to' month
     const start = new Date(from.getFullYear(), from.getMonth(), 1);
     const end = new Date(to.getFullYear(), to.getMonth(), 1);
-    let current = new Date(start);
+    const current = new Date(start);
     while (current <= end) {
       months.push(new Date(current));
       current.setMonth(current.getMonth() + 1);
@@ -57,7 +57,9 @@ export async function getMonthlySales(prisma: any, from?: Date, to?: Date) {
         },
       });
       return {
-        month: `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, "0")}`,
+        month: `${monthStart.getFullYear()}-${String(
+          monthStart.getMonth() + 1
+        ).padStart(2, "0")}`,
         sales: sales._sum.totalAmount || 0,
       };
     })

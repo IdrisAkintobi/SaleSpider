@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, isSuperAdmin } from "@/lib/auth";
 import { DEFAULT_SETTINGS } from "@/lib/constants";
+import { createChildLogger } from "@/lib/logger";
+
+const logger = createChildLogger('api:settings');
 
 // GET /api/settings
 export async function GET(request: NextRequest) {
@@ -36,13 +39,14 @@ export async function GET(request: NextRequest) {
           language: process.env.LANGUAGE || DEFAULT_SETTINGS.language,
           theme: process.env.THEME || DEFAULT_SETTINGS.theme,
           maintenanceMode: process.env.MAINTENANCE_MODE === "true" || DEFAULT_SETTINGS.maintenanceMode,
+          showDeletedProducts: process.env.SHOW_DELETED_PRODUCTS === "true" || DEFAULT_SETTINGS.showDeletedProducts,
         },
       });
     }
 
     return NextResponse.json(settings);
   } catch (error) {
-    console.error("Error fetching settings:", error);
+    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Error fetching settings');
     return NextResponse.json(
       { error: "Failed to fetch settings" },
       { status: 500 }
@@ -80,6 +84,7 @@ export async function PATCH(request: NextRequest) {
       language,
       theme,
       maintenanceMode,
+      showDeletedProducts,
     } = body;
 
     // Get current settings
@@ -103,6 +108,7 @@ export async function PATCH(request: NextRequest) {
           language: process.env.LANGUAGE || DEFAULT_SETTINGS.language,
           theme: process.env.THEME || DEFAULT_SETTINGS.theme,
           maintenanceMode: process.env.MAINTENANCE_MODE === "true" || DEFAULT_SETTINGS.maintenanceMode,
+          showDeletedProducts: process.env.SHOW_DELETED_PRODUCTS === "true" || DEFAULT_SETTINGS.showDeletedProducts,
         },
       });
     }
@@ -125,12 +131,13 @@ export async function PATCH(request: NextRequest) {
         ...(language !== undefined && { language }),
         ...(theme !== undefined && { theme }),
         ...(maintenanceMode !== undefined && { maintenanceMode }),
+        ...(showDeletedProducts !== undefined && { showDeletedProducts }),
       },
     });
 
     return NextResponse.json(updatedSettings);
   } catch (error) {
-    console.error("Error updating settings:", error);
+    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Error updating settings');
     return NextResponse.json(
       { error: "Failed to update settings" },
       { status: 500 }

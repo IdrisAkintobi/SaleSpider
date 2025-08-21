@@ -47,7 +47,7 @@ export function GenericTable<T extends object>({
     <Table>
       <TableHeader>
         <TableRow>
-          {columns.map((col, idx) => (
+          {columns.map((col, _) => (
             <TableHead
               key={col.key as string}
               className={col.className}
@@ -63,7 +63,7 @@ export function GenericTable<T extends object>({
         {data.length > 0 ? (
           data.map((row, rowIndex) => (
             <TableRow key={rowKey ? rowKey(row, rowIndex) : rowIndex}>
-              {columns.map((col, colIndex) => (
+              {columns.map((col, _) => (
                 <TableCell
                   key={col.key as string}
                   className={col.className}

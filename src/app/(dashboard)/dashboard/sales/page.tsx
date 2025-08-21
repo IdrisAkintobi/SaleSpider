@@ -32,8 +32,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { useSales } from "@/hooks/use-sales";
+import { useQuery } from "@tanstack/react-query";
 import type { Sale } from "@/lib/types";
-import { CalendarDays, Filter, UserCircle, Eye, ArrowUp, ArrowDown, DollarSign, Search } from "lucide-react";
+import { CalendarDays, Filter, UserCircle, Eye, ArrowUp, ArrowDown, ShoppingCart, Search } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -51,7 +52,7 @@ import { useTranslation } from "@/lib/i18n";
 import { startOfToday, endOfToday, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 
 export default function SalesPage() {
-  const { user, userIsManager, userIsCashier } = useAuth();
+  const { userIsManager, userIsCashier } = useAuth();
   const { toast } = useToast();
   const formatCurrency = useFormatCurrency();
   const vatPercentage = useVatPercentage();
@@ -62,7 +63,6 @@ export default function SalesPage() {
     page,
     setPage,
     pageSize,
-    setPageSize,
     sort,
     order,
     handleSort,
@@ -71,11 +71,23 @@ export default function SalesPage() {
   } = useTableControls({ initialSort: "createdAt", initialOrder: "desc" });
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterPaymentMethod, setFilterPaymentMethod] = useState<string>("all");
   const [filterCashier, setFilterCashier] = useState<string>("all");
   const [filterDateRange, setFilterDateRange] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+
+  // Fetch all cashiers for dropdown (independent of current filter)
+  const { data: allCashiers } = useQuery({
+    queryKey: ['users', 'cashiers'],
+    queryFn: async () => {
+      const res = await fetch('/api/users?role=CASHIER');
+      if (!res.ok) throw new Error('Failed to fetch cashiers');
+      return res.json();
+    },
+    staleTime: Infinity
+  });
 
   // Use custom hook for sales data
   const { data, isLoading, error } = useSales({
@@ -85,20 +97,17 @@ export default function SalesPage() {
     order,
     searchTerm,
     cashierId: filterCashier,
+    paymentMethod: filterPaymentMethod,
     from: dateRange?.from && dateRange?.to ? dateRange.from.toISOString() : undefined,
     to: dateRange?.from && dateRange?.to ? dateRange.to.toISOString() : undefined,
   });
   const sales = data?.data || [];
   const total = data?.total || 0;
-  const totalPages = Math.ceil(total / pageSize);
-  const paymentMethodTotals = data?.paymentMethodTotals || {};
-  const paymentMethods = ["ALL", ...Object.keys(paymentMethodTotals)];
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("ALL");
   // Use backend totals, not paginated sum
   const backendTotalRevenue = data?.totalSalesValue ?? 0;
-  const displayedTotal = selectedPaymentMethod === "ALL"
-    ? backendTotalRevenue
-    : paymentMethodTotals[selectedPaymentMethod] || 0;
+
+  // All available payment methods (independent of current filter)
+  const allPaymentMethods = ["CASH", "CARD", "BANK_TRANSFER", "CRYPTO", "OTHER"];
 
   // Handle query errors
   useEffect(() => {
@@ -112,6 +121,13 @@ export default function SalesPage() {
   }, [error]);
 
   const uniqueCashiers = useMemo(() => {
+    if (allCashiers?.data) {
+      return allCashiers.data.map((cashier: { id: string; name: string }) => ({
+        id: cashier.id,
+        name: cashier.name,
+      }));
+    }
+    // Fallback to sales data if cashiers API fails
     const cashiers = sales.map((sale) => ({
       id: sale.cashierId,
       name: sale.cashierName,
@@ -119,7 +135,7 @@ export default function SalesPage() {
     return Array.from(
       new Map(cashiers.map((item) => [item.id, item])).values()
     );
-  }, [sales]);
+  }, [allCashiers, sales]);
 
   const formatDate = (timestamp: number) => {
     try {
@@ -127,6 +143,12 @@ export default function SalesPage() {
     } catch (error) {
       return "Invalid Date";
     }
+  };
+
+  // For payment method filter
+  const handlePaymentMethodFilter = (value: string) => {
+    setFilterPaymentMethod(value);
+    setPage(1);
   };
 
   // For cashier filter
@@ -170,7 +192,7 @@ export default function SalesPage() {
   const recordSaleAction = !userIsManager ? (
     <Button size="lg" asChild>
       <Link href="/dashboard/record-sale">
-        <DollarSign className="mr-2 h-5 w-5" /> {t("record_new_sale")}
+        <ShoppingCart className="mr-2 h-5 w-5" /> {t("record_new_sale")}
       </Link>
     </Button>
   ) : null;
@@ -191,9 +213,20 @@ export default function SalesPage() {
               className="max-w-sm"
               icon={<Search className="h-4 w-4 text-muted-foreground" />}
             />
+            <Select value={filterPaymentMethod} onValueChange={handlePaymentMethodFilter}>
+              <SelectTrigger className="w-full sm:w-[240px]">
+                <SelectValue placeholder={t("filter_by_payment_method")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("all_payment_methods")}</SelectItem>
+                {allPaymentMethods.map(method => (
+                  <SelectItem key={method} value={method}>{method}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {userIsManager && (
               <Select value={filterCashier} onValueChange={handleCashierFilter}>
-                <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectTrigger className="w-full sm:w-[220px]">
                   <SelectValue placeholder={t("filter_by_cashier")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -250,14 +283,25 @@ export default function SalesPage() {
             className="flex-1"
             icon={<Filter className="h-4 w-4 text-muted-foreground" />}
           />
+          <Select value={filterPaymentMethod} onValueChange={handlePaymentMethodFilter}>
+            <SelectTrigger className="w-full sm:w-[240px]">
+              <SelectValue placeholder={t("filter_by_payment_method")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("all_payment_methods")}</SelectItem>
+              {allPaymentMethods.map(method => (
+                <SelectItem key={method} value={method}>{method}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {userIsManager && (
             <Select value={filterCashier} onValueChange={handleCashierFilter}>
-              <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectTrigger className="w-full sm:w-[220px]">
                 <SelectValue placeholder={t("filter_by_cashier")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t('all_cashiers')}</SelectItem>
-                {uniqueCashiers.map((cashier) => (
+                {uniqueCashiers.map((cashier: { id: string; name: string }) => (
                   <SelectItem key={cashier.id} value={cashier.id}>
                     {cashier.name}
                   </SelectItem>
@@ -327,20 +371,7 @@ export default function SalesPage() {
             <div className="flex items-center justify-between gap-8 flex-wrap">
               <div>
                 <p className="text-sm text-muted-foreground">{t("total_revenue")}</p>
-                <div className="flex items-center gap-4">
-                  <p className="text-2xl font-bold">{formatCurrency(displayedTotal)}</p>
-                  <Select value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
-                    <SelectTrigger className="w-[140px]">
-                      <SelectValue>{selectedPaymentMethod === "ALL" ? t("all_payment_method") : selectedPaymentMethod}</SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ALL">{t("all_payment_method")}</SelectItem>
-                      {Object.keys(paymentMethodTotals).map(method => (
-                        <SelectItem key={method} value={method}>{method}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <p className="text-2xl font-bold">{formatCurrency(backendTotalRevenue)}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">{t("total_sales_count")}</p>

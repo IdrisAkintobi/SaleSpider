@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { useSettings } from "@/hooks/use-settings";
 import { DEFAULT_SETTINGS } from "@/lib/constants";
 import { applyDynamicStyles } from "@/lib/dynamic-styles";
+import { useThemeSync } from "@/hooks/use-theme-sync";
 
 export interface AppSettings {
   id: string;
@@ -21,6 +22,7 @@ export interface AppSettings {
   language: string;
   theme: string;
   maintenanceMode: boolean;
+  showDeletedProducts: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -48,6 +50,7 @@ const defaultSettings: AppSettings = {
   language: process.env.NEXT_PUBLIC_LANGUAGE || DEFAULT_SETTINGS.language,
   theme: process.env.NEXT_PUBLIC_THEME || DEFAULT_SETTINGS.theme,
   maintenanceMode: process.env.NEXT_PUBLIC_MAINTENANCE_MODE === "true" || DEFAULT_SETTINGS.maintenanceMode,
+  showDeletedProducts: process.env.NEXT_PUBLIC_SHOW_DELETED_PRODUCTS === "true" || DEFAULT_SETTINGS.showDeletedProducts,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };
@@ -62,6 +65,9 @@ const SettingsContext = createContext<SettingsContextType>({
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const { data: settings, isLoading, error } = useSettings();
   const [currentSettings, setCurrentSettings] = useState<AppSettings>(defaultSettings);
+
+  // Sync theme with next-themes
+  useThemeSync(settings || defaultSettings);
 
   useEffect(() => {
     if (settings) {
