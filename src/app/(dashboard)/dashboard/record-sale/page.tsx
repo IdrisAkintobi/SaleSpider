@@ -31,26 +31,47 @@ import { useToast } from "@/hooks/use-toast";
 import { useCreateSale } from "@/hooks/use-sales";
 import { ReceiptPrinter } from "@/components/shared/receipt-printer";
 import type { PaymentMode, Product, SaleItem } from "@/lib/types";
-import { PlusCircle, ShoppingCart, XCircle, HelpCircle, PackageSearch } from "lucide-react";
+import { PackageSearch, ShoppingCart, XCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFormatCurrency } from "@/lib/currency";
 import { useTranslation } from "@/lib/i18n";
+import useDebounce from "@/hooks/use-debounce";
+import { useIntersectionObserver } from "@/hooks/use-intersection-observer";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
-async function fetchProducts(): Promise<Product[]> {
-  const res = await fetch("/api/products");
+const PAGE_SIZE = 20;
+
+async function fetchProducts(page: number = 1, pageSize: number = PAGE_SIZE, search?: string, signal?: AbortSignal): Promise<{
+  products: Product[];
+  totalCount: number;
+  totalPages: number;
+  hasMore: boolean;
+}> {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+  if (search && search.trim()) params.set("search", search.trim());
+  const res = await fetch(`/api/products?${params.toString()}`, { signal });
   if (!res.ok) {
     const error = await res.json();
     throw new Error(error.message || "Failed to fetch products");
   }
   const data = await res.json();
-  return data.products as Product[];
+  return {
+    products: data.products,
+    totalCount: data.totalCount,
+    totalPages: data.totalPages,
+    hasMore: page < data.totalPages,
+  };
 }
 
 interface CartItem extends SaleItem {
@@ -67,9 +88,10 @@ export default function RecordSalePage() {
 
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [selectedProductId, setSelectedProductId] = useState<string>("");
-  const [selectedQuantity, setSelectedQuantity] = useState<number>(1);
   const [paymentMode, setPaymentMode] = useState<PaymentMode>("Cash");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [hasMoreProducts, setHasMoreProducts] = useState<boolean>(true);
+  const [loadingProducts, setLoadingProducts] = useState<boolean>(false);
   const [completedSale, setCompletedSale] = useState<{
     id: string;
     cashierId: string;
@@ -87,59 +109,93 @@ export default function RecordSalePage() {
 
   useEffect(() => {
     const loadProducts = async () => {
+      const controller = new AbortController();
       try {
-        const products = await fetchProducts();
-        setAllProducts(products.filter((p: Product) => p.quantity > 0)); // Only show products in stock
+        setLoadingProducts(true);
+        const result = await fetchProducts(1, PAGE_SIZE, searchTerm, controller.signal);
+        setAllProducts(result.products.filter((p) => p.quantity > 0));
+        setHasMoreProducts(result.hasMore);
+        setCurrentPage(1);
       } catch (error) {
         toast({
           title: "Error",
-          description: error instanceof Error ? error.message : "Failed to load products",
+          description: "Failed to load products",
           variant: "destructive",
         });
+      } finally {
+        setLoadingProducts(false);
       }
     };
     loadProducts();
-  }, [toast]);
+  }, []);
 
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const debouncedSearch = useDebounce(searchTerm, 300);
 
-  // Filter products based on search term
-  const filteredProducts = useMemo(() => {
-    if (!searchTerm.trim()) return allProducts;
+  // Refetch products when search term changes (server-side filtering)
+  useEffect(() => {
+    const controller = new AbortController();
+    const run = async () => {
+      try {
+        setLoadingProducts(true);
+        const result = await fetchProducts(1, PAGE_SIZE, debouncedSearch, controller.signal);
+        setAllProducts(result.products.filter((p) => p.quantity > 0));
+        setHasMoreProducts(result.hasMore);
+        setCurrentPage(1);
+      } catch (error) {
+        toast({ title: "Error", description: "Failed to search products", variant: "destructive" });
+      } finally {
+        setLoadingProducts(false);
+      }
+    };
+    run();
+    return () => controller.abort();
+  }, [debouncedSearch]);
+
+  // Server-side filtered list (no client filtering required)
+  const filteredProducts = useMemo(() => allProducts, [allProducts]);
+
+  const loadMoreProducts = useCallback(async () => {
+    if (loadingProducts || !hasMoreProducts) return;
     
-    const searchLower = searchTerm.toLowerCase();
-    return allProducts.filter((product) => {
-      // Search by product ID
-      const idMatch = product.id.toLowerCase().includes(searchLower);
-      
-      // Search by product name
-      const nameMatch = product.name.toLowerCase().includes(searchLower);
-      
-      // Search by description
-      const descriptionMatch = product.description.toLowerCase().includes(searchLower);
-      
-      // Search by category
-      const categoryMatch = product.category.toLowerCase().includes(searchLower);
-      
-      // Search by GTIN
-      const gtinMatch = product.gtin?.toLowerCase().includes(searchLower) || false;
-      
-      return idMatch || nameMatch || descriptionMatch || categoryMatch || gtinMatch;
-    });
-  }, [allProducts, searchTerm]);
+    try {
+      setLoadingProducts(true);
+      const nextPage = currentPage + 1;
+      const result = await fetchProducts(nextPage, PAGE_SIZE, debouncedSearch);
+      setAllProducts(prev => [...prev, ...result.products.filter((p) => p.quantity > 0)]);
+      setHasMoreProducts(result.hasMore);
+      setCurrentPage(nextPage);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load more products",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingProducts(false);
+    }
+  }, [loadingProducts, hasMoreProducts, currentPage, debouncedSearch, toast]);
 
-  const selectedProductDetails = useMemo(() => {
-    return allProducts.find((p) => p.id === selectedProductId);
-  }, [allProducts, selectedProductId]);
+  // Infinite scroll via IntersectionObserver
+  const productsScrollRef = useRef<HTMLDivElement | null>(null);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  // Clear search when product is selected
-  const handleProductSelect = (productId: string) => {
-    setSelectedProductId(productId);
-    setSearchTerm(""); // Clear search when product is selected
-  };
+  const handleIntersect = useCallback(() => {
+    if (hasMoreProducts && !loadingProducts) {
+      loadMoreProducts();
+    }
+  }, [hasMoreProducts, loadingProducts, loadMoreProducts]);
 
-  const handleAddProductToCart = () => {
-    if (!selectedProductDetails || selectedQuantity <= 0) {
+  useIntersectionObserver(
+    sentinelRef.current,
+    handleIntersect,
+    { root: productsScrollRef.current, rootMargin: "100px", threshold: 0.1 }
+  );
+
+  const handleAddProductToCart = (product: Product, quantity: number = 1) => {
+    const productToAdd = product;
+
+    if (!productToAdd || quantity <= 0) {
       toast({
         title: "Invalid Selection",
         description: "Please select a product and enter a valid quantity.",
@@ -148,27 +204,27 @@ export default function RecordSalePage() {
       return;
     }
 
-    if (selectedQuantity > selectedProductDetails.quantity) {
+    if (quantity > productToAdd.quantity) {
       toast({
         title: "Insufficient Stock",
-        description: `Only ${selectedProductDetails.quantity} units of ${selectedProductDetails.name} available.`,
+        description: `Only ${productToAdd.quantity} units of ${productToAdd.name} available.`,
         variant: "destructive",
       });
       return;
     }
 
     const existingCartItemIndex = cart.findIndex(
-      (item) => item.productId === selectedProductDetails.id
+      (item) => item.productId === productToAdd.id
     );
     const newCart = [...cart];
 
     if (existingCartItemIndex !== -1) {
       const updatedQuantity =
-        newCart[existingCartItemIndex].quantity + selectedQuantity;
-      if (updatedQuantity > selectedProductDetails.quantity) {
+        newCart[existingCartItemIndex].quantity + quantity;
+      if (updatedQuantity > productToAdd.quantity) {
         toast({
           title: "Insufficient Stock",
-          description: `Cannot add ${selectedQuantity} more. Total would exceed available stock of ${selectedProductDetails.quantity}.`,
+          description: `Cannot add ${quantity} more. Total would exceed available stock of ${productToAdd.quantity}.`,
           variant: "destructive",
         });
         return;
@@ -176,16 +232,14 @@ export default function RecordSalePage() {
       newCart[existingCartItemIndex].quantity = updatedQuantity;
     } else {
       newCart.push({
-        productId: selectedProductDetails.id,
-        productName: selectedProductDetails.name,
-        price: selectedProductDetails.price,
-        quantity: selectedQuantity,
-        stock: selectedProductDetails.quantity,
+        productId: productToAdd.id,
+        productName: productToAdd.name,
+        price: productToAdd.price,
+        quantity: quantity,
+        stock: productToAdd.quantity,
       });
     }
     setCart(newCart);
-    setSelectedProductId("");
-    setSelectedQuantity(1);
   };
 
   const handleRemoveProductFromCart = (productId: string) => {
@@ -247,26 +301,25 @@ export default function RecordSalePage() {
 
       const recordedSale = await createSale.mutateAsync(saleToRecord);
 
-      // Set completed sale for receipt printing
       setCompletedSale({
         id: recordedSale.id,
-        cashierId: user!.id,
-        cashierName: user?.name || 'Unknown',
-        items: cart.map(item => ({
+        cashierId: recordedSale.cashierId,
+        // Use local cart snapshot to ensure receipt has items immediately
+        items: cart.map(({ stock, ...item }) => ({
           productId: item.productId,
           productName: item.productName,
           quantity: item.quantity,
-          price: item.price
+          price: item.price,
         })),
+        cashierName: user!.name,
+        timestamp: Date.now(),
         totalAmount: cartTotal,
-        paymentMode: paymentMode,
-        timestamp: Date.now()
+        paymentMode,
       });
-
-      // Refresh products list to reflect new stock
-      const products = await fetchProducts();
-      setAllProducts(products.filter((p: Product) => p.quantity > 0));
-
+      const result = await fetchProducts(1, PAGE_SIZE, debouncedSearch);
+      setAllProducts(result.products.filter((p) => p.quantity > 0));
+      setHasMoreProducts(result.hasMore);
+      setCurrentPage(1);
       toast({
         title: "Sale Recorded",
         description: "Sale recorded successfully!",
@@ -282,8 +335,13 @@ export default function RecordSalePage() {
     }
   };
 
+  const handleClearCart = useCallback(() => {
+    if (cart.length === 0) return;
+    setCart([]);
+  }, [cart]);
+
   if (userIsManager) {
-    return (
+  return (
       <div className="flex flex-col items-center justify-center h-full text-center">
         <ShoppingCart className="w-16 h-16 text-muted-foreground mb-4" />
         <h2 className="text-2xl font-semibold mb-2">Access Denied</h2>
@@ -317,25 +375,6 @@ export default function RecordSalePage() {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Label htmlFor="product-search">Search Products</Label>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-sm">
-                      <div className="space-y-2">
-                        <p className="font-medium">Search Examples:</p>
-                        <ul className="text-xs space-y-1">
-                          <li>• <strong>ID:</strong> "prod_123"</li>
-                          <li>• <strong>Name:</strong> "laptop" or "gaming"</li>
-                          <li>• <strong>Category:</strong> "electronics"</li>
-                          <li>• <strong>GTIN:</strong> "1234567890123"</li>
-                          <li>• <strong>Description:</strong> "wireless" or "bluetooth"</li>
-                        </ul>
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
               </div>
               <div className="relative">
                 <PackageSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-20 pointer-events-none" />
@@ -343,90 +382,125 @@ export default function RecordSalePage() {
                   id="product-search"
                   placeholder={t("search_products_advanced")}
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                  }}
                   className="pl-10 mb-2"
                 />
               </div>
-              {searchTerm && (
-                <div className="text-xs text-muted-foreground space-y-1">
-                  <p>
-                    Found {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''}
-                  </p>
-                  <p className="text-xs">
-                    Searchable fields: ID, Name, Description, Category, GTIN
-                  </p>
-                </div>
-              )}
             </div>
-            <div>
-              <Label htmlFor="product-select">Product</Label>
-              <Select
-                value={selectedProductId}
-                onValueChange={handleProductSelect}
+            {/* Product Grid */}
+            <div className="space-y-4">
+              <Label>Available Products</Label>
+              <div 
+                ref={productsScrollRef}
+                className="max-h-96 overflow-y-auto space-y-2 border rounded-md p-2"
               >
-                <SelectTrigger id="product-select">
-                  <SelectValue placeholder="Select a product" />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredProducts.length > 0 ? (
-                    filteredProducts.map((product) => (
-                      <SelectItem
-                        key={product.id}
-                        value={product.id}
-                        disabled={product.quantity === 0}
-                      >
-                        {product.name} ({formatCurrency(product.price)})
-                        <div className="text-xs text-muted-foreground mt-0.5">
-                          ID: {product.id.substring(0, 8)}... | {product.category}
-                          {product.gtin && ` | GTIN: ${product.gtin}`}
-                          <span className="ml-2">Stock: {product.quantity}</span>
+                {filteredProducts.length > 0 ? (
+                  filteredProducts.map((product) => (
+                    <div
+                      key={product.id}
+                      className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                        product.quantity === 0
+                          ? 'bg-muted/50 opacity-50 cursor-not-allowed'
+                          : 'hover:bg-accent hover:text-accent-foreground'
+                      }`}
+                      onClick={() => {
+                        if (product.quantity > 0) {
+                          handleAddProductToCart(product, 1);
+                        }
+                      }}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="font-medium text-sm">
+                            {product.name}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {product.category}
+                          </div>
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="text-sm font-semibold text-primary">
+                              {formatCurrency(product.price)}
+                            </span>
+                            <span className={`text-xs px-2 py-1 rounded-full ${
+                              product.quantity > 10 
+                                ? 'bg-green-100 text-green-800' 
+                                : product.quantity > 0 
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              Stock: {product.quantity}
+                            </span>
+                          </div>
                         </div>
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                      No products found
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={product.quantity === 0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (product.quantity > 0) {
+                              handleAddProductToCart(product, 1);
+                            }
+                          }}
+                        >
+                          Add
+                        </Button>
+                      </div>
                     </div>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="quantity-input">Quantity</Label>
-              <Input
-                id="quantity-input"
-                type="number"
-                min="1"
-                value={selectedQuantity}
-                onChange={(e) =>
-                  setSelectedQuantity(
-                    Math.max(1, parseInt(e.target.value, 10) || 1)
-                  )
-                }
-                disabled={!selectedProductDetails}
-                max={selectedProductDetails?.quantity}
-              />
-              {selectedProductDetails &&
-                selectedQuantity > selectedProductDetails.quantity && (
-                  <p className="text-xs text-destructive mt-1">
-                    Max quantity: {selectedProductDetails.quantity}
-                  </p>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    {searchTerm ? "No products found matching your search." : "No products available."}
+                  </div>
                 )}
+                {loadingProducts && (
+                  <div className="text-center py-4">
+                    <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+                      <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
+                      Loading more products...
+                    </div>
+                  </div>
+                )}
+                <div ref={sentinelRef} />
+              </div>
             </div>
-            <Button
-              onClick={handleAddProductToCart}
-              className="w-full"
-              disabled={!selectedProductDetails || selectedQuantity <= 0}
-            >
-              <PlusCircle className="mr-2 h-4 w-4" /> Add to Cart
-            </Button>
           </CardContent>
         </Card>
 
         {/* Cart Display Column */}
         <Card className="lg:col-span-2 shadow-lg">
           <CardHeader>
-            <CardTitle>Current Cart</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Current Cart</CardTitle>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Clear Cart"
+                    disabled={!!completedSale || cart.length === 0}
+                  >
+                    <XCircle className="h-5 w-5 text-destructive" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Clear cart?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will remove all items from the cart. You can’t undo this action.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleClearCart} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Clear Cart
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </CardHeader>
           <CardContent>
             {cart.length === 0 ? (
@@ -495,12 +569,13 @@ export default function RecordSalePage() {
                 <span>Total:</span>
                 <span>{formatCurrency(cartTotal)}</span>
               </div>
+              
               <div>
                 <Label htmlFor="payment-mode-select">Payment Mode</Label>
                 <Select
                   value={paymentMode}
-                  onValueChange={(value) =>
-                    setPaymentMode(value as PaymentMode)
+                  onValueChange={(value: PaymentMode) =>
+                    setPaymentMode(value)
                   }
                   disabled={!!completedSale}
                 >
@@ -541,9 +616,8 @@ export default function RecordSalePage() {
                     onClick={() => {
                       setCompletedSale(null);
                       setCart([]);
-                      setSelectedProductId("");
-                      setSelectedQuantity(1);
                       setPaymentMode("Cash");
+                      setSearchTerm("");
                     }}
                     className="flex-1"
                   >
