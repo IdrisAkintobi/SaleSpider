@@ -10,11 +10,47 @@ import { useTranslation } from "@/lib/i18n";
 import type { Sale } from "@/lib/types";
 
 interface ReceiptPrinterProps {
-  sale: Sale;
-  variant?: "default" | "outline" | "ghost";
-  size?: "default" | "sm" | "lg";
-  className?: string;
+  readonly sale: Sale;
+  readonly variant?: "default" | "outline" | "ghost";
+  readonly size?: "default" | "sm" | "lg";
+  readonly className?: string;
 }
+
+// Helper function to create iframe for printing
+const createPrintIframe = (): HTMLIFrameElement => {
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'absolute';
+  iframe.style.left = '-9999px';
+  iframe.style.width = '1px';
+  iframe.style.height = '1px';
+  return iframe;
+};
+
+// Helper function to write content to iframe
+const writeToIframe = (iframe: HTMLIFrameElement, content: string): void => {
+  const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+  if (!iframeDoc) {
+    throw new Error('Could not access iframe document');
+  }
+  
+  iframeDoc.documentElement.innerHTML = content;
+};
+
+// Helper function to handle print timing
+const handlePrintTiming = (iframe: HTMLIFrameElement): void => {
+  iframe.onload = () => {
+    setTimeout(() => {
+      iframe.contentWindow?.print();
+      
+      // Clean up after printing
+      setTimeout(() => {
+        if (iframe.parentNode) {
+          document.body.removeChild(iframe);
+        }
+      }, 1000);
+    }, 100);
+  };
+};
 
 export function ReceiptPrinter({ 
   sale, 
@@ -212,36 +248,11 @@ export function ReceiptPrinter({
   const handlePrintReceipt = () => {
     try {
       const receiptContent = generateReceiptContent();
-      
-      // Create a hidden iframe for printing
-      const iframe = document.createElement('iframe');
-      iframe.style.position = 'absolute';
-      iframe.style.left = '-9999px';
-      iframe.style.width = '1px';
-      iframe.style.height = '1px';
+      const iframe = createPrintIframe();
       
       document.body.appendChild(iframe);
-      
-      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-      if (!iframeDoc) {
-        throw new Error('Could not access iframe document');
-      }
-      
-      iframeDoc.write(receiptContent);
-      iframeDoc.close();
-      
-      // Wait for content to load then print
-      iframe.onload = () => {
-        setTimeout(() => {
-          iframe.contentWindow?.print();
-          
-          // Clean up after printing
-          setTimeout(() => {
-            document.body.removeChild(iframe);
-          }, 1000);
-        }, 100);
-      };
-      
+      writeToIframe(iframe, receiptContent);
+      handlePrintTiming(iframe);
 
     } catch (error) {
       console.error('Print error:', error);

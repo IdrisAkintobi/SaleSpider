@@ -249,15 +249,17 @@ export default function RecordSalePage() {
 
       // Set completed sale for receipt printing
       setCompletedSale({
-        ...recordedSale,
+        id: recordedSale.id,
         cashierId: user!.id,
+        cashierName: user?.name || 'Unknown',
         items: cart.map(item => ({
           productId: item.productId,
           productName: item.productName,
           quantity: item.quantity,
           price: item.price
         })),
-        cashierName: user?.name || 'Unknown',
+        totalAmount: cartTotal,
+        paymentMode: paymentMode,
         timestamp: Date.now()
       });
 
@@ -268,14 +270,9 @@ export default function RecordSalePage() {
       toast({
         title: "Sale Recorded",
         description: "Sale recorded successfully!",
+        duration: 5000,
       });
       
-      // Reset form
-      setCart([]);
-      setPaymentMode("Cash");
-      setSelectedProductId("");
-      setSelectedQuantity(1);
-      // Stay on the record sale page - no redirect needed
     } catch (error) {
       toast({
         title: "Failed to Record Sale",
@@ -315,7 +312,7 @@ export default function RecordSalePage() {
           <CardHeader>
             <CardTitle>Add Products to Cart</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className={`space-y-4 ${completedSale ? 'opacity-50 pointer-events-none' : ''}`}>
             {/* Product Search */}
             <div>
               <div className="flex items-center gap-2 mb-2">
@@ -468,6 +465,7 @@ export default function RecordSalePage() {
                           min="0"
                           max={item.stock}
                           className="w-20 h-8 text-center"
+                          disabled={!!completedSale}
                         />
                       </TableCell>
                       <TableCell>
@@ -480,6 +478,7 @@ export default function RecordSalePage() {
                           onClick={() =>
                             handleRemoveProductFromCart(item.productId)
                           }
+                          disabled={!!completedSale}
                         >
                           <XCircle className="h-4 w-4 text-destructive" />
                         </Button>
@@ -503,6 +502,7 @@ export default function RecordSalePage() {
                   onValueChange={(value) =>
                     setPaymentMode(value as PaymentMode)
                   }
+                  disabled={!!completedSale}
                 >
                   <SelectTrigger id="payment-mode-select">
                     <SelectValue placeholder="Select payment mode" />
@@ -515,25 +515,41 @@ export default function RecordSalePage() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button
-                size="lg"
-                onClick={handleRecordSale}
-                className="w-full"
-                disabled={cart.length === 0 || createSale.isPending}
-              >
-                {createSale.isPending ? (
-                  "Recording Sale..."
-                ) : (
-                  "Record Sale"
-                )}
-              </Button>
-              {completedSale && (
-                <ReceiptPrinter 
-                  sale={completedSale} 
-                  variant="default"
-                  size="default"
-                  className="ml-2"
-                />
+              {!completedSale ? (
+                <Button
+                  size="lg"
+                  onClick={handleRecordSale}
+                  className="w-full"
+                  disabled={cart.length === 0 || createSale.isPending}
+                >
+                  {createSale.isPending ? (
+                    "Recording Sale..."
+                  ) : (
+                    "Record Sale"
+                  )}
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <ReceiptPrinter 
+                    sale={completedSale} 
+                    variant="default"
+                    size="lg"
+                    className="flex-1"
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setCompletedSale(null);
+                      setCart([]);
+                      setSelectedProductId("");
+                      setSelectedQuantity(1);
+                      setPaymentMode("Cash");
+                    }}
+                    className="flex-1"
+                  >
+                    New Sale
+                  </Button>
+                </div>
               )}
             </CardFooter>
           )}
