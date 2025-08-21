@@ -37,6 +37,9 @@ const translations: Record<string, Record<string, string>> = {
     // Breadcrumbs
     dashboard: "Dashboard",
     overview: "Overview",
+    // Route labels
+    "routes.ai_recommendations": "AI Recommendations",
+    "routes.staff": "Staff Management",
     // Settings Descriptions
     general_settings_description:
       "Configure basic application information and branding.",
@@ -267,6 +270,9 @@ const translations: Record<string, Record<string, string>> = {
     // Breadcrumbs
     dashboard: "Tableau de bord",
     overview: "Aperçu",
+    // Route labels
+    "routes.ai_recommendations": "Recommandations IA",
+    "routes.staff": "Gestion du personnel",
     // Settings Descriptions
     general_settings_description:
       "Configurer les informations de base de l'application et la marque.",
@@ -506,6 +512,9 @@ const translations: Record<string, Record<string, string>> = {
     // Breadcrumbs
     dashboard: "Panel de control",
     overview: "Resumen",
+    // Route labels
+    "routes.ai_recommendations": "Recomendaciones de IA",
+    "routes.staff": "Gestión de personal",
     // Settings Descriptions
     general_settings_description:
       "Configurar información básica de la aplicación y la marca.",
@@ -741,6 +750,9 @@ const translations: Record<string, Record<string, string>> = {
     // Breadcrumbs
     dashboard: "Dashboard",
     overview: "Übersicht",
+    // Route labels
+    "routes.ai_recommendations": "KI-Empfehlungen",
+    "routes.staff": "Personalverwaltung",
     // Settings Descriptions
     general_settings_description:
       "Konfigurieren Sie grundlegende Anwendungsinformationen und Branding.",
