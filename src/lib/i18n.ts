@@ -57,8 +57,8 @@ const translations: Record<string, Record<string, string>> = {
     search_products: "Search products...",
     search_staff: "Search staff by name, username, or role...",
     search_sales_cashier:
-      "Search sales by cashier, product, or payment mode...",
-    search_sales_product: "Search sales by product or payment mode...",
+      "Search sales by sale ID, cashier, product, or payment mode...",
+    search_sales_product: "Search sales by sale ID, product, or payment mode...",
     search_products_advanced:
       "Search by ID, name, category, GTIN, or description...",
     // Overview Components
@@ -168,8 +168,10 @@ const translations: Record<string, Record<string, string>> = {
     no_recent_sales: "No recent sales",
     // Sales Page
     filter_by_cashier: "Filter by cashier",
+    filter_by_payment_method: "Filter by payment method",
     filter_by_date: "Filter by date",
-    all_cashiers: "All Cashiers",
+    all_cashiers: "All cashiers",
+    all_payment_methods: "All payment methods",
     all_time: "All Time",
     pick_date_range: "Pick a date range",
     clear_range: "Clear Range",
@@ -291,9 +293,9 @@ const translations: Record<string, Record<string, string>> = {
     search_staff:
       "Rechercher du personnel par nom, nom d'utilisateur ou rôle...",
     search_sales_cashier:
-      "Rechercher des ventes par caissier, produit ou mode de paiement...",
+      "Rechercher des ventes par ID de vente, caissier, produit ou mode de paiement...",
     search_sales_product:
-      "Rechercher des ventes par produit ou mode de paiement...",
+      "Rechercher des ventes par ID de vente, produit ou mode de paiement...",
     search_products_advanced:
       "Rechercher par ID, nom, catégorie, GTIN ou description...",
     // Overview Components
@@ -405,8 +407,10 @@ const translations: Record<string, Record<string, string>> = {
     no_recent_sales: "Aucune vente récente",
     // Sales Page
     filter_by_cashier: "Filtrer par caissier",
+    filter_by_payment_method: "Filtrer par mode de paiement",
     filter_by_date: "Filtrer par date",
     all_cashiers: "Tous les caissiers",
+    all_payment_methods: "Tous les modes de paiement",
     all_time: "Toute la période",
     pick_date_range: "Choisir une plage de dates",
     clear_range: "Effacer la plage",
@@ -532,8 +536,8 @@ const translations: Record<string, Record<string, string>> = {
     search_products: "Buscar productos...",
     search_staff: "Buscar personal por nombre, usuario o rol...",
     search_sales_cashier:
-      "Buscar ventas por cajero, producto o modo de pago...",
-    search_sales_product: "Buscar ventas por producto o modo de pago...",
+      "Buscar ventas por ID de venta, cajero, producto o modo de pago...",
+    search_sales_product: "Buscar ventas por ID de venta, producto o modo de pago...",
     search_products_advanced:
       "Buscar por ID, nombre, categoría, GTIN o descripción...",
     // Overview Components
@@ -645,8 +649,10 @@ const translations: Record<string, Record<string, string>> = {
     no_recent_sales: "No hay ventas recientes",
     // Sales Page
     filter_by_cashier: "Filtrar por cajero",
+    filter_by_payment_method: "Filtrar por método de pago",
     filter_by_date: "Filtrar por fecha",
     all_cashiers: "Todos los cajeros",
+    all_payment_methods: "Todos los métodos de pago",
     all_time: "Todo el tiempo",
     pick_date_range: "Elegir rango de fechas",
     clear_range: "Limpiar rango",
@@ -770,8 +776,8 @@ const translations: Record<string, Record<string, string>> = {
     search_products: "Produkte suchen...",
     search_staff: "Personal nach Name, Benutzername oder Rolle suchen...",
     search_sales_cashier:
-      "Verkäufe nach Kassierer, Produkt oder Zahlungsart suchen...",
-    search_sales_product: "Verkäufe nach Produkt oder Zahlungsart suchen...",
+      "Nach Verkaufs-ID, Kassierer, Produkt oder Zahlungsart suchen...",
+    search_sales_product: "Nach Verkaufs-ID, Produkt oder Zahlungsart suchen...",
     search_products_advanced:
       "Nach ID, Name, Kategorie, GTIN oder Beschreibung suchen...",
     // Overview Components
@@ -884,8 +890,10 @@ const translations: Record<string, Record<string, string>> = {
     no_recent_sales: "Keine letzten Verkäufe",
     // Sales Page
     filter_by_cashier: "Nach Kassierer filtern",
+    filter_by_payment_method: "Nach Zahlungsart filtern",
     filter_by_date: "Nach Datum filtern",
     all_cashiers: "Alle Kassierer",
+    all_payment_methods: "Alle Zahlungsarten",
     all_time: "Alle Zeit",
     pick_date_range: "Datumsbereich wählen",
     clear_range: "Bereich löschen",

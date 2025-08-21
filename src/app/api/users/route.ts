@@ -20,18 +20,19 @@ export async function GET(request: NextRequest) {
 
     const where: any = {};
 
-    if (role) {
-      where.role = role as Role;
-    }
-
     if (status) {
       where.status = status;
     }
 
-    // Exclude super admin users from the list
-    where.role = {
-      not: "SUPER_ADMIN",
-    };
+    // Handle role filtering with super admin exclusion
+    if (role) {
+      where.role = role as Role;
+    } else {
+      // Exclude super admin users from the list when no specific role is requested
+      where.role = {
+        not: "SUPER_ADMIN",
+      };
+    }
 
     // Get total count for pagination
     const total = await prisma.user.count({ where });

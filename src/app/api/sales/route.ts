@@ -45,8 +45,10 @@ export async function GET(req: NextRequest) {
   const sort = searchParams.get("sort") || "createdAt";
   const order = (searchParams.get("order") || "desc").toLowerCase() === "asc" ? "asc" : "desc";
   const cashierId = searchParams.get("cashierId");
+  const paymentMethod = searchParams.get("paymentMethod");
   const from = searchParams.get("from");
   const to = searchParams.get("to");
+  const search = (searchParams.get("search") || "").trim();
 
   // Map sort field to Prisma
   let orderBy: any = {};
@@ -70,6 +72,10 @@ export async function GET(req: NextRequest) {
     if (cashierId && cashierId !== "all") {
       where.cashierId = cashierId;
     }
+    // Payment method filter
+    if (paymentMethod && paymentMethod !== "all") {
+      where.paymentMode = paymentMethod as PaymentMode;
+    }
     // Date range filter with proper time boundaries
     if (from && to) {
       where.createdAt = { 
@@ -80,6 +86,37 @@ export async function GET(req: NextRequest) {
       where.createdAt = { gte: startOfDay(new Date(from)) };
     } else if (to) {
       where.createdAt = { lte: endOfDay(new Date(to)) };
+    }
+
+    // Apply search filter (by sale ID, cashier name/username, product name, or payment mode label)
+    if (search) {
+      const searchLower = search.toLowerCase();
+      // Map payment mode label search to enum values if matched
+      const paymentModeMatches: PaymentMode[] = [];
+      const labelToEnum: Array<{ label: string; value: PaymentMode }> = [
+        { label: "cash", value: PaymentMode.CASH },
+        { label: "card", value: PaymentMode.CARD },
+        { label: "bank transfer", value: PaymentMode.BANK_TRANSFER },
+        { label: "crypto", value: PaymentMode.CRYPTO },
+        { label: "other", value: PaymentMode.OTHER },
+      ];
+      for (const entry of labelToEnum) {
+        if (entry.label.includes(searchLower)) paymentModeMatches.push(entry.value);
+      }
+
+      where.OR = [
+        // Case-insensitive sale ID match
+        { id: { contains: search, mode: 'insensitive' } },
+        // Cashier name/username contains
+        { cashier: { name: { contains: search, mode: 'insensitive' } } },
+        { cashier: { username: { contains: search, mode: 'insensitive' } } },
+        // Product name on any sale item contains
+        { items: { some: { product: { name: { contains: search, mode: 'insensitive' } } } } },
+      ];
+
+      if (paymentModeMatches.length > 0) {
+        where.OR.push({ paymentMode: { in: paymentModeMatches } });
+      }
     }
 
     // Get total count for pagination
