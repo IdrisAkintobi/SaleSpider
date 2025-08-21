@@ -100,9 +100,6 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useSettingsContext() {
-  const context = useContext(SettingsContext);
-  if (!context) {
-    throw new Error("useSettingsContext must be used within a SettingsProvider");
-  }
-  return context;
-} 
+  // Always return the context; a default value is provided at creation
+  return useContext(SettingsContext);
+}

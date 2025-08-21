@@ -118,9 +118,9 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
     }
   }, [salesError, usersError, productsError, statsError, monthlyError, toast]);
 
-  // All data processing with useMemo
-  const sales: Sale[] = salesData?.data ?? [];
-  const users = usersData?.data ?? [];
+  // Stabilize derived arrays to avoid changing deps in useMemo
+  const sales: Sale[] = useMemo(() => salesData?.data ?? [], [salesData]);
+  const users = useMemo(() => usersData?.data ?? [], [usersData]);
 
   const statsMemo = useMemo(() => {
     const totalSales = sales.reduce((sum: number, sale: Sale) => sum + sale.totalAmount, 0);

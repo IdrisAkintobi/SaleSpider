@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useProductMutation } from "@/hooks/use-product-mutation";
-import type { Product } from "@/lib/types";
+import type { Product, ProductUpdateInput } from "@/lib/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ProductCategory } from "@prisma/client";
 import { useEffect } from "react";
@@ -83,14 +83,25 @@ export function UpdateProductDialog({
     updateData
   ) => {
     if (product) {
-      // Filter out unchanged fields (this logic stays in the component)
-      const updatedData = Object.keys(updateData).reduce((acc, key) => {
-        const objKey = key as keyof UpdateProductFormData;
-        if (updateData[objKey] !== product[objKey]) {
-          acc[objKey] = updateData[objKey];
+      // Filter out unchanged fields and only include allowed updatable fields
+      const updatedData: ProductUpdateInput = {};
+      const keys: (keyof ProductUpdateInput)[] = [
+        "name",
+        "description",
+        "category",
+        "price",
+        "lowStockMargin",
+        "imageUrl",
+        "gtin",
+      ];
+      for (const key of keys) {
+        const newValue = updateData[key as keyof UpdateProductFormData] as ProductUpdateInput[typeof key];
+        const oldValue = (product as Pick<Product, keyof ProductUpdateInput>)[key];
+        if (newValue !== undefined && newValue !== oldValue) {
+          // assign only when changed
+          (updatedData as any)[key] = newValue;
         }
-        return acc;
-      }, {} as Record<string, any>);
+      }
 
       updateProductMutation.mutate({
         id: product.id,

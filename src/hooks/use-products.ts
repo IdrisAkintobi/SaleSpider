@@ -29,7 +29,7 @@ export function useProducts(options: UseProductsOptions = {}) {
         setProducts(result.products.filter((p) => p.quantity > 0));
         setHasMore(result.hasMore);
         setCurrentPage(1);
-      } catch (e) {
+      } catch {
         // Let caller handle toasts if needed
       } finally {
         setLoading(false);

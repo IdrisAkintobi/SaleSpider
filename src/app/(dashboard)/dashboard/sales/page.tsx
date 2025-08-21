@@ -102,7 +102,7 @@ export default function SalesPage() {
     from: dateRange?.from && dateRange?.to ? dateRange.from.toISOString() : undefined,
     to: dateRange?.from && dateRange?.to ? dateRange.to.toISOString() : undefined,
   });
-  const sales = data?.data || [];
+  const sales = useMemo(() => data?.data || [], [data]);
   const total = data?.total || 0;
   // Use backend totals, not paginated sum
   const backendTotalRevenue = data?.totalSalesValue ?? 0;
@@ -119,7 +119,7 @@ export default function SalesPage() {
         variant: "destructive",
       });
     }
-  }, [error]);
+  }, [error, toast]);
 
   const uniqueCashiers = useMemo(() => {
     if (allCashiers?.data) {
@@ -141,7 +141,7 @@ export default function SalesPage() {
   const formatDate = (timestamp: number) => {
     try {
       return new Date(timestamp).toLocaleDateString();
-    } catch (error) {
+    } catch {
       return "Invalid Date";
     }
   };
@@ -539,8 +539,10 @@ export default function SalesPage() {
                       </Dialog>
                     </div>
                   );
-                default:
-                  return (sale as any)[col.key];
+                default: {
+                  const value = (sale as unknown as Record<string, unknown>)[col.key as string];
+                  return value as React.ReactNode;
+                }
               }
             }}
             emptyMessage="No sales found."

@@ -193,7 +193,7 @@ export default function RecordSalePage() {
     try {
       const saleToRecord = {
         cashierId: user!.id,
-        items: cart.map(({ stock, ...item }) => item),
+        items: cart.map(({ stock: _stock, ...item }) => item),
         totalAmount: cartTotal,
         paymentMode,
       };
@@ -204,7 +204,7 @@ export default function RecordSalePage() {
         id: recordedSale.id,
         cashierId: recordedSale.cashierId,
         // Use local cart snapshot to ensure receipt has items immediately
-        items: cart.map(({ stock, ...item }) => ({
+        items: cart.map(({ stock: _stock, ...item }) => ({
           productId: item.productId,
           productName: item.productName,
           quantity: item.quantity,
@@ -308,7 +308,7 @@ export default function RecordSalePage() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Clear cart?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will remove all items from the cart. You can’t undo this action.
+                      This will remove all items from the cart. You can&apos;t undo this action.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

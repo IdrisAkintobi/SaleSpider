@@ -31,21 +31,16 @@ export function getCurrencySettings() {
  * Use this in client-side components
  */
 export function useCurrencySettings() {
-  try {
-    const { settings } = useSettingsContext();
-    const currency = settings?.currency ?? DEFAULT_SETTINGS.currency;
-    let currencySymbol = settings?.currencySymbol ?? DEFAULT_SETTINGS.currencySymbol;
-    if (DOLLAR_CURRENCIES.includes(currency)) {
-      currencySymbol = "$";
-    }
-    return {
-      currency,
-      currencySymbol,
-    };
-  } catch {
-    // If context is not available, return default
-    return getCurrencySettings();
+  const { settings } = useSettingsContext();
+  const currency = settings?.currency ?? DEFAULT_SETTINGS.currency;
+  let currencySymbol = settings?.currencySymbol ?? DEFAULT_SETTINGS.currencySymbol;
+  if (DOLLAR_CURRENCIES.includes(currency)) {
+    currencySymbol = "$";
   }
+  return {
+    currency,
+    currencySymbol,
+  };
 }
 
 /**

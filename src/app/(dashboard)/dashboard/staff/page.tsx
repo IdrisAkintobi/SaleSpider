@@ -18,7 +18,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useSales } from "@/hooks/use-sales";
 import { useStaff, useUpdateUserStatus } from "@/hooks/use-staff";
 import { Role } from "@prisma/client";
-import type { User, UserStatus } from "@/lib/types";
+import type { User, UserStatus, Sale } from "@/lib/types";
+import type { ReactNode } from "react";
 import {
   Search,
   ArrowUp,
@@ -78,20 +79,20 @@ export default function StaffPage() {
     order,
     searchTerm,
   }, userIsManager);
-  const users = data?.data ?? [];
+  const users = useMemo(() => data?.data ?? [], [data]);
   const total = data?.total || 0;
   const updateStatusMutation = useUpdateUserStatus();
 
   // Add after useStaff and before staffList
   const { data: salesData } = useSales();
-  const sales = salesData?.data ?? [];
+  const sales = useMemo(() => salesData?.data ?? [], [salesData]);
 
   // Combine users and sales data to create performance data
   const staffList: StaffPerformance[] = useMemo(() => {
     return users.map((user: User) => {
-      const userSales = sales.filter((sale: any) => sale.cashierId === user.id);
+      const userSales = sales.filter((sale: Sale) => sale.cashierId === user.id);
       const totalSalesValue = userSales.reduce(
-        (sum: number, sale: any) => sum + sale.totalAmount,
+        (sum: number, sale: Sale) => sum + sale.totalAmount,
         0
       );
       return {
@@ -283,8 +284,10 @@ export default function StaffPage() {
                           </Button>
                             </div>
                   );
-                default:
-                  return (staff as any)[col.key];
+                default: {
+                  const value = (staff as unknown as Record<string, unknown>)[col.key as string];
+                  return (value as ReactNode) ?? null;
+                }
               }
             }}
             emptyMessage={t("no_staff_found")}
@@ -310,20 +313,25 @@ export default function StaffPage() {
                 e.preventDefault();
                 const form = e.target as HTMLFormElement;
                 const formData = new FormData(form);
-                const update: any = { id: editStaff.id };
+                const update: Partial<User> & { id: string } = { id: editStaff.id };
                 if (currentUser?.role === "SUPER_ADMIN" || (currentUser?.role === "MANAGER" && editStaff.role === "CASHIER")) {
-                  update.name = formData.get("name");
-                  update.username = formData.get("username");
-                  update.email = formData.get("email");
-                  update.role = formData.get("role");
+                  const name = formData.get("name");
+                  if (typeof name === "string") update.name = name;
+                  const username = formData.get("username");
+                  if (typeof username === "string") update.username = username;
+                  const email = formData.get("email");
+                  if (typeof email === "string") update.email = email;
+                  const role = formData.get("role");
+                  if (typeof role === "string") update.role = role as Role;
                 }
                 editMutation.mutate(update, {
                   onSuccess: () => {
                     toast({ title: "Staff updated" });
                     setEditStaff(null);
                   },
-                  onError: (error: any) => {
-                    toast({ title: "Error", description: error.message, variant: "destructive" });
+                  onError: (error: unknown) => {
+                    const message = error instanceof Error ? error.message : String(error);
+                    toast({ title: "Error", description: message, variant: "destructive" });
                   },
                 });
               }}
