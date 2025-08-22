@@ -131,6 +131,7 @@ model AppSettings {
   theme             String   @default("light") // light, dark, auto
   maintenanceMode   Boolean  @default(false)
   showDeletedProducts Boolean @default(false) // Show deleted products in inventory
+  enabledPaymentMethods PaymentMode[] @default([CASH, CARD, BANK_TRANSFER, CRYPTO, OTHER])
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }

@@ -52,6 +52,7 @@ import { useVatPercentage } from "@/lib/vat";
 import { useTranslation } from "@/lib/i18n";
 import { startOfToday, endOfToday, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import { PAYMENT_METHODS } from "@/lib/constants";
+import { useSettingsContext } from "@/contexts/settings-context";
 
 export default function SalesPage() {
   const { userIsManager, userIsCashier } = useAuth();
@@ -59,6 +60,7 @@ export default function SalesPage() {
   const formatCurrency = useFormatCurrency();
   const vatPercentage = useVatPercentage();
   const t = useTranslation();
+  const { settings } = useSettingsContext();
   
   // Use shared table controls
   const {
@@ -108,7 +110,15 @@ export default function SalesPage() {
   // Use backend totals, not paginated sum
   const backendTotalRevenue = data?.totalSalesValue ?? 0;
 
-  // All available payment methods are provided via PAYMENT_METHODS
+  // Enabled payment methods from settings
+  const enabledPaymentEnums = settings?.enabledPaymentMethods || undefined;
+  const enabledPaymentOptions = React.useMemo(
+    () =>
+      PAYMENT_METHODS.filter(m =>
+        !enabledPaymentEnums ? true : enabledPaymentEnums.includes(m.enum)
+      ),
+    [enabledPaymentEnums]
+  );
 
   // Handle query errors
   useEffect(() => {
@@ -220,7 +230,7 @@ export default function SalesPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t("all_payment_methods")}</SelectItem>
-                {PAYMENT_METHODS.map(m => (
+                {enabledPaymentOptions.map(m => (
                   <SelectItem key={m.enum} value={m.enum}>{m.label}</SelectItem>
                 ))}
               </SelectContent>
@@ -290,7 +300,7 @@ export default function SalesPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t("all_payment_methods")}</SelectItem>
-              {PAYMENT_METHODS.map(m => (
+              {enabledPaymentOptions.map(m => (
                 <SelectItem key={m.enum} value={m.enum}>{m.label}</SelectItem>
               ))}
             </SelectContent>

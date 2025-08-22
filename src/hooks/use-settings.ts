@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { PaymentMode } from "@/lib/constants";
 
 export interface AppSettings {
   id: string;
@@ -17,6 +18,7 @@ export interface AppSettings {
   theme: string;
   maintenanceMode: boolean;
   showDeletedProducts: boolean;
+  enabledPaymentMethods: PaymentMode[];
   createdAt: string;
   updatedAt: string;
 }
@@ -37,14 +39,25 @@ export interface UpdateSettingsData {
   theme?: string;
   maintenanceMode?: boolean;
   showDeletedProducts?: boolean;
+  enabledPaymentMethods?: PaymentMode[];
 }
 
 // Fetch settings from API
 async function fetchSettings(): Promise<AppSettings> {
   const response = await fetch("/api/settings");
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || "Failed to fetch settings");
+    const status = `${response.status} ${response.statusText}`;
+    const bodyText = await response.text();
+    let message = "Failed to fetch settings";
+    if (bodyText) {
+      try {
+        const json = JSON.parse(bodyText);
+        message = json.error || json.message || message;
+      } catch {
+        message = bodyText;
+      }
+    }
+    throw new Error(`${status}: ${message}`);
   }
   return response.json();
 }
@@ -60,8 +73,18 @@ async function updateSettings(data: UpdateSettingsData): Promise<AppSettings> {
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || "Failed to update settings");
+    const status = `${response.status} ${response.statusText}`;
+    const bodyText = await response.text();
+    let message = "Failed to update settings";
+    if (bodyText) {
+      try {
+        const json = JSON.parse(bodyText);
+        message = json.error || json.message || message;
+      } catch {
+        message = bodyText;
+      }
+    }
+    throw new Error(`${status}: ${message}`);
   }
 
   return response.json();

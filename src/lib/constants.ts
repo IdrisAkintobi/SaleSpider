@@ -18,6 +18,7 @@ export const DEFAULT_SETTINGS = {
   theme: "light",
   maintenanceMode: false,
   showDeletedProducts: false,
+  enabledPaymentMethods: ["CASH", "CARD", "BANK_TRANSFER", "CRYPTO", "OTHER"] as const,
 };
 
 export const CURRENCY_OPTIONS = [
@@ -66,15 +67,23 @@ export const LANGUAGE_OPTIONS = [
   { value: "de", label: "German" },
 ] as const;
 
-// Centralized Payment Methods
-// label: human-readable label used in cashier UI (record sale)
-// enum: Prisma enum string used in filters and backend queries
+// Payment modes enum values
+export const PAYMENT_MODE_VALUES = [
+  "CASH",
+  "CARD",
+  "BANK_TRANSFER",
+  "CRYPTO",
+  "OTHER",
+] as const;
+
+export type PaymentMode = (typeof PAYMENT_MODE_VALUES)[number];
+
 export const PAYMENT_METHODS = [
-  { label: "Cash", enum: "CASH" },
-  { label: "Card", enum: "CARD" },
-  { label: "Bank Transfer", enum: "BANK_TRANSFER" },
-  { label: "Crypto", enum: "CRYPTO" },
-  { label: "Other", enum: "OTHER" },
+  { label: "Cash", enum: "CASH" as PaymentMode },
+  { label: "Card", enum: "CARD" as PaymentMode },
+  { label: "Bank Transfer", enum: "BANK_TRANSFER" as PaymentMode },
+  { label: "Crypto", enum: "CRYPTO" as PaymentMode },
+  { label: "Other", enum: "OTHER" as PaymentMode },
 ] as const;
 
 export const THEME_OPTIONS = [
