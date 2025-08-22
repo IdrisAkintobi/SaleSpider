@@ -1,9 +1,8 @@
 import { PrismaClient, Role, UserStatus } from "@prisma/client";
-import { NextRequest, NextResponse } from "next/server";
-import { createChildLogger } from "@/lib/logger";
+import { NextRequest } from "next/server";
+import { jsonOk, jsonError, handleException } from "@/lib/api-response";
 
 const prisma = new PrismaClient();
-const logger = createChildLogger('api:users:id');
 
 // Function to update user status
 export async function PATCH(
@@ -17,7 +16,7 @@ export async function PATCH(
   const userId = req.headers.get("X-User-Id");
 
   if (!userId) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
   }
 
   // Fetch the user to check their role
@@ -26,23 +25,17 @@ export async function PATCH(
   });
 
   if (!user || (user.role !== Role.MANAGER && user.role !== Role.SUPER_ADMIN)) {
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    return jsonError("Forbidden", 403, { code: "FORBIDDEN" });
   }
 
   // Prevent self-deactivation
   if (userId === id) {
-    return NextResponse.json(
-      { message: "Cannot update your own status" },
-      { status: 400 }
-    );
+    return jsonError("Cannot update your own status", 400, { code: "BAD_REQUEST" });
   }
 
   // Validate status
   if (!Object.values(UserStatus).includes(status)) {
-    return NextResponse.json(
-      { message: "Invalid status value" },
-      { status: 400 }
-    );
+    return jsonError("Invalid status value", 400, { code: "BAD_REQUEST" });
   }
 
   try {
@@ -61,12 +54,8 @@ export async function PATCH(
       },
     });
 
-    return NextResponse.json(updatedUser);
+    return jsonOk(updatedUser);
   } catch (error) {
-    logger.error({ userId, targetUserId: id, error: error instanceof Error ? error.message : 'Unknown error' }, 'Error updating user status');
-    return NextResponse.json(
-      { message: "Failed to update user status" },
-      { status: 500 }
-    );
+    return handleException(error, "Failed to update user status", 500);
   }
-} 
+}

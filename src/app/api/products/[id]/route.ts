@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { PrismaClient, Role } from "@prisma/client";
 import { createChildLogger } from "@/lib/logger";
 import { SoftDeleteService } from "@/lib/soft-delete";
 import { AuditTrailService } from "@/lib/audit-trail";
+import { jsonOk, jsonError, handleException } from "@/lib/api-response";
 
 const prisma = new PrismaClient();
 const logger = createChildLogger('api:products:id');
@@ -23,19 +24,12 @@ export async function GET(
     });
 
     if (!product) {
-      return NextResponse.json(
-        { message: "Product not found" },
-        { status: 404 }
-      );
+      return jsonError("Product not found", 404, { code: "NOT_FOUND" });
     }
 
-    return NextResponse.json(product);
+    return jsonOk(product);
   } catch (error) {
-    logger.error({ productId: id, error: error instanceof Error ? error.message : 'Unknown error' }, 'Error fetching product');
-    return NextResponse.json(
-      { message: "Failed to fetch product" },
-      { status: 500 }
-    );
+    return handleException(error, "Failed to fetch product", 500);
   }
 }
 
@@ -52,7 +46,7 @@ export async function PATCH(
 
   if (!userId) {
     // fallback safety check.
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
   }
 
   // Fetch the user to check their role
@@ -60,7 +54,7 @@ export async function PATCH(
     where: { id: userId },
   });
   if (!user || user.role === Role.CASHIER) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
   }
 
   try {
@@ -71,10 +65,7 @@ export async function PATCH(
     });
 
     if (!productExists) {
-      return NextResponse.json(
-        { message: "Product not found" },
-        { status: 404 }
-      );
+      return jsonError("Product not found", 404, { code: "NOT_FOUND" });
     }
 
     // Validate quantity if provided
@@ -82,10 +73,7 @@ export async function PATCH(
       updateData.quantity !== undefined &&
       typeof updateData.quantity !== "number"
     ) {
-      return NextResponse.json(
-        { message: "Invalid quantity provided" },
-        { status: 400 }
-      );
+      return jsonError("Invalid quantity provided", 400, { code: "BAD_REQUEST" });
     }
 
     // Prepare the data for update and audit trail
@@ -125,13 +113,9 @@ export async function PATCH(
       }
     );
 
-    return NextResponse.json(updatedProduct);
+    return jsonOk(updatedProduct);
   } catch (error) {
-    logger.error({ productId: id, userId, error: error instanceof Error ? error.message : 'Unknown error' }, 'Error updating product');
-    return NextResponse.json(
-      { message: "Failed to update product" },
-      { status: 500 }
-    );
+    return handleException(error, "Failed to update product", 500);
   }
 }
 
@@ -146,7 +130,7 @@ export async function DELETE(
   const userId = (request as NextRequest).headers.get("X-User-Id");
 
   if (!userId) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
   }
 
   // Fetch the user to check their role
@@ -155,7 +139,7 @@ export async function DELETE(
   });
 
   if (!user || user.role !== Role.SUPER_ADMIN) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
   }
 
   try {
@@ -166,17 +150,11 @@ export async function DELETE(
     });
 
     if (!product) {
-      return NextResponse.json(
-        { message: "Product not found" },
-        { status: 404 }
-      );
+      return jsonError("Product not found", 404, { code: "NOT_FOUND" });
     }
 
     if (product.deletedAt) {
-      return NextResponse.json(
-        { message: "Product is already deleted" },
-        { status: 400 }
-      );
+      return jsonError("Product is already deleted", 400, { code: "BAD_REQUEST" });
     }
 
     // Soft delete the product
@@ -189,20 +167,11 @@ export async function DELETE(
       userRole: user.role
     }, 'Product soft deleted by super admin');
 
-    return NextResponse.json({ 
+    return jsonOk({ 
       message: "Product deleted successfully",
       productId: id 
     });
   } catch (error) {
-    logger.error({ 
-      productId: id, 
-      userId,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, 'Failed to delete product');
-    
-    return NextResponse.json(
-      { message: "Failed to delete product" },
-      { status: 500 }
-    );
+    return handleException(error, "Failed to delete product", 500);
   }
 }

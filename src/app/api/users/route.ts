@@ -1,11 +1,10 @@
 import { PrismaClient, Role } from "@prisma/client";
-import { NextRequest, NextResponse } from "next/server";
-import { createChildLogger } from "@/lib/logger";
+import { NextRequest } from "next/server";
 import { AuditTrailService } from "@/lib/audit-trail";
 import * as argon2 from "argon2";
+import { jsonOk, jsonError, handleException } from "@/lib/api-response";
 
 const prisma = new PrismaClient();
-const logger = createChildLogger('api:users');
 
 // Function to get users
 export async function GET(request: NextRequest) {
@@ -62,13 +61,9 @@ export async function GET(request: NextRequest) {
       take: pageSize,
     });
 
-    return NextResponse.json({ data: users, total });
+    return jsonOk({ data: users, total });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Error fetching users');
-    return NextResponse.json(
-      { message: "Failed to fetch users" },
-      { status: 500 }
-    );
+    return handleException(error, "Failed to fetch users", 500);
   }
 }
 
@@ -80,10 +75,7 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!name || !username || !email || !password || !role) {
-      return NextResponse.json(
-        { message: "All fields are required" },
-        { status: 400 }
-      );
+      return jsonError("All fields are required", 400, { code: "BAD_REQUEST" });
     }
 
     // Check if user already exists
@@ -97,10 +89,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingUser) {
-      return NextResponse.json(
-        { message: "User with this email or username already exists" },
-        { status: 409 }
-      );
+      return jsonError("User with this email or username already exists", 409, { code: "CONFLICT" });
     }
 
     // Hash the password
@@ -128,13 +117,9 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(newUser, { status: 201 });
+    return jsonOk(newUser, { status: 201 });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Error creating user');
-    return NextResponse.json(
-      { message: "Failed to create user" },
-      { status: 500 }
-    );
+    return handleException(error, "Failed to create user", 500);
   }
 }
 
@@ -143,20 +128,20 @@ export async function PATCH(request: NextRequest) {
   // Read the X-User-Id header set by the middleware
   const userId = request.headers.get("X-User-Id");
   if (!userId) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
   }
 
   // Fetch the user to check their role
   const actingUser = await prisma.user.findUnique({ where: { id: userId } });
   if (!actingUser) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
   }
 
   try {
     const body = await request.json();
     const { id, name, username, email, role, status } = body;
     if (!id) {
-      return NextResponse.json({ message: "User ID is required" }, { status: 400 });
+      return jsonError("User ID is required", 400, { code: "BAD_REQUEST" });
     }
     // Only super-admin can edit all, manager can only edit cashiers
     const targetUser = await prisma.user.findUnique({ 
@@ -164,13 +149,13 @@ export async function PATCH(request: NextRequest) {
       select: { id: true, role: true }
     });
     if (!targetUser) {
-      return NextResponse.json({ message: "User not found" }, { status: 404 });
+      return jsonError("User not found", 404, { code: "NOT_FOUND" });
     }
     if (actingUser.role === "MANAGER" && targetUser.role !== "CASHIER") {
-      return NextResponse.json({ message: "Managers can only edit cashiers" }, { status: 403 });
+      return jsonError("Managers can only edit cashiers", 403, { code: "FORBIDDEN" });
     }
     if (actingUser.role !== "SUPER_ADMIN" && actingUser.role !== "MANAGER") {
-      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+      return jsonError("Forbidden", 403, { code: "FORBIDDEN" });
     }
 
     // Prepare update data and track changed fields for audit trail
@@ -212,12 +197,8 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(updatedUser);
+    return jsonOk(updatedUser);
   } catch (error) {
-    logger.error({ userId, error: error instanceof Error ? error.message : 'Unknown error' }, 'Error updating user');
-    return NextResponse.json(
-      { message: "Failed to update user" },
-      { status: 500 }
-    );
+    return handleException(error, "Failed to update user", 500);
   }
 } 

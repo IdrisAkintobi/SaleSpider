@@ -1,8 +1,8 @@
 import { PrismaClient, Role } from "@prisma/client";
 import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
 import { SoftDeleteService } from "@/lib/soft-delete";
 import { logger } from "@/lib/logger";
+import { jsonOk, jsonError, handleException } from "@/lib/api-response";
 
 const prisma = new PrismaClient();
 
@@ -17,7 +17,7 @@ export async function POST(
   const userId = (request as NextRequest).headers.get("X-User-Id");
 
   if (!userId) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
   }
 
   // Fetch the user to check their role
@@ -26,7 +26,7 @@ export async function POST(
   });
 
   if (!user || user.role !== Role.SUPER_ADMIN) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
   }
 
   try {
@@ -37,17 +37,11 @@ export async function POST(
     });
 
     if (!product) {
-      return NextResponse.json(
-        { message: "Product not found" },
-        { status: 404 }
-      );
+      return jsonError("Product not found", 404, { code: "NOT_FOUND" });
     }
 
     if (!product.deletedAt) {
-      return NextResponse.json(
-        { message: "Product is not deleted" },
-        { status: 400 }
-      );
+      return jsonError("Product is not deleted", 400, { code: "BAD_REQUEST" });
     }
 
     // Restore the product
@@ -60,20 +54,11 @@ export async function POST(
       userRole: user.role
     }, 'Product restored by super admin');
 
-    return NextResponse.json({ 
+    return jsonOk({ 
       message: "Product restored successfully",
       productId: id 
     });
   } catch (error) {
-    logger.error({ 
-      productId: id, 
-      userId,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, 'Failed to restore product');
-    
-    return NextResponse.json(
-      { message: "Failed to restore product" },
-      { status: 500 }
-    );
+    return handleException(error, "Failed to restore product", 500);
   }
 }

@@ -1,10 +1,9 @@
 import { PrismaClient } from "@prisma/client";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getMonthlySales } from "@/lib/utils";
-import { createChildLogger } from "@/lib/logger";
+import { jsonOk, jsonError, handleException } from "@/lib/api-response";
 
 const prisma = new PrismaClient();
-const logger = createChildLogger('api:sales:stats');
 
 // Function to get sales stats
 export async function GET(req: NextRequest) {
@@ -12,7 +11,7 @@ export async function GET(req: NextRequest) {
   const userId = req.headers.get("X-User-Id");
 
   if (!userId) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
   }
 
   try {
@@ -120,7 +119,7 @@ export async function GET(req: NextRequest) {
       monthly = await getMonthlySales(prisma);
     }
 
-    return NextResponse.json({
+    return jsonOk({
       totalSales: aggregate._sum.totalAmount ?? 0,
       totalOrders: aggregate._count.id ?? 0,
       averageSale: aggregate._avg.totalAmount ?? 0,
@@ -130,10 +129,6 @@ export async function GET(req: NextRequest) {
       monthly,
     });
   } catch (error) {
-    logger.error({ userId, error: error instanceof Error ? error.message : 'Unknown error' }, 'Error fetching sales stats');
-    return NextResponse.json(
-      { message: "Failed to fetch sales stats" },
-      { status: 500 }
-    );
+    return handleException(error, "Failed to fetch sales stats", 500);
   }
-} 
+}

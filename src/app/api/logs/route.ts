@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { createChildLogger } from "@/lib/logger";
+import { jsonOk, handleException } from "@/lib/api-response";
 
 const logger = createChildLogger('client-logs-api');
 
@@ -34,15 +35,8 @@ export async function POST(req: NextRequest) {
         logger.info(clientLogData, 'Client-side log received');
     }
 
-    return NextResponse.json({ success: true });
+    return jsonOk({ success: true });
   } catch (error) {
-    logger.error({
-      error: error instanceof Error ? error.message : 'Unknown error',
-    }, 'Failed to process client log');
-    
-    return NextResponse.json(
-      { error: 'Failed to process log' },
-      { status: 500 }
-    );
+    return handleException(error, 'Failed to process log', 500);
   }
 }
