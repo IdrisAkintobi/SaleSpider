@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, isSuperAdmin } from "@/lib/auth";
 import { DEFAULT_SETTINGS } from "@/lib/constants";
@@ -7,6 +7,30 @@ import { PAYMENT_METHODS } from "@/lib/constants";
 import { jsonOk, jsonError, handleException } from "@/lib/api-response";
 
 const logger = createChildLogger('api:settings');
+
+// Helper: build default settings payload (used in GET and PATCH)
+function buildDefaultSettingsData() {
+  return ({
+    appName: process.env.APP_NAME || DEFAULT_SETTINGS.appName,
+    appLogo: process.env.APP_LOGO || DEFAULT_SETTINGS.appLogo,
+    primaryColor: process.env.PRIMARY_COLOR || DEFAULT_SETTINGS.primaryColor,
+    secondaryColor: process.env.SECONDARY_COLOR || DEFAULT_SETTINGS.secondaryColor,
+    accentColor: process.env.ACCENT_COLOR || DEFAULT_SETTINGS.accentColor,
+    currency: process.env.CURRENCY || DEFAULT_SETTINGS.currency,
+    currencySymbol: process.env.CURRENCY_SYMBOL || DEFAULT_SETTINGS.currencySymbol,
+    vatPercentage: parseFloat(process.env.VAT_PERCENTAGE || DEFAULT_SETTINGS.vatPercentage.toString()),
+    timezone: process.env.TIMEZONE || DEFAULT_SETTINGS.timezone,
+    dateFormat: process.env.DATE_FORMAT || DEFAULT_SETTINGS.dateFormat,
+    timeFormat: process.env.TIME_FORMAT || DEFAULT_SETTINGS.timeFormat,
+    language: process.env.LANGUAGE || DEFAULT_SETTINGS.language,
+    theme: process.env.THEME || DEFAULT_SETTINGS.theme,
+    maintenanceMode: process.env.MAINTENANCE_MODE === "true" || DEFAULT_SETTINGS.maintenanceMode,
+    showDeletedProducts: process.env.SHOW_DELETED_PRODUCTS === "true" || DEFAULT_SETTINGS.showDeletedProducts,
+    enabledPaymentMethods: (process.env.ENABLED_PAYMENT_METHODS
+      ? process.env.ENABLED_PAYMENT_METHODS.split(",").map(s => s.trim().toUpperCase())
+      : [...(DEFAULT_SETTINGS.enabledPaymentMethods as readonly string[])]),
+  }) as any;
+}
 
 // GET /api/settings
 export async function GET(request: NextRequest) {
@@ -27,28 +51,7 @@ export async function GET(request: NextRequest) {
     // If no settings exist, create default settings
     if (!settings) {
       logger.warn({ userId: user.id }, 'No settings found, creating defaults');
-      settings = await prisma.appSettings.create({
-        data: ({
-          appName: process.env.APP_NAME || DEFAULT_SETTINGS.appName,
-          appLogo: process.env.APP_LOGO || DEFAULT_SETTINGS.appLogo,
-          primaryColor: process.env.PRIMARY_COLOR || DEFAULT_SETTINGS.primaryColor,
-          secondaryColor: process.env.SECONDARY_COLOR || DEFAULT_SETTINGS.secondaryColor,
-          accentColor: process.env.ACCENT_COLOR || DEFAULT_SETTINGS.accentColor,
-          currency: process.env.CURRENCY || DEFAULT_SETTINGS.currency,
-          currencySymbol: process.env.CURRENCY_SYMBOL || DEFAULT_SETTINGS.currencySymbol,
-          vatPercentage: parseFloat(process.env.VAT_PERCENTAGE || DEFAULT_SETTINGS.vatPercentage.toString()),
-          timezone: process.env.TIMEZONE || DEFAULT_SETTINGS.timezone,
-          dateFormat: process.env.DATE_FORMAT || DEFAULT_SETTINGS.dateFormat,
-          timeFormat: process.env.TIME_FORMAT || DEFAULT_SETTINGS.timeFormat,
-          language: process.env.LANGUAGE || DEFAULT_SETTINGS.language,
-          theme: process.env.THEME || DEFAULT_SETTINGS.theme,
-          maintenanceMode: process.env.MAINTENANCE_MODE === "true" || DEFAULT_SETTINGS.maintenanceMode,
-          showDeletedProducts: process.env.SHOW_DELETED_PRODUCTS === "true" || DEFAULT_SETTINGS.showDeletedProducts,
-          enabledPaymentMethods: (process.env.ENABLED_PAYMENT_METHODS
-            ? process.env.ENABLED_PAYMENT_METHODS.split(",").map(s => s.trim().toUpperCase())
-            : [...(DEFAULT_SETTINGS.enabledPaymentMethods as readonly string[])]),
-        }) as any,
-      });
+      settings = await prisma.appSettings.create({ data: buildDefaultSettingsData() });
     }
 
     logger.debug({ userId: user.id, settingsId: settings.id }, 'GET /api/settings success');
@@ -64,7 +67,7 @@ export async function PATCH(request: NextRequest) {
     const user = await getCurrentUser(request);
     
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
     }
 
     // Check if user is super admin
@@ -117,28 +120,7 @@ export async function PATCH(request: NextRequest) {
 
     // If no settings exist, create with defaults
     if (!settings) {
-      settings = await prisma.appSettings.create({
-        data: ({
-          appName: process.env.APP_NAME || DEFAULT_SETTINGS.appName,
-          appLogo: process.env.APP_LOGO || DEFAULT_SETTINGS.appLogo,
-          primaryColor: process.env.PRIMARY_COLOR || DEFAULT_SETTINGS.primaryColor,
-          secondaryColor: process.env.SECONDARY_COLOR || DEFAULT_SETTINGS.secondaryColor,
-          accentColor: process.env.ACCENT_COLOR || DEFAULT_SETTINGS.accentColor,
-          currency: process.env.CURRENCY || DEFAULT_SETTINGS.currency,
-          currencySymbol: process.env.CURRENCY_SYMBOL || DEFAULT_SETTINGS.currencySymbol,
-          vatPercentage: parseFloat(process.env.VAT_PERCENTAGE || DEFAULT_SETTINGS.vatPercentage.toString()),
-          timezone: process.env.TIMEZONE || DEFAULT_SETTINGS.timezone,
-          dateFormat: process.env.DATE_FORMAT || DEFAULT_SETTINGS.dateFormat,
-          timeFormat: process.env.TIME_FORMAT || DEFAULT_SETTINGS.timeFormat,
-          language: process.env.LANGUAGE || DEFAULT_SETTINGS.language,
-          theme: process.env.THEME || DEFAULT_SETTINGS.theme,
-          maintenanceMode: process.env.MAINTENANCE_MODE === "true" || DEFAULT_SETTINGS.maintenanceMode,
-          showDeletedProducts: process.env.SHOW_DELETED_PRODUCTS === "true" || DEFAULT_SETTINGS.showDeletedProducts,
-          enabledPaymentMethods: (process.env.ENABLED_PAYMENT_METHODS
-            ? process.env.ENABLED_PAYMENT_METHODS.split(",").map(s => s.trim().toUpperCase())
-            : [...(DEFAULT_SETTINGS.enabledPaymentMethods as readonly string[])]),
-        }) as any,
-      });
+      settings = await prisma.appSettings.create({ data: buildDefaultSettingsData() });
     }
 
     // Update settings with provided values

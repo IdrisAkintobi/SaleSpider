@@ -120,6 +120,58 @@ export default function SalesPage() {
     [enabledPaymentEnums]
   );
 
+  // Deduplicated filter controls
+  function PaymentMethodSelect() {
+    return (
+      <Select value={filterPaymentMethod} onValueChange={handlePaymentMethodFilter}>
+        <SelectTrigger className="w-full sm:w-[240px]">
+          <SelectValue placeholder={t("filter_by_payment_method")} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">{t("all_payment_methods")}</SelectItem>
+          {enabledPaymentOptions.map(m => (
+            <SelectItem key={m.enum} value={m.enum}>{m.label}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+  }
+
+  function CashierSelect() {
+    if (!userIsManager) return null;
+    return (
+      <Select value={filterCashier} onValueChange={handleCashierFilter}>
+        <SelectTrigger className="w-full sm:w-[220px]">
+          <SelectValue placeholder={t("filter_by_cashier")} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">{t('all_cashiers')}</SelectItem>
+          {uniqueCashiers.map((cashier: { id: string; name: string }) => (
+            <SelectItem key={cashier.id} value={cashier.id}>
+              {cashier.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+  }
+
+  function DateRangeQuickSelect() {
+    return (
+      <Select value={filterDateRange} onValueChange={handleDateRangeFilter}>
+        <SelectTrigger className="w-full sm:w-[200px]">
+          <SelectValue placeholder={t("filter_by_date")} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">{t('all_time')}</SelectItem>
+          <SelectItem value="today">{t('today')}</SelectItem>
+          <SelectItem value="week">{t('this_week')}</SelectItem>
+          <SelectItem value="month">{t('this_month')}</SelectItem>
+        </SelectContent>
+      </Select>
+    );
+  }
+
   // Handle query errors
   useEffect(() => {
     if (error) {
@@ -224,38 +276,9 @@ export default function SalesPage() {
               className="max-w-sm"
               icon={<Search className="h-4 w-4 text-muted-foreground" />}
             />
-            <Select value={filterPaymentMethod} onValueChange={handlePaymentMethodFilter}>
-              <SelectTrigger className="w-full sm:w-[240px]">
-                <SelectValue placeholder={t("filter_by_payment_method")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("all_payment_methods")}</SelectItem>
-                {enabledPaymentOptions.map(m => (
-                  <SelectItem key={m.enum} value={m.enum}>{m.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {userIsManager && (
-              <Select value={filterCashier} onValueChange={handleCashierFilter}>
-                <SelectTrigger className="w-full sm:w-[220px]">
-                  <SelectValue placeholder={t("filter_by_cashier")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t("all_cashiers")}</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-            <Select value={filterDateRange} onValueChange={handleDateRangeFilter}>
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder={t("filter_by_date")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("all_time")}</SelectItem>
-                <SelectItem value="today">{t("today")}</SelectItem>
-                <SelectItem value="week">{t("this_week")}</SelectItem>
-                <SelectItem value="month">{t("this_month")}</SelectItem>
-              </SelectContent>
-            </Select>
+            <PaymentMethodSelect />
+            <CashierSelect />
+            <DateRangeQuickSelect />
           </div>
         </div>
         <SalesTableSkeleton />
@@ -294,43 +317,9 @@ export default function SalesPage() {
             className="flex-1"
             icon={<Filter className="h-4 w-4 text-muted-foreground" />}
           />
-          <Select value={filterPaymentMethod} onValueChange={handlePaymentMethodFilter}>
-            <SelectTrigger className="w-full sm:w-[240px]">
-              <SelectValue placeholder={t("filter_by_payment_method")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("all_payment_methods")}</SelectItem>
-              {enabledPaymentOptions.map(m => (
-                <SelectItem key={m.enum} value={m.enum}>{m.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {userIsManager && (
-            <Select value={filterCashier} onValueChange={handleCashierFilter}>
-              <SelectTrigger className="w-full sm:w-[220px]">
-                <SelectValue placeholder={t("filter_by_cashier")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('all_cashiers')}</SelectItem>
-                {uniqueCashiers.map((cashier: { id: string; name: string }) => (
-                  <SelectItem key={cashier.id} value={cashier.id}>
-                    {cashier.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-          <Select value={filterDateRange} onValueChange={handleDateRangeFilter}>
-            <SelectTrigger className="w-full sm:w-[200px]">
-              <SelectValue placeholder={t("filter_by_date")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('all_time')}</SelectItem>
-              <SelectItem value="today">{t('today')}</SelectItem>
-              <SelectItem value="week">{t('this_week')}</SelectItem>
-              <SelectItem value="month">{t('this_month')}</SelectItem>
-            </SelectContent>
-          </Select>
+          <PaymentMethodSelect />
+          <CashierSelect />
+          <DateRangeQuickSelect />
           <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
             <PopoverTrigger asChild>
               <Button

@@ -1,8 +1,8 @@
 import { PrismaClient, Role } from "@prisma/client";
-import type { NextRequest } from "next/server";
 import { SoftDeleteService } from "@/lib/soft-delete";
 import { logger } from "@/lib/logger";
 import { jsonOk, jsonError, handleException } from "@/lib/api-response";
+import { getUserFromHeader } from "@/lib/api-auth";
 
 const prisma = new PrismaClient();
 
@@ -13,19 +13,9 @@ export async function POST(
 ) {
   const { id } = await params;
 
-  // Read the X-User-Id header set by the middleware
-  const userId = (request as NextRequest).headers.get("X-User-Id");
-
-  if (!userId) {
-    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
-  }
-
-  // Fetch the user to check their role
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-  });
-
-  if (!user || user.role !== Role.SUPER_ADMIN) {
+  // Read user from header and validate role
+  const { userId, user } = await getUserFromHeader(request, prisma);
+  if (!userId || !user || user.role !== Role.SUPER_ADMIN) {
     return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
   }
 

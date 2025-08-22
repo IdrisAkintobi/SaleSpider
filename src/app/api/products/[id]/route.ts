@@ -4,6 +4,7 @@ import { createChildLogger } from "@/lib/logger";
 import { SoftDeleteService } from "@/lib/soft-delete";
 import { AuditTrailService } from "@/lib/audit-trail";
 import { jsonOk, jsonError, handleException } from "@/lib/api-response";
+import { getUserFromHeader } from "@/lib/api-auth";
 
 const prisma = new PrismaClient();
 const logger = createChildLogger('api:products:id');
@@ -41,19 +42,9 @@ export async function PATCH(
   const { id } = await params;
   const updateData = await request.json();
 
-  // Read the X-User-Id header set by the middleware
-  const userId = (request as NextRequest).headers.get("X-User-Id");
-
-  if (!userId) {
-    // fallback safety check.
-    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
-  }
-
-  // Fetch the user to check their role
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-  });
-  if (!user || user.role === Role.CASHIER) {
+  // Read user from header and validate role
+  const { userId, user } = await getUserFromHeader(request, prisma);
+  if (!userId || !user || user.role === Role.CASHIER) {
     return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
   }
 
@@ -126,19 +117,9 @@ export async function DELETE(
 ) {
   const { id } = await params;
 
-  // Read the X-User-Id header set by the middleware
-  const userId = (request as NextRequest).headers.get("X-User-Id");
-
-  if (!userId) {
-    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
-  }
-
-  // Fetch the user to check their role
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-  });
-
-  if (!user || user.role !== Role.SUPER_ADMIN) {
+  // Read user from header and validate role
+  const { userId, user } = await getUserFromHeader(request, prisma);
+  if (!userId || !user || user.role !== Role.SUPER_ADMIN) {
     return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
   }
 
