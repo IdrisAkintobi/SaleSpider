@@ -3,6 +3,7 @@ import { SoftDeleteService } from "@/lib/soft-delete";
 import { logger } from "@/lib/logger";
 import { jsonOk, jsonError, handleException } from "@/lib/api-response";
 import { getUserFromHeader } from "@/lib/api-auth";
+import { getProductBasic } from "@/lib/products";
 
 const prisma = new PrismaClient();
 
@@ -21,10 +22,7 @@ export async function POST(
 
   try {
     // Check if product exists and is deleted
-    const product = await prisma.product.findUnique({
-      where: { id },
-      select: { id: true, name: true, deletedAt: true }
-    });
+    const product = await getProductBasic(prisma, id);
 
     if (!product) {
       return jsonError("Product not found", 404, { code: "NOT_FOUND" });
