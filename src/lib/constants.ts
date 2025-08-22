@@ -66,6 +66,17 @@ export const LANGUAGE_OPTIONS = [
   { value: "de", label: "German" },
 ] as const;
 
+// Centralized Payment Methods
+// label: human-readable label used in cashier UI (record sale)
+// enum: Prisma enum string used in filters and backend queries
+export const PAYMENT_METHODS = [
+  { label: "Cash", enum: "CASH" },
+  { label: "Card", enum: "CARD" },
+  { label: "Bank Transfer", enum: "BANK_TRANSFER" },
+  { label: "Crypto", enum: "CRYPTO" },
+  { label: "Other", enum: "OTHER" },
+] as const;
+
 export const THEME_OPTIONS = [
   { value: "light", label: "Light" },
   { value: "dark", label: "Dark" },

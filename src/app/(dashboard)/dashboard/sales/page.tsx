@@ -51,6 +51,7 @@ import { useFormatCurrency } from "@/lib/currency";
 import { useVatPercentage } from "@/lib/vat";
 import { useTranslation } from "@/lib/i18n";
 import { startOfToday, endOfToday, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
+import { PAYMENT_METHODS } from "@/lib/constants";
 
 export default function SalesPage() {
   const { userIsManager, userIsCashier } = useAuth();
@@ -107,8 +108,7 @@ export default function SalesPage() {
   // Use backend totals, not paginated sum
   const backendTotalRevenue = data?.totalSalesValue ?? 0;
 
-  // All available payment methods (independent of current filter)
-  const allPaymentMethods = ["CASH", "CARD", "BANK_TRANSFER", "CRYPTO", "OTHER"];
+  // All available payment methods are provided via PAYMENT_METHODS
 
   // Handle query errors
   useEffect(() => {
@@ -220,8 +220,8 @@ export default function SalesPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t("all_payment_methods")}</SelectItem>
-                {allPaymentMethods.map(method => (
-                  <SelectItem key={method} value={method}>{method}</SelectItem>
+                {PAYMENT_METHODS.map(m => (
+                  <SelectItem key={m.enum} value={m.enum}>{m.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -290,8 +290,8 @@ export default function SalesPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t("all_payment_methods")}</SelectItem>
-              {allPaymentMethods.map(method => (
-                <SelectItem key={method} value={method}>{method}</SelectItem>
+              {PAYMENT_METHODS.map(m => (
+                <SelectItem key={m.enum} value={m.enum}>{m.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>

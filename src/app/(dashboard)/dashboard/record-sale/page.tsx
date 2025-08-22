@@ -36,6 +36,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { useFormatCurrency } from "@/lib/currency";
 import { useTranslation } from "@/lib/i18n";
+import { PAYMENT_METHODS } from "@/lib/constants";
 // IntersectionObserver is handled inside ProductGrid
 // import { useIntersectionObserver } from "@/hooks/use-intersection-observer";
 import { ProductSearch } from "@/components/dashboard/record-sale/product-search";
@@ -402,10 +403,11 @@ export default function RecordSalePage() {
                     <SelectValue placeholder="Select payment mode" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Cash">Cash</SelectItem>
-                    <SelectItem value="Card">Card</SelectItem>
-                    <SelectItem value="Crypto">Crypto</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
+                    {PAYMENT_METHODS.map((m) => (
+                      <SelectItem key={m.enum} value={m.label}>
+                        {m.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
