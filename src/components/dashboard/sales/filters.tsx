@@ -13,12 +13,12 @@ export function PaymentMethodSelect({
   onChange,
   options,
   t,
-}: {
+}: Readonly<{
   value: string;
   onChange: (v: string) => void;
-  options: PaymentOption[];
+  options: readonly PaymentOption[];
   t: TFunc;
-}) {
+}>) {
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger className="w-full sm:w-[240px]">
@@ -42,13 +42,13 @@ export function CashierSelect({
   onChange,
   cashiers,
   t,
-}: {
+}: Readonly<{
   show: boolean;
   value: string;
   onChange: (v: string) => void;
-  cashiers: Cashier[];
+  cashiers: readonly Cashier[];
   t: TFunc;
-}) {
+}>) {
   if (!show) return null;
   return (
     <Select value={value} onValueChange={onChange}>
@@ -71,11 +71,11 @@ export function DateRangeQuickSelect({
   value,
   onChange,
   t,
-}: {
+}: Readonly<{
   value: string;
   onChange: (v: string) => void;
   t: TFunc;
-}) {
+}>) {
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger className="w-full sm:w-[200px]">
