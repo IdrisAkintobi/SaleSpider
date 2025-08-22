@@ -61,15 +61,9 @@ export const TIME_FORMAT_OPTIONS = [
 
 export const LANGUAGE_OPTIONS = [
   { value: "en", label: "English" },
-  { value: "es", label: "Spanish" },
   { value: "fr", label: "French" },
+  { value: "es", label: "Spanish" },
   { value: "de", label: "German" },
-  { value: "it", label: "Italian" },
-  { value: "pt", label: "Portuguese" },
-  { value: "ru", label: "Russian" },
-  { value: "ja", label: "Japanese" },
-  { value: "ko", label: "Korean" },
-  { value: "zh", label: "Chinese" },
 ] as const;
 
 export const THEME_OPTIONS = [
