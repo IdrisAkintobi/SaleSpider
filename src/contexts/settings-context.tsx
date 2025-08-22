@@ -2,9 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { useSettings } from "@/hooks/use-settings";
-import { DEFAULT_SETTINGS } from "@/lib/constants";
-import type { PaymentMode } from "@/lib/constants";
-import { PAYMENT_MODE_VALUES } from "@/lib/constants";
+import { DEFAULT_SETTINGS, PAYMENT_MODE_VALUES, type PaymentMode } from "@/lib/constants";
 import { applyDynamicStyles } from "@/lib/dynamic-styles";
 import { useThemeSync } from "@/hooks/use-theme-sync";
 

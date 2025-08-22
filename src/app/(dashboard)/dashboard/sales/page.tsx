@@ -15,13 +15,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Table,
   TableBody,
   TableCell,
@@ -53,6 +46,7 @@ import { useTranslation } from "@/lib/i18n";
 import { startOfToday, endOfToday, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import { PAYMENT_METHODS } from "@/lib/constants";
 import { useSettingsContext } from "@/contexts/settings-context";
+import { PaymentMethodSelect as PaymentMethodSelectShared, CashierSelect as CashierSelectShared, DateRangeQuickSelect as DateRangeQuickSelectShared } from "@/components/dashboard/sales/filters";
 
 export default function SalesPage() {
   const { userIsManager, userIsCashier } = useAuth();
@@ -120,69 +114,7 @@ export default function SalesPage() {
     [enabledPaymentEnums]
   );
 
-  // Deduplicated filter controls
-  function PaymentMethodSelect() {
-    return (
-      <Select value={filterPaymentMethod} onValueChange={handlePaymentMethodFilter}>
-        <SelectTrigger className="w-full sm:w-[240px]">
-          <SelectValue placeholder={t("filter_by_payment_method")} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">{t("all_payment_methods")}</SelectItem>
-          {enabledPaymentOptions.map(m => (
-            <SelectItem key={m.enum} value={m.enum}>{m.label}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    );
-  }
-
-  function CashierSelect() {
-    if (!userIsManager) return null;
-    return (
-      <Select value={filterCashier} onValueChange={handleCashierFilter}>
-        <SelectTrigger className="w-full sm:w-[220px]">
-          <SelectValue placeholder={t("filter_by_cashier")} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">{t('all_cashiers')}</SelectItem>
-          {uniqueCashiers.map((cashier: { id: string; name: string }) => (
-            <SelectItem key={cashier.id} value={cashier.id}>
-              {cashier.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    );
-  }
-
-  function DateRangeQuickSelect() {
-    return (
-      <Select value={filterDateRange} onValueChange={handleDateRangeFilter}>
-        <SelectTrigger className="w-full sm:w-[200px]">
-          <SelectValue placeholder={t("filter_by_date")} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">{t('all_time')}</SelectItem>
-          <SelectItem value="today">{t('today')}</SelectItem>
-          <SelectItem value="week">{t('this_week')}</SelectItem>
-          <SelectItem value="month">{t('this_month')}</SelectItem>
-        </SelectContent>
-      </Select>
-    );
-  }
-
-  // Handle query errors
-  useEffect(() => {
-    if (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : String(error),
-        variant: "destructive",
-      });
-    }
-  }, [error, toast]);
-
+  // Unique cashiers list (moved above usage)
   const uniqueCashiers = useMemo(() => {
     if (allCashiers?.data) {
       return allCashiers.data.map((cashier: { id: string; name: string }) => ({
@@ -195,10 +127,21 @@ export default function SalesPage() {
       id: sale.cashierId,
       name: sale.cashierName,
     }));
-    return Array.from(
-      new Map(cashiers.map((item) => [item.id, item])).values()
-    );
+    return Array.from(new Map(cashiers.map((item) => [item.id, item])).values());
   }, [allCashiers, sales]);
+
+  // Handle query errors
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : String(error),
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
+
+  // (moved earlier)
 
   const formatDate = (timestamp: number) => {
     try {
@@ -276,9 +219,24 @@ export default function SalesPage() {
               className="max-w-sm"
               icon={<Search className="h-4 w-4 text-muted-foreground" />}
             />
-            <PaymentMethodSelect />
-            <CashierSelect />
-            <DateRangeQuickSelect />
+            <PaymentMethodSelectShared
+              value={filterPaymentMethod}
+              onChange={handlePaymentMethodFilter}
+              options={enabledPaymentOptions}
+              t={t}
+            />
+            <CashierSelectShared
+              show={userIsManager}
+              value={filterCashier}
+              onChange={handleCashierFilter}
+              cashiers={uniqueCashiers}
+              t={t}
+            />
+            <DateRangeQuickSelectShared
+              value={filterDateRange}
+              onChange={handleDateRangeFilter}
+              t={t}
+            />
           </div>
         </div>
         <SalesTableSkeleton />
@@ -317,9 +275,24 @@ export default function SalesPage() {
             className="flex-1"
             icon={<Filter className="h-4 w-4 text-muted-foreground" />}
           />
-          <PaymentMethodSelect />
-          <CashierSelect />
-          <DateRangeQuickSelect />
+          <PaymentMethodSelectShared
+            value={filterPaymentMethod}
+            onChange={handlePaymentMethodFilter}
+            options={enabledPaymentOptions}
+            t={t}
+          />
+          <CashierSelectShared
+            show={userIsManager}
+            value={filterCashier}
+            onChange={handleCashierFilter}
+            cashiers={uniqueCashiers}
+            t={t}
+          />
+          <DateRangeQuickSelectShared
+            value={filterDateRange}
+            onChange={handleDateRangeFilter}
+            t={t}
+          />
           <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
             <PopoverTrigger asChild>
               <Button

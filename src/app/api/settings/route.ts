@@ -1,9 +1,8 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, isSuperAdmin } from "@/lib/auth";
-import { DEFAULT_SETTINGS } from "@/lib/constants";
+import { DEFAULT_SETTINGS, PAYMENT_METHODS } from "@/lib/constants";
 import { createChildLogger } from "@/lib/logger";
-import { PAYMENT_METHODS } from "@/lib/constants";
 import { jsonOk, jsonError, handleException } from "@/lib/api-response";
 
 const logger = createChildLogger('api:settings');
