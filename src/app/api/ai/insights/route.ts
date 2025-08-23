@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { Role } from "@prisma/client";
 import { createChildLogger } from "@/lib/logger";
 import { SalesAnalyticsService } from "@/lib/sales-analytics";
 import { getInventoryRecommendations } from "@/ai/flows/inventory-recommendations";
 import { PrismaClient } from "@prisma/client";
+import { jsonOk, jsonError, handleException } from "@/lib/api-response";
 
 const prisma = new PrismaClient();
 const logger = createChildLogger('ai-insights-api');
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
   const userId = req.headers.get("X-User-Id");
   
   if (!userId) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
   }
 
   try {
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest) {
 
     if (!user || user.role === Role.CASHIER) {
       logger.warn({ userId }, 'Unauthorized access to AI insights');
-      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+      return jsonError("Forbidden", 403, { code: "FORBIDDEN" });
     }
 
     // Get query parameters - limit to 7 days max to avoid overloading
@@ -107,23 +108,12 @@ export async function GET(req: NextRequest) {
       },
     }, 'AI insights generated successfully');
 
-    return NextResponse.json(response);
+    return jsonOk(response);
   } catch (error) {
     const duration = Date.now() - startTime;
-    logger.error({
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      userId,
-      duration: `${duration}ms`,
-    }, 'Failed to generate AI insights');
-
-    return NextResponse.json(
-      { 
-        message: "Failed to generate AI insights",
-        error: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.message : 'Unknown error' : undefined,
-      },
-      { status: 500 }
-    );
+    // Contextual log, actual error handling centralized
+    logger.error({ userId, duration: `${duration}ms` }, 'Failed to generate AI insights');
+    return handleException(error, "Failed to generate AI insights", 500);
   }
 }
 
@@ -132,7 +122,7 @@ export async function POST(req: NextRequest) {
   const userId = req.headers.get("X-User-Id");
   
   if (!userId) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
   }
 
   try {
@@ -142,7 +132,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (!user || user.role === Role.CASHIER) {
-      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+      return jsonError("Forbidden", 403, { code: "FORBIDDEN" });
     }
 
     const body = await req.json();
@@ -197,16 +187,8 @@ export async function POST(req: NextRequest) {
       },
     };
 
-    return NextResponse.json(response);
+    return jsonOk(response);
   } catch (error) {
-    logger.error({
-      error: error instanceof Error ? error.message : 'Unknown error',
-      userId,
-    }, 'Failed to generate custom AI insights');
-
-    return NextResponse.json(
-      { message: "Failed to generate AI insights" },
-      { status: 500 }
-    );
+    return handleException(error, "Failed to generate AI insights", 500);
   }
 }

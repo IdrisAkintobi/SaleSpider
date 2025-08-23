@@ -1,8 +1,9 @@
 import { PrismaClient, Role, PaymentMode } from "@prisma/client";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { calculateSaleTotals } from "@/lib/vat";
 import { startOfDay, endOfDay } from "date-fns";
 import { createChildLogger } from "@/lib/logger";
+import { jsonOk, jsonError, handleException } from "@/lib/api-response";
 
 const prisma = new PrismaClient();
 const logger = createChildLogger('sales-api');
@@ -26,7 +27,7 @@ export async function GET(req: NextRequest) {
   const userId = req.headers.get("X-User-Id");
 
   if (!userId) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
   }
 
   // Fetch the user to check their role
@@ -35,7 +36,7 @@ export async function GET(req: NextRequest) {
   });
 
   if (!user) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
   }
 
   // Parse query params
@@ -184,17 +185,9 @@ export async function GET(req: NextRequest) {
       })),
     }));
 
-    return NextResponse.json({ data: transformedSales, total, paymentMethodTotals, totalSalesValue });
+    return jsonOk({ data: transformedSales, total, paymentMethodTotals, totalSalesValue });
   } catch (error) {
-    logger.error({
-      error: error instanceof Error ? error.message : 'Unknown error',
-      userId,
-      filters: { cashierId, from, to, page, pageSize }
-    }, 'Error fetching sales');
-    return NextResponse.json(
-      { message: "Failed to fetch sales" },
-      { status: 500 }
-    );
+    return handleException(error, "Failed to fetch sales", 500);
   }
 }
 
@@ -204,7 +197,7 @@ export async function POST(req: NextRequest) {
   const userId = req.headers.get("X-User-Id");
 
   if (!userId) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
   }
 
   // Fetch the user to check their role
@@ -213,12 +206,12 @@ export async function POST(req: NextRequest) {
   });
 
   if (!user) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
   }
 
   // Only cashiers can record sales
   if (user.role !== Role.CASHIER) {
-    return NextResponse.json({ message: "Only cashiers can record sales" }, { status: 403 });
+    return jsonError("Only cashiers can record sales", 403, { code: "FORBIDDEN" });
   }
 
   try {
@@ -226,12 +219,12 @@ export async function POST(req: NextRequest) {
 
     // Validate input
     if (!cashierId || !items || !Array.isArray(items) || items.length === 0 || !totalAmount || !paymentMode) {
-      return NextResponse.json({ message: "Invalid sale data" }, { status: 400 });
+      return jsonError("Invalid sale data", 400, { code: "BAD_REQUEST" });
     }
 
     // Verify cashier ID matches the authenticated user
     if (cashierId !== userId) {
-      return NextResponse.json({ message: "Cashier ID mismatch" }, { status: 403 });
+      return jsonError("Cashier ID mismatch", 403, { code: "FORBIDDEN" });
     }
 
     // Validate items and check stock
@@ -241,13 +234,15 @@ export async function POST(req: NextRequest) {
       });
 
       if (!product) {
-        return NextResponse.json({ message: `Product ${item.productId} not found` }, { status: 404 });
+        return jsonError(`Product ${item.productId} not found`, 404, { code: "NOT_FOUND" });
       }
 
       if (product.quantity < item.quantity) {
-        return NextResponse.json({ 
-          message: `Insufficient stock for ${product.name}. Available: ${product.quantity}, Requested: ${item.quantity}` 
-        }, { status: 400 });
+        return jsonError(
+          `Insufficient stock for ${product.name}. Available: ${product.quantity}, Requested: ${item.quantity}`,
+          400,
+          { code: "BAD_REQUEST" }
+        );
       }
     }
 
@@ -307,18 +302,12 @@ export async function POST(req: NextRequest) {
       paymentMode: mappedPaymentMode
     }, 'Sale recorded successfully');
 
-    return NextResponse.json({ 
+    return jsonOk({ 
       id: result.id,
       message: "Sale recorded successfully" 
     });
 
   } catch (error) {
-    logger.error({
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, 'Error recording sale');
-    return NextResponse.json(
-      { message: "Failed to record sale" },
-      { status: 500 }
-    );
+    return handleException(error, "Failed to record sale", 500);
   }
 } 

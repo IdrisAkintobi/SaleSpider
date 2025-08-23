@@ -1,8 +1,9 @@
 import { Product } from "@/lib/types";
 import { Prisma, PrismaClient, ProductCategory, Role } from "@prisma/client";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { createChildLogger } from "@/lib/logger";
 import { AuditTrailService } from "@/lib/audit-trail";
+import { jsonOk, jsonError, handleException } from "@/lib/api-response";
 
 const prisma = new PrismaClient();
 const logger = createChildLogger('products-api');
@@ -17,10 +18,7 @@ export async function GET(req: NextRequest) {
   const sortOrder = url.searchParams.get("sortOrder") ?? "desc";
 
   if (isNaN(page) || page < 1 || isNaN(pageSize) || pageSize < 1) {
-    return NextResponse.json(
-      { message: "Invalid pagination parameters" },
-      { status: 400 }
-    );
+    return jsonError("Invalid pagination parameters", 400, { code: "BAD_REQUEST" });
   }
 
   const skip = (page - 1) * pageSize;
@@ -61,7 +59,7 @@ export async function GET(req: NextRequest) {
       where: productSearchWhere(searchQuery, includeDeleted) as Prisma.ProductWhereInput,
     });
 
-    return NextResponse.json({
+    return jsonOk({
       products,
       totalCount: totalProducts,
       page,
@@ -69,16 +67,7 @@ export async function GET(req: NextRequest) {
       totalPages: Math.ceil(totalProducts / pageSize),
     });
   } catch (error) {
-    logger.error({
-      error: error instanceof Error ? error.message : 'Unknown error',
-      searchQuery,
-      page,
-      pageSize
-    }, 'Error fetching products');
-    return NextResponse.json(
-      { message: "Failed to fetch products" },
-      { status: 500 }
-    );
+    return handleException(error, "Failed to fetch products", 500);
   }
 }
 
@@ -89,7 +78,7 @@ export async function POST(req: NextRequest) {
 
   if (!userId) {
     // fallback safety check.
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
   }
 
   const user = await prisma.user.findUnique({
@@ -97,7 +86,7 @@ export async function POST(req: NextRequest) {
   });
 
   if (!user || user.role === Role.CASHIER) {
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    return jsonError("Forbidden", 403, { code: "FORBIDDEN" });
   }
 
   try {
@@ -112,10 +101,7 @@ export async function POST(req: NextRequest) {
       !lowStockMargin ||
       !quantity
     ) {
-      return NextResponse.json(
-        { message: "Missing required fields" },
-        { status: 400 }
-      );
+      return jsonError("Missing required fields", 400, { code: "BAD_REQUEST" });
     }
 
     const newProduct = await prisma.product.create({
@@ -156,16 +142,9 @@ export async function POST(req: NextRequest) {
       userId
     }, 'Product created successfully');
     
-    return NextResponse.json(newProduct, { status: 201 });
+    return jsonOk(newProduct, { status: 201 });
   } catch (error) {
-    logger.error({
-      error: error instanceof Error ? error.message : 'Unknown error',
-      userId
-    }, 'Error creating product');
-    return NextResponse.json(
-      { message: "Failed to create product" },
-      { status: 500 }
-    );
+    return handleException(error, "Failed to create product", 500);
   }
 }
 

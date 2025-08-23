@@ -5,6 +5,42 @@
 import { useSettingsContext } from "@/contexts/settings-context";
 import { DEFAULT_SETTINGS } from "./constants";
 
+// Centralized Product Details Dialog translations to reduce duplication
+const productDetailsDialogTranslations: Record<string, Record<string, string>> = {
+  en: {
+    product_details: "Product Details",
+    view_product_information: "View product information",
+    created_at: "Date Created",
+    category: "Category",
+    description: "Description",
+    deleted: "Deleted",
+  },
+  fr: {
+    product_details: "Détails du produit",
+    view_product_information: "Voir les informations du produit",
+    created_at: "Date de création",
+    category: "Catégorie",
+    description: "Description",
+    deleted: "Supprimé",
+  },
+  es: {
+    product_details: "Detalles del producto",
+    view_product_information: "Ver información del producto",
+    created_at: "Fecha de creación",
+    category: "Categoría",
+    description: "Descripción",
+    deleted: "Eliminado",
+  },
+  de: {
+    product_details: "Produktdetails",
+    view_product_information: "Produktinformationen anzeigen",
+    created_at: "Erstellungsdatum",
+    category: "Kategorie",
+    description: "Beschreibung",
+    deleted: "Gelöscht",
+  },
+};
+
 // Simple translation dictionary
 const translations: Record<string, Record<string, string>> = {
   en: {
@@ -105,6 +141,8 @@ const translations: Record<string, Record<string, string>> = {
     gtin_optional: "GTIN (optional)",
     inventory: "Inventory",
     no_products_found: "No products found.",
+    // Product Details Dialog (spread centralized translations)
+    ...productDetailsDialogTranslations.en,
     // Staff
     add_staff: "Add Staff",
     edit_staff: "Edit Staff",
@@ -343,6 +381,8 @@ const translations: Record<string, Record<string, string>> = {
     gtin_optional: "GTIN (facultatif)",
     inventory: "Inventaire",
     no_products_found: "Aucun produit trouvé.",
+    // Product Details Dialog (spread centralized translations)
+    ...productDetailsDialogTranslations.fr,
     // Personnel
     add_staff: "Ajouter du personnel",
     edit_staff: "Modifier le personnel",
@@ -586,6 +626,8 @@ const translations: Record<string, Record<string, string>> = {
     gtin_optional: "GTIN (opcional)",
     inventory: "Inventario",
     no_products_found: "No se encontraron productos.",
+    // Product Details Dialog (spread centralized translations)
+    ...productDetailsDialogTranslations.es,
     // Personal
     add_staff: "Agregar personal",
     edit_staff: "Editar personal",
@@ -827,6 +869,8 @@ const translations: Record<string, Record<string, string>> = {
     gtin_optional: "GTIN (optional)",
     inventory: "Inventar",
     no_products_found: "Keine Produkte gefunden.",
+    // Product Details Dialog (spread centralized translations)
+    ...productDetailsDialogTranslations.de,
     // Personal
     add_staff: "Personal hinzufügen",
     edit_staff: "Personal bearbeiten",

@@ -15,13 +15,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Table,
   TableBody,
   TableCell,
@@ -51,6 +44,9 @@ import { useFormatCurrency } from "@/lib/currency";
 import { useVatPercentage } from "@/lib/vat";
 import { useTranslation } from "@/lib/i18n";
 import { startOfToday, endOfToday, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
+import { PAYMENT_METHODS } from "@/lib/constants";
+import { useSettingsContext } from "@/contexts/settings-context";
+import { PaymentMethodSelect as PaymentMethodSelectShared, CashierSelect as CashierSelectShared, DateRangeQuickSelect as DateRangeQuickSelectShared } from "@/components/dashboard/sales/filters";
 
 export default function SalesPage() {
   const { userIsManager, userIsCashier } = useAuth();
@@ -58,6 +54,7 @@ export default function SalesPage() {
   const formatCurrency = useFormatCurrency();
   const vatPercentage = useVatPercentage();
   const t = useTranslation();
+  const { settings } = useSettingsContext();
   
   // Use shared table controls
   const {
@@ -107,20 +104,17 @@ export default function SalesPage() {
   // Use backend totals, not paginated sum
   const backendTotalRevenue = data?.totalSalesValue ?? 0;
 
-  // All available payment methods (independent of current filter)
-  const allPaymentMethods = ["CASH", "CARD", "BANK_TRANSFER", "CRYPTO", "OTHER"];
+  // Enabled payment methods from settings
+  const enabledPaymentEnums = settings?.enabledPaymentMethods || undefined;
+  const enabledPaymentOptions = React.useMemo(
+    () =>
+      PAYMENT_METHODS.filter(m =>
+        !enabledPaymentEnums ? true : enabledPaymentEnums.includes(m.enum)
+      ),
+    [enabledPaymentEnums]
+  );
 
-  // Handle query errors
-  useEffect(() => {
-    if (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : String(error),
-        variant: "destructive",
-      });
-    }
-  }, [error, toast]);
-
+  // Unique cashiers list (moved above usage)
   const uniqueCashiers = useMemo(() => {
     if (allCashiers?.data) {
       return allCashiers.data.map((cashier: { id: string; name: string }) => ({
@@ -133,10 +127,21 @@ export default function SalesPage() {
       id: sale.cashierId,
       name: sale.cashierName,
     }));
-    return Array.from(
-      new Map(cashiers.map((item) => [item.id, item])).values()
-    );
+    return Array.from(new Map(cashiers.map((item) => [item.id, item])).values());
   }, [allCashiers, sales]);
+
+  // Handle query errors
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : String(error),
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
+
+  // (moved earlier)
 
   const formatDate = (timestamp: number) => {
     try {
@@ -214,38 +219,24 @@ export default function SalesPage() {
               className="max-w-sm"
               icon={<Search className="h-4 w-4 text-muted-foreground" />}
             />
-            <Select value={filterPaymentMethod} onValueChange={handlePaymentMethodFilter}>
-              <SelectTrigger className="w-full sm:w-[240px]">
-                <SelectValue placeholder={t("filter_by_payment_method")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("all_payment_methods")}</SelectItem>
-                {allPaymentMethods.map(method => (
-                  <SelectItem key={method} value={method}>{method}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {userIsManager && (
-              <Select value={filterCashier} onValueChange={handleCashierFilter}>
-                <SelectTrigger className="w-full sm:w-[220px]">
-                  <SelectValue placeholder={t("filter_by_cashier")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t("all_cashiers")}</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-            <Select value={filterDateRange} onValueChange={handleDateRangeFilter}>
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder={t("filter_by_date")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("all_time")}</SelectItem>
-                <SelectItem value="today">{t("today")}</SelectItem>
-                <SelectItem value="week">{t("this_week")}</SelectItem>
-                <SelectItem value="month">{t("this_month")}</SelectItem>
-              </SelectContent>
-            </Select>
+            <PaymentMethodSelectShared
+              value={filterPaymentMethod}
+              onChange={handlePaymentMethodFilter}
+              options={enabledPaymentOptions}
+              t={t}
+            />
+            <CashierSelectShared
+              show={userIsManager}
+              value={filterCashier}
+              onChange={handleCashierFilter}
+              cashiers={uniqueCashiers}
+              t={t}
+            />
+            <DateRangeQuickSelectShared
+              value={filterDateRange}
+              onChange={handleDateRangeFilter}
+              t={t}
+            />
           </div>
         </div>
         <SalesTableSkeleton />
@@ -284,43 +275,24 @@ export default function SalesPage() {
             className="flex-1"
             icon={<Filter className="h-4 w-4 text-muted-foreground" />}
           />
-          <Select value={filterPaymentMethod} onValueChange={handlePaymentMethodFilter}>
-            <SelectTrigger className="w-full sm:w-[240px]">
-              <SelectValue placeholder={t("filter_by_payment_method")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("all_payment_methods")}</SelectItem>
-              {allPaymentMethods.map(method => (
-                <SelectItem key={method} value={method}>{method}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {userIsManager && (
-            <Select value={filterCashier} onValueChange={handleCashierFilter}>
-              <SelectTrigger className="w-full sm:w-[220px]">
-                <SelectValue placeholder={t("filter_by_cashier")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('all_cashiers')}</SelectItem>
-                {uniqueCashiers.map((cashier: { id: string; name: string }) => (
-                  <SelectItem key={cashier.id} value={cashier.id}>
-                    {cashier.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-          <Select value={filterDateRange} onValueChange={handleDateRangeFilter}>
-            <SelectTrigger className="w-full sm:w-[200px]">
-              <SelectValue placeholder={t("filter_by_date")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('all_time')}</SelectItem>
-              <SelectItem value="today">{t('today')}</SelectItem>
-              <SelectItem value="week">{t('this_week')}</SelectItem>
-              <SelectItem value="month">{t('this_month')}</SelectItem>
-            </SelectContent>
-          </Select>
+          <PaymentMethodSelectShared
+            value={filterPaymentMethod}
+            onChange={handlePaymentMethodFilter}
+            options={enabledPaymentOptions}
+            t={t}
+          />
+          <CashierSelectShared
+            show={userIsManager}
+            value={filterCashier}
+            onChange={handleCashierFilter}
+            cashiers={uniqueCashiers}
+            t={t}
+          />
+          <DateRangeQuickSelectShared
+            value={filterDateRange}
+            onChange={handleDateRangeFilter}
+            t={t}
+          />
           <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
             <PopoverTrigger asChild>
               <Button

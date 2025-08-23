@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { DEFAULT_SETTINGS } from "@/lib/constants";
+import { DEFAULT_SETTINGS, PAYMENT_MODE_VALUES, type PaymentMode } from "@/lib/constants";
 
 const prisma = new PrismaClient();
 
@@ -18,6 +18,12 @@ const defaultSettings = {
   language: process.env.LANGUAGE || DEFAULT_SETTINGS.language,
   theme: process.env.THEME || DEFAULT_SETTINGS.theme,
   maintenanceMode: process.env.MAINTENANCE_MODE === "true" || DEFAULT_SETTINGS.maintenanceMode,
+  enabledPaymentMethods: (process.env.ENABLED_PAYMENT_METHODS
+    ? process.env.ENABLED_PAYMENT_METHODS
+        .split(",")
+        .map((s) => s.trim().toUpperCase())
+        .filter((v): v is PaymentMode => (PAYMENT_MODE_VALUES as readonly string[]).includes(v))
+    : [...DEFAULT_SETTINGS.enabledPaymentMethods]) as PaymentMode[],
 };
 
 export async function seedSettings() {
@@ -34,7 +40,7 @@ export async function seedSettings() {
 
     // Create default settings
     const settings = await prisma.appSettings.create({
-      data: {
+      data: ({
         appName: defaultSettings.appName,
         appLogo: defaultSettings.appLogo,
         primaryColor: defaultSettings.primaryColor,
@@ -49,7 +55,8 @@ export async function seedSettings() {
         language: defaultSettings.language,
         theme: defaultSettings.theme,
         maintenanceMode: defaultSettings.maintenanceMode,
-      },
+        enabledPaymentMethods: defaultSettings.enabledPaymentMethods,
+      }) as any,
     });
 
     console.log("✅ Settings seeded successfully");

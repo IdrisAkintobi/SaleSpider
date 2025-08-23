@@ -34,7 +34,8 @@ export type ProductUpdatableFields = Pick<
   "name" | "description" | "category" | "price" | "lowStockMargin" | "imageUrl" | "gtin"
 >;
 
-export type ProductUpdateInput = Partial<ProductUpdatableFields>;
+// Allow quantity to be updated (incremented) via API as part of product update
+export type ProductUpdateInput = Partial<ProductUpdatableFields & { quantity?: number }>;
 
 export interface SaleItem {
   productId: string;

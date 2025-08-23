@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { useSettings } from "@/hooks/use-settings";
-import { DEFAULT_SETTINGS } from "@/lib/constants";
+import { DEFAULT_SETTINGS, PAYMENT_MODE_VALUES, type PaymentMode } from "@/lib/constants";
 import { applyDynamicStyles } from "@/lib/dynamic-styles";
 import { useThemeSync } from "@/hooks/use-theme-sync";
 
@@ -23,6 +23,7 @@ export interface AppSettings {
   theme: string;
   maintenanceMode: boolean;
   showDeletedProducts: boolean;
+  enabledPaymentMethods: PaymentMode[];
   createdAt: string;
   updatedAt: string;
 }
@@ -51,6 +52,12 @@ const defaultSettings: AppSettings = {
   theme: process.env.NEXT_PUBLIC_THEME || DEFAULT_SETTINGS.theme,
   maintenanceMode: process.env.NEXT_PUBLIC_MAINTENANCE_MODE === "true" || DEFAULT_SETTINGS.maintenanceMode,
   showDeletedProducts: process.env.NEXT_PUBLIC_SHOW_DELETED_PRODUCTS === "true" || DEFAULT_SETTINGS.showDeletedProducts,
+  enabledPaymentMethods: (process.env.NEXT_PUBLIC_ENABLED_PAYMENT_METHODS
+    ? process.env.NEXT_PUBLIC_ENABLED_PAYMENT_METHODS
+        .split(",")
+        .map((s) => s.trim().toUpperCase())
+        .filter((v): v is PaymentMode => (PAYMENT_MODE_VALUES as readonly string[]).includes(v))
+    : [...DEFAULT_SETTINGS.enabledPaymentMethods]) as PaymentMode[],
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };

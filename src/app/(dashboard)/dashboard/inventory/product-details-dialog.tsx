@@ -31,7 +31,7 @@ export function ProductDetailsDialog({ isOpen, onOpenChange, product }: Readonly
           <DialogTitle className="flex items-center gap-2">
             {t("product_details")}: {product.name}
             {product.deletedAt && (
-              <Badge variant="secondary" className="text-xs">Deleted</Badge>
+              <Badge variant="secondary" className="text-xs">{t("deleted")}</Badge>
             )}
           </DialogTitle>
           <DialogDescription>

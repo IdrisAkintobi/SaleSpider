@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -21,7 +22,10 @@ import {
   DATE_FORMAT_OPTIONS, 
   TIME_FORMAT_OPTIONS, 
   LANGUAGE_OPTIONS, 
-  THEME_OPTIONS 
+  THEME_OPTIONS,
+  PAYMENT_METHODS,
+  PAYMENT_MODE_VALUES,
+  type PaymentMode,
 } from "@/lib/constants";
 import { useTranslation } from "@/lib/i18n";
 import { applyDynamicStyles } from "@/lib/dynamic-styles";
@@ -48,6 +52,7 @@ const settingsSchema = z.object({
   theme: z.enum(["light", "dark", "auto"]),
   maintenanceMode: z.boolean(),
   showDeletedProducts: z.boolean(),
+  enabledPaymentMethods: z.array(z.enum(PAYMENT_MODE_VALUES)).default([]),
 });
 
 type SettingsFormData = z.infer<typeof settingsSchema>;
@@ -78,10 +83,13 @@ export default function SettingsPage() {
     theme: DEFAULT_SETTINGS.theme as "light" | "dark" | "auto",
     maintenanceMode: DEFAULT_SETTINGS.maintenanceMode,
     showDeletedProducts: DEFAULT_SETTINGS.showDeletedProducts,
+    enabledPaymentMethods: [...DEFAULT_SETTINGS.enabledPaymentMethods],
   });
 
   const getDefaultSettingsWithMeta = () => ({
     ...DEFAULT_SETTINGS,
+    // ensure mutable array type for enabledPaymentMethods
+    enabledPaymentMethods: [...DEFAULT_SETTINGS.enabledPaymentMethods] as PaymentMode[],
     id: "",
     createdAt: "",
     updatedAt: "",
@@ -111,6 +119,7 @@ export default function SettingsPage() {
         theme: settings.theme as "light" | "dark" | "auto",
         maintenanceMode: settings.maintenanceMode,
         showDeletedProducts: settings.showDeletedProducts,
+        enabledPaymentMethods: settings.enabledPaymentMethods ?? [...DEFAULT_SETTINGS.enabledPaymentMethods],
       });
     }
   }, [settings, form]);
@@ -223,9 +232,10 @@ export default function SettingsPage() {
         // Apply default colors
         applyDynamicStyles(getDefaultSettingsWithMeta());
         break;
-      case 'currency':
+      case 'payments':
         form.setValue("currency", defaults.currency);
         form.setValue("currencySymbol", defaults.currencySymbol);
+        form.setValue("enabledPaymentMethods", [...DEFAULT_SETTINGS.enabledPaymentMethods] as PaymentMode[]);
         break;
       case 'localization':
         form.setValue("language", defaults.language);
@@ -251,7 +261,7 @@ export default function SettingsPage() {
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="general">{t("general")}</TabsTrigger>
             <TabsTrigger value="appearance">{t("appearance")}</TabsTrigger>
-            <TabsTrigger value="currency">{t("currency")}</TabsTrigger>
+            <TabsTrigger value="payments">Payments</TabsTrigger>
             <TabsTrigger value="localization">{t("localization")}</TabsTrigger>
             <TabsTrigger value="system">{t("system")}</TabsTrigger>
           </TabsList>
@@ -401,19 +411,19 @@ export default function SettingsPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="currency" className="space-y-6">
+          <TabsContent value="payments" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <CreditCard className="h-5 w-5" />
-                    {t("currency")} {t("settings")}
+                    Payments {t("settings")}
                   </div>
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleSectionReset('currency')}
+                    onClick={() => handleSectionReset('payments')}
                   >
                     <RotateCcw className="h-4 w-4" />
                   </Button>
@@ -445,6 +455,51 @@ export default function SettingsPage() {
                       {form.formState.errors.currency.message}
                     </p>
                   )}
+                </div>
+
+                <div className="space-y-3">
+                  <Label>Enabled Payment Methods</Label>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => form.setValue("enabledPaymentMethods", PAYMENT_METHODS.map(m => m.enum))}
+                    >
+                      Select All
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => form.setValue("enabledPaymentMethods", [])}
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                    {PAYMENT_METHODS.map((m) => {
+                      const checked = (watchedValues.enabledPaymentMethods || []).includes(m.enum);
+                      return (
+                        <div key={m.enum} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`pm-${m.enum}`}
+                            checked={checked}
+                            onCheckedChange={(val) => {
+                              const current = new Set(watchedValues.enabledPaymentMethods || []);
+                              if (val === true) {
+                                current.add(m.enum);
+                              } else {
+                                current.delete(m.enum);
+                              }
+                              form.setValue("enabledPaymentMethods", Array.from(current) as PaymentMode[]);
+                            }}
+                          />
+                          <Label htmlFor={`pm-${m.enum}`}>{m.label}</Label>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </CardContent>
             </Card>

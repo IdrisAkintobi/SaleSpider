@@ -12,8 +12,8 @@ interface AuthContextType {
   userIsCashier: boolean;
   userIsManager: boolean;
   isLoading: boolean;
-  login: (username: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
+  login: (username: string, password: string) => void;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

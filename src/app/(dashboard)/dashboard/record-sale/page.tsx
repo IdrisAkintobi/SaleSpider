@@ -36,6 +36,8 @@ import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { useFormatCurrency } from "@/lib/currency";
 import { useTranslation } from "@/lib/i18n";
+import { PAYMENT_METHODS } from "@/lib/constants";
+import { useSettingsContext } from "@/contexts/settings-context";
 // IntersectionObserver is handled inside ProductGrid
 // import { useIntersectionObserver } from "@/hooks/use-intersection-observer";
 import { ProductSearch } from "@/components/dashboard/record-sale/product-search";
@@ -66,6 +68,7 @@ export default function RecordSalePage() {
   const router = useRouter();
   const formatCurrency = useFormatCurrency();
   const t = useTranslation();
+  const { settings } = useSettingsContext();
 
   const { products, hasMore, loading, searchTerm, setSearchTerm, loadMore, refresh } = useProducts();
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -88,6 +91,15 @@ export default function RecordSalePage() {
   // Products already server-filtered in hook
   const filteredProducts = useMemo(() => products, [products]);
 
+  // Enabled payment methods from settings
+  const enabledPaymentEnums = settings?.enabledPaymentMethods || undefined;
+  const enabledPaymentOptions = useMemo(
+    () =>
+      PAYMENT_METHODS.filter(m =>
+        !enabledPaymentEnums ? true : enabledPaymentEnums.includes(m.enum)
+      ),
+    [enabledPaymentEnums]
+  );
 
   // ProductGrid now manages its own IntersectionObserver
 
@@ -402,10 +414,11 @@ export default function RecordSalePage() {
                     <SelectValue placeholder="Select payment mode" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Cash">Cash</SelectItem>
-                    <SelectItem value="Card">Card</SelectItem>
-                    <SelectItem value="Crypto">Crypto</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
+                    {enabledPaymentOptions.map((m) => (
+                      <SelectItem key={m.enum} value={m.label}>
+                        {m.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
