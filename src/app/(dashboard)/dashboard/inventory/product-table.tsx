@@ -12,6 +12,7 @@ import {
   Trash2,
   RotateCcw,
   MoreHorizontal,
+  Package,
 } from "lucide-react";
 import Image from "next/image";
 import React from "react";
@@ -26,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { DeshelvingDialog } from "@/components/dashboard/deshelving-dialog";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -178,6 +180,7 @@ export function ProductTable({
                     product={product} 
                     onUpdateStock={onUpdateStock}
                     onUpdateProduct={onUpdateProduct}
+                    onRefresh={() => window.location.reload()}
                   />
                 ) : null;
               default: {
@@ -209,9 +212,10 @@ interface ProductActionsDropdownProps {
   product: Product;
   onUpdateStock: (product: Product) => void;
   onUpdateProduct: (product: Product) => void;
+  onRefresh: () => void;
 }
 
-function ProductActionsDropdown({ product, onUpdateStock, onUpdateProduct }: ProductActionsDropdownProps) {
+function ProductActionsDropdown({ product, onUpdateStock, onUpdateProduct, onRefresh }: ProductActionsDropdownProps) {
   const { user } = useAuth();
   const t = useTranslation();
   const deleteProductMutation = useDeleteProduct();
@@ -249,6 +253,21 @@ function ProductActionsDropdown({ product, onUpdateStock, onUpdateProduct }: Pro
               <Edit3 className="mr-2 h-4 w-4" />
               {t("edit_product")}
             </DropdownMenuItem>
+            <DeshelvingDialog
+              product={{
+                id: product.id,
+                name: product.name,
+                quantity: product.quantity,
+                price: product.price,
+              }}
+              trigger={
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <Package className="mr-2 h-4 w-4" />
+                  Deshelve Product
+                </DropdownMenuItem>
+              }
+              onSuccess={onRefresh}
+            />
             {isSuperAdmin && (
               <DropdownMenuItem 
                 onClick={() => setShowDeleteDialog(true)}
