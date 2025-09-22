@@ -9,8 +9,11 @@
         "deshelvings",
         "Genkit",
         "GTIN",
+        "overscan",
         "parseable",
+        "placehold",
         "salespider",
+        "turbopack",
         "understocked"
     ]
 }
