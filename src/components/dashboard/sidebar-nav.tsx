@@ -1,7 +1,18 @@
 "use client";
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useAuth } from "@/contexts/auth-context";
 import { useSidebarCollapse } from "@/contexts/sidebar-context";
+import {
+  useIntelligentPrefetch,
+  usePrefetchOnHover,
+} from "@/hooks/use-prefetch";
+import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { Role } from "@prisma/client";
 import type { LucideIcon } from "lucide-react";
@@ -10,20 +21,13 @@ import {
   LayoutDashboard,
   Package,
   ReceiptText,
-  ShoppingCart,
-  Users,
   Settings,
   Shield,
+  ShoppingCart,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useTranslation } from "@/lib/i18n";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 interface NavItem {
   href: string;
@@ -93,6 +97,11 @@ export function SidebarNav({ onNavigate }: SidebarNavProps) {
   const { isCollapsed } = useSidebarCollapse();
   const t = useTranslation();
 
+  // Smart prefetching hooks
+  const { prefetchProducts, prefetchSales, prefetchAuditLogs } =
+    usePrefetchOnHover();
+  const { trackAction } = useIntelligentPrefetch();
+
   if (!user) return null;
 
   const filteredNavItems = navItems.filter((item) =>
@@ -103,14 +112,40 @@ export function SidebarNav({ onNavigate }: SidebarNavProps) {
     <TooltipProvider>
       <nav className="grid items-start gap-2 text-sm font-medium px-2">
         {filteredNavItems.map((item) => {
-          const isActive = pathname === item.href ||
-            (pathname.startsWith(item.href) && item.href !== "/dashboard/overview");
-          
+          const isActive =
+            pathname === item.href ||
+            (pathname.startsWith(item.href) &&
+              item.href !== "/dashboard/overview");
+
+          // Smart prefetching based on navigation item
+          const handleMouseEnter = () => {
+            trackAction(`hover-${item.labelKey}`);
+
+            switch (item.href) {
+              case "/dashboard/inventory":
+                prefetchProducts();
+                break;
+              case "/dashboard/sales":
+                prefetchSales();
+                break;
+              case "/dashboard/audit-logs":
+                prefetchAuditLogs();
+                break;
+              // Add more prefetching as needed
+            }
+          };
+
+          const handleClick = () => {
+            trackAction(`view-${item.labelKey}`);
+            onNavigate?.();
+          };
+
           const linkContent = (
             <Link
               key={item.href}
               href={item.href}
-              onClick={onNavigate}
+              onClick={handleClick}
+              onMouseEnter={handleMouseEnter}
               className={cn(
                 "flex items-center rounded-lg px-3 py-2 transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                 isCollapsed ? "justify-center" : "gap-3",
@@ -120,10 +155,12 @@ export function SidebarNav({ onNavigate }: SidebarNavProps) {
               )}
             >
               <item.icon className="h-4 w-4 flex-shrink-0" />
-              <span className={cn(
-                "transition-opacity duration-300",
-                isCollapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100"
-              )}>
+              <span
+                className={cn(
+                  "transition-opacity duration-300",
+                  isCollapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100"
+                )}
+              >
                 {t(item.labelKey)}
               </span>
             </Link>
@@ -132,9 +169,7 @@ export function SidebarNav({ onNavigate }: SidebarNavProps) {
           if (isCollapsed) {
             return (
               <Tooltip key={item.href}>
-                <TooltipTrigger asChild>
-                  {linkContent}
-                </TooltipTrigger>
+                <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
                 <TooltipContent side="right" className="ml-2">
                   {t(item.labelKey)}
                 </TooltipContent>
