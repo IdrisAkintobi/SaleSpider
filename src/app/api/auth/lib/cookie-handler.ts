@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 
 export const authTokenKey = "auth_token";
 
-// In local production over HTTP (e.g., npm run start on LAN), a Secure cookie
-// will NOT be sent by the browser, causing 401s. Control this via COOKIE_SECURE.
 // Set COOKIE_SECURE=false for HTTP, true for HTTPS deployments.
 const defaultCookieProperties = {
   httpOnly: true,

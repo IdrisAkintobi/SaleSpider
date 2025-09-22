@@ -1,10 +1,12 @@
-import { PrismaClient, Role } from "@prisma/client";
+import { Role } from "@prisma/client";
 import { NextRequest } from "next/server";
 import { AuditTrailService } from "@/lib/audit-trail";
 import * as argon2 from "argon2";
 import { jsonOk, jsonError, handleException } from "@/lib/api-response";
+import { createChildLogger } from "@/lib/logger";
 
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
+const logger = createChildLogger('api:users');
 
 // Function to get users
 export async function GET(request: NextRequest) {
@@ -63,6 +65,7 @@ export async function GET(request: NextRequest) {
 
     return jsonOk({ data: users, total });
   } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to fetch users');
     return handleException(error, "Failed to fetch users", 500);
   }
 }
@@ -119,6 +122,7 @@ export async function POST(request: NextRequest) {
 
     return jsonOk(newUser, { status: 201 });
   } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to create user');
     return handleException(error, "Failed to create user", 500);
   }
 }
@@ -199,6 +203,7 @@ export async function PATCH(request: NextRequest) {
 
     return jsonOk(updatedUser);
   } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to update user');
     return handleException(error, "Failed to update user", 500);
   }
 } 

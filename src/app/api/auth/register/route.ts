@@ -1,9 +1,9 @@
-import { PrismaClient, Role } from "@prisma/client";
+import { Role } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import * as argon2 from "argon2";
 import { NextRequest, NextResponse } from "next/server";
 import { createChildLogger } from "@/lib/logger";
 
-const prisma = new PrismaClient();
 const logger = createChildLogger('api:auth:register');
 
 // Function to register a new user

@@ -1,7 +1,5 @@
-import { PrismaClient } from "@prisma/client";
 import { createChildLogger } from "@/lib/logger";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 const logger = createChildLogger('sales-analytics');
 
 export interface SalesAnalytics {

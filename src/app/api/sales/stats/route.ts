@@ -1,9 +1,10 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { NextRequest } from "next/server";
 import { getMonthlySales } from "@/lib/utils";
 import { jsonOk, jsonError, handleException } from "@/lib/api-response";
+import { createChildLogger } from "@/lib/logger";
 
-const prisma = new PrismaClient();
+const logger = createChildLogger('api:sales:stats');
 
 // Function to get sales stats
 export async function GET(req: NextRequest) {
@@ -129,6 +130,7 @@ export async function GET(req: NextRequest) {
       monthly,
     });
   } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to fetch sales stats');
     return handleException(error, "Failed to fetch sales stats", 500);
   }
 }

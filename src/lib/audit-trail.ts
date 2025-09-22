@@ -1,7 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from '@/lib/prisma';
 import { createChildLogger } from "@/lib/logger";
 
-const prisma = new PrismaClient();
 const logger = createChildLogger('audit-trail');
 
 export interface AuditLogData {

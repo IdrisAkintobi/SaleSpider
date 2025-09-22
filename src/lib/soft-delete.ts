@@ -1,9 +1,8 @@
 // Soft delete utilities for products
-import { PrismaClient } from "@prisma/client";
+import { prisma } from '@/lib/prisma';
 import { createChildLogger } from "@/lib/logger";
 import { AuditTrailService } from "@/lib/audit-trail";
 
-const prisma = new PrismaClient();
 const logger = createChildLogger('soft-delete');
 
 export class SoftDeleteService {

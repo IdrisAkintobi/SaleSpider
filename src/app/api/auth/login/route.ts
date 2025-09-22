@@ -1,15 +1,14 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import * as argon2 from "argon2";
 import { SignJWT } from "jose";
 import { NextRequest, NextResponse } from "next/server";
 import { authTokenKey, setCookie } from "@/app/api/auth/lib/cookie-handler";
 import { createChildLogger } from "@/lib/logger";
 
-const prisma = new PrismaClient();
 const secret = new TextEncoder().encode(process.env.JWT_SECRET);
 const tokenExpiry = process.env.TOKEN_EXPIRY ?? "12h";
 const alg = "HS256";
-const logger = createChildLogger('auth-login');
+const logger = createChildLogger('api:auth:login');
 
 // Function to login
 export async function POST(req: NextRequest) {

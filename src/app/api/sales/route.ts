@@ -1,11 +1,11 @@
-import { PrismaClient, Role, PaymentMode } from "@prisma/client";
+import { PaymentMode, Role } from "@prisma/client";
 import { NextRequest } from "next/server";
 import { calculateSaleTotals } from "@/lib/vat";
 import { startOfDay, endOfDay } from "date-fns";
 import { createChildLogger } from "@/lib/logger";
 import { jsonOk, jsonError, handleException } from "@/lib/api-response";
 
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 const logger = createChildLogger('sales-api');
 
 // Helper function to map payment mode string to enum
@@ -187,6 +187,7 @@ export async function GET(req: NextRequest) {
 
     return jsonOk({ data: transformedSales, total, paymentMethodTotals, totalSalesValue });
   } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to fetch sales');
     return handleException(error, "Failed to fetch sales", 500);
   }
 }
@@ -308,6 +309,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to record sale');
     return handleException(error, "Failed to record sale", 500);
   }
 } 

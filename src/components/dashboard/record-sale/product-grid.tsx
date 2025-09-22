@@ -1,5 +1,3 @@
-"use client";
-
 import { useRef, useCallback } from "react";
 import type { Product } from "@/lib/types";
 import { Button } from "@/components/ui/button";
