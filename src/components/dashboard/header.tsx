@@ -117,7 +117,7 @@ export function DashboardHeader() {
         ))}
       </div>
 
-      <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
+      <div className="flex items-center gap-2 ml-auto">
         <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
