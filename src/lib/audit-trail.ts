@@ -4,9 +4,9 @@ import { createChildLogger } from "@/lib/logger";
 const logger = createChildLogger('audit-trail');
 
 export interface AuditLogData {
-  entityType: 'USER' | 'PRODUCT';
+  entityType: 'USER' | 'PRODUCT' | 'DESHELVING';
   entityId: string;
-  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE';
+  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE' | 'DESHELVE';
   changes?: Record<string, any>;
   oldValues?: Record<string, any>;
   newValues?: Record<string, any>;
