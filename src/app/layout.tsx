@@ -14,6 +14,18 @@ export const metadata: Metadata = {
   title: "SaleSpider - Smart Inventory & Sales",
   description:
     "A Next.js DApp for sales and inventory management using account abstraction for SaleSpider.",
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/icon.svg', type: 'image/svg+xml', sizes: '32x32' },
+      { url: '/favicon.ico', sizes: '32x32' },
+    ],
+    apple: [
+      { url: '/apple-icon.svg', type: 'image/svg+xml' },
+    ],
+    shortcut: '/favicon.svg',
+  },
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({

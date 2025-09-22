@@ -1,0 +1,24 @@
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Compact favicon version -->
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1D4ED8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="16" height="16" rx="3" fill="url(#gradient)"/>
+  
+  <!-- Shopping cart (simplified) -->
+  <path d="M2 2h1.5l1 5h6l1-3H4" 
+        stroke="white" stroke-width="1" fill="none" stroke-linecap="round"/>
+  
+  <!-- Cart wheels -->
+  <circle cx="5" cy="13" r="0.8" fill="white"/>
+  <circle cx="11" cy="13" r="0.8" fill="white"/>
+  
+  <!-- Sales tag -->
+  <path d="M10 2 L14 2 L14 6 L12 4 Z" fill="white" opacity="0.8"/>
+  <circle cx="12.5" cy="3.5" r="0.5" fill="url(#gradient)"/>
+</svg>
