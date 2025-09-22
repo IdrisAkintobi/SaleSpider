@@ -5,9 +5,7 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Dialog,
@@ -33,22 +31,10 @@ import {
   type AuditLog,
   type AuditLogFilters,
 } from "@/hooks/use-audit-logs";
-import {
-  usePagePerformance,
-  useRenderTime,
-  useSlowRenderDetector,
-} from "@/hooks/use-performance";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/lib/i18n";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Eye,
-  Filter,
-  RefreshCw,
-  Search,
-  Shield,
-} from "lucide-react";
+import { useRenderTime, usePagePerformance, useSlowRenderDetector } from "@/hooks/use-performance";
+import { ChevronLeft, ChevronRight, Eye, Filter, RefreshCw, Search, Shield } from "lucide-react";
 import { useMemo, useState } from "react";
 
 const entityTypeLabels: Record<string, { label: string; color: string }> = {
@@ -98,8 +84,8 @@ export function AuditLogTable() {
   const [page, setPage] = useState(1);
   const [limit] = useState(50);
   const [filters, setFilters] = useState<AuditLogFilters>({
-    entityType: "",
-    action: "",
+    entityType: "all",
+    action: "all",
     userEmail: "",
     startDate: "",
     endDate: "",
@@ -122,10 +108,17 @@ export function AuditLogTable() {
       )}% slow renders`
     );
   }
+  // Transform filters for API call (convert "all" to empty string)
+  const apiFilters = {
+    ...filters,
+    entityType: filters.entityType === "all" ? "" : filters.entityType,
+    action: filters.action === "all" ? "" : filters.action,
+  };
+
   const { data, isLoading, error, refetch } = useAuditLogs({
     page,
     limit,
-    ...filters,
+    ...apiFilters,
   });
 
   const refreshMutation = useRefreshAuditLogs();
@@ -142,8 +135,8 @@ export function AuditLogTable() {
 
   const clearFilters = () => {
     setFilters({
-      entityType: "",
-      action: "",
+      entityType: "all",
+      action: "all",
       userEmail: "",
       startDate: "",
       endDate: "",
@@ -151,9 +144,6 @@ export function AuditLogTable() {
     setPage(1);
   };
 
-  const handleRefresh = () => {
-    refreshMutation.mutate();
-  };
   if (error) {
     toast({
       title: t("error"),
@@ -299,15 +289,7 @@ export function AuditLogTable() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5" />
-                {t("auditLogs")}
-              </CardTitle>
-              <CardDescription>
-                {t("auditLogsDescription")}
-              </CardDescription>
-            </div>
+            <Shield className="h-8 w-8 opacity-20 text-muted-foreground" />
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
@@ -320,14 +302,10 @@ export function AuditLogTable() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleRefresh}
-                disabled={isLoading || refreshMutation.isPending}
+                onClick={() => refreshMutation.mutate()}
+                disabled={refreshMutation.isPending}
               >
-                <RefreshCw
-                  className={`h-4 w-4 mr-2 ${
-                    isLoading || refreshMutation.isPending ? "animate-spin" : ""
-                  }`}
-                />
+                <RefreshCw className="h-4 w-4 mr-2" />
                 {t("refresh")}
               </Button>
             </div>
@@ -349,7 +327,7 @@ export function AuditLogTable() {
                     <SelectValue placeholder={t("allTypes")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">{t("allTypes")}</SelectItem>
+                    <SelectItem value="all">{t("allTypes")}</SelectItem>
                     <SelectItem value="USER">{t("user")}</SelectItem>
                     <SelectItem value="PRODUCT">{t("product")}</SelectItem>
                     <SelectItem value="DESHELVING">{t("deshelving")}</SelectItem>
@@ -367,7 +345,7 @@ export function AuditLogTable() {
                     <SelectValue placeholder={t("allActions")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">{t("allActions")}</SelectItem>
+                    <SelectItem value="all">{t("allActions")}</SelectItem>
                     <SelectItem value="CREATE">{t("create")}</SelectItem>
                     <SelectItem value="UPDATE">{t("update")}</SelectItem>
                     <SelectItem value="DELETE">{t("delete")}</SelectItem>
@@ -460,7 +438,7 @@ export function AuditLogTable() {
             <div className="text-center py-8 text-muted-foreground">
               <Shield className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p>{t("noAuditLogsFound")}</p>
-              {Object.values(filters).some((f) => f) && (
+              {Object.values(filters).some(Boolean) && (
                 <p className="text-sm mt-1">{t("tryAdjustingFilters")}</p>
               )}
             </div>

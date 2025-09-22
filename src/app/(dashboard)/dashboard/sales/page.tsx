@@ -29,12 +29,11 @@ import { useSales } from "@/hooks/use-sales";
 import { useQuery } from "@tanstack/react-query";
 import type { Sale } from "@/lib/types";
 import { exportSalesCSV } from "@/lib/csv-export";
-import { CalendarDays, Filter, UserCircle, Eye, ArrowUp, ArrowDown, ShoppingCart, Search, Download } from "lucide-react";
+import { CalendarDays, Filter, UserCircle, Eye, ArrowUp, ArrowDown, ShoppingCart, Search, Download, CalendarIcon } from "lucide-react";
 import React, { useMemo, useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DateRange } from "react-day-picker";
 import { useTableControls } from "@/hooks/use-table-controls";
@@ -111,7 +110,7 @@ export default function SalesPage() {
   const enabledPaymentOptions = React.useMemo(
     () =>
       PAYMENT_METHODS.filter(m =>
-        !enabledPaymentEnums ? true : enabledPaymentEnums.includes(m.enum)
+        enabledPaymentEnums ? enabledPaymentEnums.includes(m.enum) : true
       ),
     [enabledPaymentEnums]
   );
@@ -213,9 +212,10 @@ export default function SalesPage() {
         description: t("exportSuccess"),
       });
     } catch (error) {
+      console.error('Error exporting sales:', error);
       toast({
         title: t("exportError"),
-        description: t("exportError"),
+        description: error instanceof Error ? error.message : t("exportError"),
         variant: "destructive",
       });
     } finally {

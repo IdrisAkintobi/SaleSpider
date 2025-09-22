@@ -3,9 +3,9 @@
  */
 
 export interface CSVColumn {
-  key: string;
-  label: string;
-  formatter?: (value: any, row?: any) => string;
+  readonly key: string;
+  readonly label: string;
+  readonly formatter?: (value: any, row?: any) => string;
 }
 
 /**
@@ -24,7 +24,7 @@ export function convertToCSV(data: any[], columns: CSVColumn[]): string {
       const formattedValue = col.formatter ? col.formatter(value, row) : value;
       
       // Escape quotes and wrap in quotes
-      const escapedValue = String(formattedValue || '').replace(/"/g, '""');
+      const escapedValue = String(formattedValue || '').replaceAll('"', '""');
       return `"${escapedValue}"`;
     }).join(',');
   });
@@ -46,7 +46,7 @@ export function downloadCSV(csvContent: string, filename: string): void {
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
+    link.remove();
   }
 }
 

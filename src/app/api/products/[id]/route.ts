@@ -80,11 +80,11 @@ export async function PATCH(
     }
     
     // Track other changed fields for audit trail
-    Object.keys(updateData).forEach(key => {
+    for (const key of Object.keys(updateData)) {
       if (key !== 'quantity') {
         changedFields[key] = updateData[key];
       }
-    });
+    }
 
     const updatedProduct = await prisma.product.update({
       where: { id },

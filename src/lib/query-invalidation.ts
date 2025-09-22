@@ -2,11 +2,11 @@
  * Centralized query invalidation patterns for consistent cache management
  */
 
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "./query-keys";
 
 export class QueryInvalidator {
-  constructor(private queryClient: QueryClient) {}
+  constructor(private readonly queryClient: QueryClient) {}
 
   /**
    * Invalidate queries after product operations
@@ -80,8 +80,6 @@ export class QueryInvalidator {
 /**
  * Hook to get query invalidator instance
  */
-import { useQueryClient } from "@tanstack/react-query";
-
 export function useQueryInvalidator() {
   const queryClient = useQueryClient();
   return new QueryInvalidator(queryClient);

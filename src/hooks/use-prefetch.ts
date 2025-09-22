@@ -59,10 +59,10 @@ export function useIntelligentPrefetch() {
   };
 
   const predictAndPrefetch = () => {
-    const recentActions = userActions.current.slice(-3);
+    const recentActions = new Set(userActions.current.slice(-3));
     
     // If user viewed products, likely to view sales next
-    if (recentActions.includes('view-products')) {
+    if (recentActions.has('view-products')) {
       queryClient.prefetchQuery({
         queryKey: queryKeys.sales.lists(),
         queryFn: () => fetch('/api/sales').then(res => res.json()),
@@ -70,7 +70,7 @@ export function useIntelligentPrefetch() {
     }
 
     // If user viewed sales, likely to view AI insights
-    if (recentActions.includes('view-sales')) {
+    if (recentActions.has('view-sales')) {
       queryClient.prefetchQuery({
         queryKey: queryKeys.ai.insights({}),
         queryFn: () => fetch('/api/ai/insights').then(res => res.json()),
@@ -78,7 +78,7 @@ export function useIntelligentPrefetch() {
     }
 
     // If user is a manager/admin, likely to check audit logs
-    if (recentActions.includes('management-action')) {
+    if (recentActions.has('management-action')) {
       queryClient.prefetchQuery({
         queryKey: queryKeys.auditLogs.lists(),
         queryFn: () => fetch('/api/audit-logs').then(res => res.json()),
@@ -93,34 +93,39 @@ export function useIntelligentPrefetch() {
 export function useIdlePrefetch() {
   const queryClient = useQueryClient();
 
+  const prefetchCommonData = () => {
+    queryClient.prefetchQuery({
+      queryKey: queryKeys.products.lists(),
+      queryFn: () => fetch('/api/products').then(res => res.json()),
+    });
+
+    queryClient.prefetchQuery({
+      queryKey: queryKeys.sales.stats(),
+      queryFn: () => fetch('/api/sales/stats').then(res => res.json()),
+    });
+  };
+
+  const prefetchDuringIdle = () => {
+    if ('requestIdleCallback' in globalThis) {
+      return requestIdleCallback(prefetchCommonData);
+    }
+    return null;
+  };
+
   useEffect(() => {
-    let idleCallback: number;
-
-    const prefetchDuringIdle = () => {
-      if ('requestIdleCallback' in window) {
-        idleCallback = requestIdleCallback(() => {
-          // Prefetch commonly accessed data during idle time
-          queryClient.prefetchQuery({
-            queryKey: queryKeys.products.lists(),
-            queryFn: () => fetch('/api/products').then(res => res.json()),
-          });
-
-          queryClient.prefetchQuery({
-            queryKey: queryKeys.sales.stats(),
-            queryFn: () => fetch('/api/sales/stats').then(res => res.json()),
-          });
-        });
-      }
-    };
-
     // Start prefetching after a short delay
-    const timeout = setTimeout(prefetchDuringIdle, 2000);
+    const timeout = setTimeout(() => {
+      const idleCallback = prefetchDuringIdle();
+      
+      return () => {
+        if (idleCallback && 'cancelIdleCallback' in globalThis) {
+          cancelIdleCallback(idleCallback);
+        }
+      };
+    }, 2000);
 
     return () => {
       clearTimeout(timeout);
-      if (idleCallback) {
-        cancelIdleCallback(idleCallback);
-      }
     };
   }, [queryClient]);
 }

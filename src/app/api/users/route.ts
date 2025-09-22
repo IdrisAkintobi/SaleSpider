@@ -127,6 +127,24 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// Validate user permissions for editing
+async function validateUserEditPermissions(actingUser: any, targetUserId: string) {
+  const targetUser = await prisma.user.findUnique({ 
+    where: { id: targetUserId },
+    select: { id: true, role: true }
+  });
+  
+  if (!targetUser) {
+    return { error: jsonError("User not found", 404, { code: "NOT_FOUND" }) };
+  }
+  
+  if (actingUser.role === "MANAGER" && targetUser.role !== "CASHIER") {
+    return { error: jsonError("Managers can only edit cashiers", 403, { code: "FORBIDDEN" }) };
+  }
+  
+  return { targetUser };
+}
+
 // Function to update a user
 export async function PATCH(request: NextRequest) {
   // Read the X-User-Id header set by the middleware
@@ -147,16 +165,10 @@ export async function PATCH(request: NextRequest) {
     if (!id) {
       return jsonError("User ID is required", 400, { code: "BAD_REQUEST" });
     }
-    // Only super-admin can edit all, manager can only edit cashiers
-    const targetUser = await prisma.user.findUnique({ 
-      where: { id },
-      select: { id: true, role: true }
-    });
-    if (!targetUser) {
-      return jsonError("User not found", 404, { code: "NOT_FOUND" });
-    }
-    if (actingUser.role === "MANAGER" && targetUser.role !== "CASHIER") {
-      return jsonError("Managers can only edit cashiers", 403, { code: "FORBIDDEN" });
+    
+    const validation = await validateUserEditPermissions(actingUser, id);
+    if (validation.error) {
+      return validation.error;
     }
     if (actingUser.role !== "SUPER_ADMIN" && actingUser.role !== "MANAGER") {
       return jsonError("Forbidden", 403, { code: "FORBIDDEN" });
