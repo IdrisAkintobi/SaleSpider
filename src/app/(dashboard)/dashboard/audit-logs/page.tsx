@@ -2,13 +2,39 @@
 
 import { AuditLogTable } from "@/components/dashboard/audit-log-table";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
-import { Badge } from "@/components/ui/badge";
-import { Shield, AlertTriangle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/lib/i18n";
+import { exportAuditLogsCSV } from "@/lib/csv-export";
+import { Shield, AlertTriangle, Download } from "lucide-react";
+import { useState } from "react";
 
 export default function AuditLogsPage() {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const t = useTranslation();
+  const [isExporting, setIsExporting] = useState(false);
   const isAuthorized = user?.role === "MANAGER" || user?.role === "SUPER_ADMIN";
+
+  const handleExportCSV = async () => {
+    setIsExporting(true);
+    try {
+      await exportAuditLogsCSV();
+      toast({
+        title: t("exportSuccess"),
+        description: t("exportSuccess"),
+      });
+    } catch (error) {
+      toast({
+        title: t("exportError"),
+        description: t("exportError"),
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   if (!isAuthorized) {
     return (
@@ -33,15 +59,20 @@ export default function AuditLogsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <Shield className="h-8 w-8" />
-            Audit Logs
+            {t("auditLogs")}
           </h1>
           <p className="text-muted-foreground mt-2">
-            Complete audit trail of all system activities, changes, and user actions for compliance and security monitoring.
+            {t("auditLogsDescription")}
           </p>
         </div>
-        <Badge variant="secondary" className="text-sm">
-          {user?.role === "SUPER_ADMIN" ? "Super Admin" : "Manager"} Access
-        </Badge>
+        <Button 
+          onClick={handleExportCSV}
+          disabled={isExporting}
+          variant="outline"
+        >
+          <Download className="h-4 w-4 mr-2" />
+          {isExporting ? t("exportingData") : t("exportCSV")}
+        </Button>
       </div>
 
       {/* Audit Log Table */}

@@ -28,7 +28,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useSales } from "@/hooks/use-sales";
 import { useQuery } from "@tanstack/react-query";
 import type { Sale } from "@/lib/types";
-import { CalendarDays, Filter, UserCircle, Eye, ArrowUp, ArrowDown, ShoppingCart, Search } from "lucide-react";
+import { exportSalesCSV } from "@/lib/csv-export";
+import { CalendarDays, Filter, UserCircle, Eye, ArrowUp, ArrowDown, ShoppingCart, Search, Download } from "lucide-react";
 import React, { useMemo, useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -75,6 +76,7 @@ export default function SalesPage() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Fetch all cashiers for dropdown (independent of current filter)
   const { data: allCashiers } = useQuery({
@@ -194,14 +196,54 @@ export default function SalesPage() {
     }
   };
 
-  // Record New Sale button for cashiers
-  const recordSaleAction = !userIsManager ? (
-    <Button size="lg" asChild>
-      <Link href="/dashboard/record-sale">
-        <ShoppingCart className="mr-2 h-5 w-5" /> {t("record_new_sale")}
-      </Link>
-    </Button>
-  ) : null;
+  // Export CSV function
+  const handleExportCSV = async () => {
+    setIsExporting(true);
+    try {
+      const filters = {
+        searchTerm,
+        cashierId: filterCashier,
+        paymentMethod: filterPaymentMethod,
+        from: dateRange?.from?.toISOString(),
+        to: dateRange?.to?.toISOString(),
+      };
+      await exportSalesCSV(filters);
+      toast({
+        title: t("exportSuccess"),
+        description: t("exportSuccess"),
+      });
+    } catch (error) {
+      toast({
+        title: t("exportError"),
+        description: t("exportError"),
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Actions for page header
+  const pageActions = (
+    <div className="flex gap-2">
+      <Button 
+        onClick={handleExportCSV}
+        disabled={isExporting}
+        variant="outline"
+        size="lg"
+      >
+        <Download className="mr-2 h-4 w-4" />
+        {isExporting ? t("exportingData") : t("exportCSV")}
+      </Button>
+      {!userIsManager && (
+        <Button size="lg" asChild>
+          <Link href="/dashboard/record-sale">
+            <ShoppingCart className="mr-2 h-5 w-5" /> {t("record_new_sale")}
+          </Link>
+        </Button>
+      )}
+    </div>
+  );
 
   if (isLoading) {
     return (
@@ -263,7 +305,7 @@ export default function SalesPage() {
       <PageHeader
         title={t("sales")}
         description={t("sales_history_description")}
-        actions={recordSaleAction}
+        actions={pageActions}
       />
 
       <div className="mb-6 space-y-4">

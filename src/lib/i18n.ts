@@ -308,6 +308,10 @@ const translations: Record<string, Record<string, string>> = {
     showingEntries: "Showing",
     entries: "entries",
     to: "to",
+    exportCSV: "Export CSV",
+    exportingData: "Exporting data...",
+    exportSuccess: "Data exported successfully",
+    exportError: "Failed to export data",
   },
   fr: {
     // Common
@@ -582,6 +586,10 @@ const translations: Record<string, Record<string, string>> = {
     showingEntries: "Affichage",
     entries: "entrées",
     to: "à",
+    exportCSV: "Exporter CSV",
+    exportingData: "Exportation des données...",
+    exportSuccess: "Données exportées avec succès",
+    exportError: "Échec de l'exportation des données",
   },
   es: {
     // Common
@@ -853,6 +861,10 @@ const translations: Record<string, Record<string, string>> = {
     showingEntries: "Mostrando",
     entries: "entradas",
     to: "a",
+    exportCSV: "Exportar CSV",
+    exportingData: "Exportando datos...",
+    exportSuccess: "Datos exportados exitosamente",
+    exportError: "Error al exportar datos",
   },
   de: {
     // Common
@@ -1125,6 +1137,10 @@ const translations: Record<string, Record<string, string>> = {
     showingEntries: "Zeige",
     entries: "Einträge",
     to: "bis",
+    exportCSV: "CSV exportieren",
+    exportingData: "Daten werden exportiert...",
+    exportSuccess: "Daten erfolgreich exportiert",
+    exportError: "Fehler beim Exportieren der Daten",
   },
 };
 
