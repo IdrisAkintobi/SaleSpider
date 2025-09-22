@@ -23,6 +23,7 @@ model User {
   role     Role
   status   UserStatus @default(ACTIVE)
   sales    Sale[]    @relation("CashierSales")
+  deshelvings Deshelving[] @relation("ManagerDeshelvings")
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
@@ -50,6 +51,7 @@ model Product {
   imageUrl       String?
   gtin           String?  @unique // Optional field for GTIN (Global Trade Item Number)
   saleItems      SaleItem[]
+  deshelvings    Deshelving[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime? // Soft delete timestamp
@@ -136,21 +138,54 @@ model AppSettings {
   updatedAt         DateTime @updatedAt
 }
 
+model Deshelving {
+  id          String           @id @default(cuid())
+  productId   String
+  product     Product          @relation(fields: [productId], references: [id])
+  quantity    Int              // Quantity being deshelved (removed from inventory)
+  reason      DeshelvingReason
+  description String?          // Optional detailed description
+  managerId   String           // Manager who performed the deshelving
+  manager     User             @relation("ManagerDeshelvings", fields: [managerId], references: [id])
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([productId])
+  @@index([managerId])
+  @@index([createdAt])
+  @@index([reason])
+  @@map("deshelvings")
+}
+
+enum DeshelvingReason {
+  DAMAGED
+  RETURNED
+  EXPIRED
+  RESERVED
+  STOLEN
+  LOST
+  QUALITY_CONTROL
+  RECALL
+  TRANSFER
+  OTHER
+}
+
 model AuditLog {
   id          String   @id @default(cuid())
-  entityType  String   // "USER" or "PRODUCT"
-  entityId    String   // ID of the user or product
-  action      String   // "CREATE", "UPDATE", "DELETE", "RESTORE"
+  entityType  String   // "USER", "PRODUCT", "DESHELVING"
+  entityId    String   // ID of the user, product, or deshelving
+  action      String   // "CREATE", "UPDATE", "DELETE", "RESTORE", "DESHELVE"
   changes     Json?    // JSON object containing the changes made
   oldValues   Json?    // Previous values before the change
   newValues   Json?    // New values after the change
   userId      String   // ID of the user who made the change
   userEmail   String   // Email of the user who made the change
   timestamp   DateTime @default(now())
-  metadata    Json?    // Additional metadata (IP address, user agent, etc.)
+  metadata    Json?    // Additional metadata (IP, user agent, etc.)
 
   @@index([entityType, entityId])
   @@index([userId])
   @@index([timestamp])
+  @@index([action])
   @@map("audit_logs")
 }
