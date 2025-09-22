@@ -1,5 +1,6 @@
 import { createChildLogger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
+import { DeshelvingService } from "@/lib/deshelving-service";
 const logger = createChildLogger('sales-analytics');
 
 export interface SalesAnalytics {
@@ -23,6 +24,22 @@ export interface SalesAnalytics {
     totalSales: number;
     totalRevenue: number;
   }>;
+  deshelvingInsights?: {
+    totalQuantityDeshelved: number;
+    totalValueLost: number;
+    topDeshelvingReasons: Array<{
+      reason: string;
+      quantity: number;
+      value: number;
+      count: number;
+    }>;
+    highRiskProducts: Array<{
+      productId: string;
+      productName: string;
+      deshelvingCount: number; // total units deshelved
+      totalLoss: number;
+    }>;
+  };
 }
 
 export interface ProductPerformance {
@@ -147,6 +164,38 @@ export class SalesAnalyticsService {
         totalRevenue: trend.totalRevenue || 0,
       }));
 
+      // Get deshelving insights
+      const deshelvingAnalytics = await DeshelvingService.getDeshelvingAnalytics(daysBack);
+      
+      // Format deshelving data for AI insights
+      const topDeshelvingReasons = Object.entries(deshelvingAnalytics.reasonBreakdown)
+        .filter(([, data]) => data.quantity > 0)
+        .sort(([, a], [, b]) => b.quantity - a.quantity)
+        .slice(0, 5)
+        .map(([reason, data]) => ({
+          reason,
+          quantity: data.quantity,
+          value: data.value,
+          count: data.count,
+        }));
+
+      // Get high-risk products based on deshelving frequency and value
+      const highRiskProducts = deshelvingAnalytics.topAffectedProducts
+        .slice(0, 5)
+        .map(product => ({
+          productId: product.productId,
+          productName: product.productName,
+          deshelvingCount: product.totalQuantityDeshelved,
+          totalLoss: product.totalValueLost,
+        }));
+
+      const deshelvingInsights = {
+        totalQuantityDeshelved: deshelvingAnalytics.totalQuantityDeshelved,
+        totalValueLost: deshelvingAnalytics.totalValueLost,
+        topDeshelvingReasons,
+        highRiskProducts,
+      };
+
       return {
         totalSales,
         totalRevenue,
@@ -154,6 +203,7 @@ export class SalesAnalyticsService {
         topSellingProducts: topSellingWithNames,
         lowStockProducts,
         salesTrends: formattedTrends,
+        deshelvingInsights,
       };
     } catch (error) {
       logger.error({
@@ -169,6 +219,12 @@ export class SalesAnalyticsService {
         topSellingProducts: [],
         lowStockProducts: [],
         salesTrends: [],
+        deshelvingInsights: {
+          totalQuantityDeshelved: 0,
+          totalValueLost: 0,
+          topDeshelvingReasons: [],
+          highRiskProducts: [],
+        },
       };
     }
   }
@@ -274,6 +330,7 @@ export class SalesAnalyticsService {
         topProducts: analytics.topSellingProducts,
         trends: analytics.salesTrends,
         productPerformance: productPerformance.slice(0, 20), // Top 20 products
+        deshelvingInsights: analytics.deshelvingInsights,
       }, null, 2),
       currentInventory: JSON.stringify(inventory.map(item => ({
         id: item.id,

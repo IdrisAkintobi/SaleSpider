@@ -1,4 +1,4 @@
-'use server';
+"use server";
 
 /**
  * @fileOverview This file defines a Genkit flow for generating inventory recommendations based on sales data.
@@ -8,21 +8,21 @@
  * - InventoryRecommendationsOutput - The return type for the getInventoryRecommendations function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from "@/ai/genkit";
+import { z } from "genkit";
 
 const InventoryRecommendationsInputSchema = z.object({
   salesData: z
     .string()
     .describe(
-      'Sales data, including product names, quantities sold, and dates of sales. Must be in a clear, parseable format, such as JSON or CSV.'
+      "Sales data, including product names, quantities sold, and dates of sales. Must be in a clear, parseable format, such as JSON or CSV."
     ),
   currentInventory: z
     .string()
     .describe(
-      'Current inventory levels for each product. Must be in a clear, parseable format, such as JSON or CSV.'
+      "Current inventory levels for each product. Must be in a clear, parseable format, such as JSON or CSV."
     ),
-  storeName: z.string().describe('The name of the store.'),
+  storeName: z.string().describe("The name of the store."),
 });
 export type InventoryRecommendationsInput = z.infer<
   typeof InventoryRecommendationsInputSchema
@@ -32,17 +32,17 @@ const InventoryRecommendationsOutputSchema = z.object({
   optimalLevels: z
     .string()
     .describe(
-      'Strategic summary of inventory level recommendations focusing on overall patterns, categories, and turnover optimization for store management.'
+      "Strategic summary of inventory level recommendations focusing on overall patterns, categories, and turnover optimization for store management."
     ),
   promotionalOpportunities: z
     .string()
     .describe(
-      'High-level promotional strategy recommendations based on sales trends and inventory movement for physical store operations.'
+      "High-level promotional strategy recommendations based on sales trends and inventory movement for physical store operations."
     ),
   reorderAmounts: z
     .string()
     .describe(
-      'Strategic purchasing guidance focusing on category priorities, budget allocation, and supplier management for store inventory.'
+      "Strategic purchasing guidance focusing on category priorities, budget allocation, and supplier management for store inventory."
     ),
 });
 export type InventoryRecommendationsOutput = z.infer<
@@ -56,15 +56,17 @@ export async function getInventoryRecommendations(
 }
 
 const prompt = ai.definePrompt({
-  name: 'inventoryRecommendationsPrompt',
-  input: {schema: InventoryRecommendationsInputSchema},
-  output: {schema: InventoryRecommendationsOutputSchema},
+  name: "inventoryRecommendationsPrompt",
+  input: { schema: InventoryRecommendationsInputSchema },
+  output: { schema: InventoryRecommendationsOutputSchema },
   prompt: `You are an expert inventory management consultant/auditor for physical retail stores. This is a store management system for tracking sales and inventory, not an e-commerce platform.
 
-  Based on the sales data and current inventory levels provided, generate high-level strategic insights and recommendations for {{storeName}}.
+  Based on the sales data, current inventory levels, and deshelving analytics provided, generate high-level strategic insights and recommendations for {{storeName}}.
 
   Sales Data: {{{salesData}}}
   Current Inventory Levels: {{{currentInventory}}}
+
+  The sales data includes deshelving insights that show inventory losses due to various reasons like damage, expiration, theft, quality control issues, recalls, etc. Use this information to provide comprehensive inventory management recommendations.
 
   IMPORTANT: Even if sales data is limited or sparse, provide valuable insights based on the inventory data and general retail best practices. Do not start responses with phrases like "Given the lack of sales data" or "Without sales data". Instead, focus on what can be analyzed and provide actionable recommendations.
 
@@ -76,6 +78,7 @@ const prompt = ai.definePrompt({
   - Categories that may be overstocked or understocked
   - Seasonal trends affecting inventory decisions
   - Storage space optimization recommendations
+  - Impact of inventory losses (deshelving) on stock levels and reorder timing
   
   **Sales & Promotion Strategy:**
   Provide strategic insights on:
@@ -83,6 +86,7 @@ const prompt = ai.definePrompt({
   - Product categories that could benefit from targeted marketing
   - Seasonal considerations for promotional timing
   - Strategies to improve inventory turnover based on current stock levels
+  - Promotional opportunities for products with high deshelving rates to move them faster
   
   **Purchasing & Reorder Strategy:**
   Offer high-level guidance on:
@@ -90,19 +94,28 @@ const prompt = ai.definePrompt({
   - Budget allocation recommendations based on current stock levels
   - Risk management for overstocked or slow-moving categories
   - Optimization strategies for storage space and cash flow
+  - Adjusting reorder quantities to account for expected inventory losses
   
-  Always provide positive, actionable recommendations that help store managers optimize their operations. Focus on inventory optimization, cash flow improvement, and operational efficiency based on the available data.
+  **Loss Prevention & Quality Control:**
+  Based on deshelving analytics, provide recommendations on:
+  - Identifying patterns in inventory losses and their root causes
+  - Preventive measures for high-loss product categories
+  - Storage and handling improvements to reduce damage and expiration
+  - Quality control processes to minimize defective products
+  - Security measures if theft is a significant factor
+  
+  Always provide positive, actionable recommendations that help store managers optimize their operations. Focus on inventory optimization, cash flow improvement, operational efficiency, and loss prevention based on the available data.
   `,
 });
 
 const inventoryRecommendationsFlow = ai.defineFlow(
   {
-    name: 'inventoryRecommendationsFlow',
+    name: "inventoryRecommendationsFlow",
     inputSchema: InventoryRecommendationsInputSchema,
     outputSchema: InventoryRecommendationsOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
+  async (input) => {
+    const { output } = await prompt(input);
     return output!;
   }
 );
