@@ -39,6 +39,7 @@ import {
   useSlowRenderDetector,
 } from "@/hooks/use-performance";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/lib/i18n";
 import {
   ChevronLeft,
   ChevronRight,
@@ -105,6 +106,7 @@ export function AuditLogTable() {
   });
   const [showFilters, setShowFilters] = useState(false);
   const { toast } = useToast();
+  const t = useTranslation();
 
   useRenderTime("AuditLogTable");
   usePagePerformance("Audit Logs Page");
@@ -154,8 +156,8 @@ export function AuditLogTable() {
   };
   if (error) {
     toast({
-      title: "Error",
-      description: "Failed to load audit logs",
+      title: t("error"),
+      description: t("failedToLoadAuditLogs"),
       variant: "destructive",
     });
   }
@@ -217,7 +219,7 @@ export function AuditLogTable() {
               </DialogTrigger>
               <DialogContent className="max-w-4xl max-h-[80vh] overflow-auto">
                 <DialogHeader>
-                  <DialogTitle>Audit Log Details</DialogTitle>
+                  <DialogTitle>{t("auditLogDetails")}</DialogTitle>
                   <DialogDescription>
                     {log.entityType} {log.action} -{" "}
                     {new Date(log.timestamp).toLocaleString()}
@@ -226,17 +228,17 @@ export function AuditLogTable() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label className="text-sm font-medium">Entity ID</Label>
+                      <Label className="text-sm font-medium">{t("entityId")}</Label>
                       <p className="font-mono text-sm mt-1">{log.entityId}</p>
                     </div>
                     <div>
-                      <Label className="text-sm font-medium">User</Label>
-                      <p className="text-sm mt-1">{log.userEmail || "System"}</p>
+                      <Label className="text-sm font-medium">{t("user")}</Label>
+                      <p className="text-sm mt-1">{log.userEmail || t("system")}</p>
                     </div>
                   </div>
                   {log.changes && (
                     <div>
-                      <Label className="text-sm font-medium">Changes</Label>
+                      <Label className="text-sm font-medium">{t("changes")}</Label>
                       <pre className="bg-muted p-3 rounded-md text-xs overflow-auto mt-1">
                         {formatJsonData(log.changes)}
                       </pre>
@@ -244,7 +246,7 @@ export function AuditLogTable() {
                   )}
                   {log.oldValues && (
                     <div>
-                      <Label className="text-sm font-medium">Old Values</Label>
+                      <Label className="text-sm font-medium">{t("oldValues")}</Label>
                       <pre className="bg-muted p-3 rounded-md text-xs overflow-auto mt-1">
                         {formatJsonData(log.oldValues)}
                       </pre>
@@ -252,7 +254,7 @@ export function AuditLogTable() {
                   )}
                   {log.newValues && (
                     <div>
-                      <Label className="text-sm font-medium">New Values</Label>
+                      <Label className="text-sm font-medium">{t("newValues")}</Label>
                       <pre className="bg-muted p-3 rounded-md text-xs overflow-auto mt-1">
                         {formatJsonData(log.newValues)}
                       </pre>
@@ -260,7 +262,7 @@ export function AuditLogTable() {
                   )}
                   {log.metadata && (
                     <div>
-                      <Label className="text-sm font-medium">Metadata</Label>
+                      <Label className="text-sm font-medium">{t("metadata")}</Label>
                       <pre className="bg-muted p-3 rounded-md text-xs overflow-auto mt-1">
                         {formatJsonData(log.metadata)}
                       </pre>
@@ -285,7 +287,7 @@ export function AuditLogTable() {
         <CardContent className="p-6">
           <div className="flex items-center justify-center">
             <RefreshCw className="h-6 w-6 animate-spin mr-2" />
-            Loading audit logs...
+            {t("loadingAuditLogs")}...
           </div>
         </CardContent>
       </Card>
@@ -300,10 +302,10 @@ export function AuditLogTable() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Shield className="h-5 w-5" />
-                Audit Logs
+                {t("auditLogs")}
               </CardTitle>
               <CardDescription>
-                Complete audit trail of all system activities and changes
+                {t("auditLogsDescription")}
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -313,7 +315,7 @@ export function AuditLogTable() {
                 onClick={() => setShowFilters(!showFilters)}
               >
                 <Filter className="h-4 w-4 mr-2" />
-                Filters
+                {t("filters")}
               </Button>
               <Button
                 variant="outline"
@@ -326,7 +328,7 @@ export function AuditLogTable() {
                     isLoading || refreshMutation.isPending ? "animate-spin" : ""
                   }`}
                 />
-                Refresh
+                {t("refresh")}
               </Button>
             </div>
           </div>
@@ -336,7 +338,7 @@ export function AuditLogTable() {
           <CardContent className="border-t">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <div>
-                <Label htmlFor="entityType">Entity Type</Label>
+                <Label htmlFor="entityType">{t("entityType")}</Label>
                 <Select
                   value={filters.entityType}
                   onValueChange={(value) =>
@@ -344,42 +346,42 @@ export function AuditLogTable() {
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="All types" />
+                    <SelectValue placeholder={t("allTypes")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All types</SelectItem>
-                    <SelectItem value="USER">User</SelectItem>
-                    <SelectItem value="PRODUCT">Product</SelectItem>
-                    <SelectItem value="DESHELVING">Deshelving</SelectItem>
+                    <SelectItem value="">{t("allTypes")}</SelectItem>
+                    <SelectItem value="USER">{t("user")}</SelectItem>
+                    <SelectItem value="PRODUCT">{t("product")}</SelectItem>
+                    <SelectItem value="DESHELVING">{t("deshelving")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label htmlFor="action">Action</Label>
+                <Label htmlFor="action">{t("action")}</Label>
                 <Select
                   value={filters.action}
                   onValueChange={(value) => handleFilterChange("action", value)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="All actions" />
+                    <SelectValue placeholder={t("allActions")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All actions</SelectItem>
-                    <SelectItem value="CREATE">Create</SelectItem>
-                    <SelectItem value="UPDATE">Update</SelectItem>
-                    <SelectItem value="DELETE">Delete</SelectItem>
-                    <SelectItem value="RESTORE">Restore</SelectItem>
-                    <SelectItem value="DESHELVE">Deshelve</SelectItem>
+                    <SelectItem value="">{t("allActions")}</SelectItem>
+                    <SelectItem value="CREATE">{t("create")}</SelectItem>
+                    <SelectItem value="UPDATE">{t("update")}</SelectItem>
+                    <SelectItem value="DELETE">{t("delete")}</SelectItem>
+                    <SelectItem value="RESTORE">{t("restore")}</SelectItem>
+                    <SelectItem value="DESHELVE">{t("deshelve")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label htmlFor="userEmail">User Email</Label>
+                <Label htmlFor="userEmail">{t("userEmail")}</Label>
                 <Input
                   id="userEmail"
-                  placeholder="Search by email..."
+                  placeholder={t("searchByEmail")}
                   value={filters.userEmail}
                   onChange={(e) =>
                     handleFilterChange("userEmail", e.target.value)
@@ -388,7 +390,7 @@ export function AuditLogTable() {
               </div>
 
               <div>
-                <Label htmlFor="startDate">Start Date</Label>
+                <Label htmlFor="startDate">{t("startDate")}</Label>
                 <Input
                   id="startDate"
                   type="date"
@@ -400,7 +402,7 @@ export function AuditLogTable() {
               </div>
 
               <div>
-                <Label htmlFor="endDate">End Date</Label>
+                <Label htmlFor="endDate">{t("endDate")}</Label>
                 <Input
                   id="endDate"
                   type="date"
@@ -414,10 +416,10 @@ export function AuditLogTable() {
               <div className="flex items-end gap-2">
                 <Button onClick={applyFilters} className="flex-1">
                   <Search className="h-4 w-4 mr-2" />
-                  Apply
+                  {t("apply")}
                 </Button>
                 <Button variant="outline" onClick={clearFilters}>
-                  Clear
+                  {t("clear")}
                 </Button>
               </div>
             </div>
@@ -429,12 +431,12 @@ export function AuditLogTable() {
         <CardContent className="p-0">
           <div className="border-b border-border bg-muted/50 p-4">
             <div className="grid grid-cols-6 gap-4 text-sm font-medium text-muted-foreground">
-              <div>Date</div>
-              <div>Entity</div>
-              <div>Action</div>
-              <div>Entity ID</div>
-              <div>User</div>
-              <div className="text-right">Details</div>
+              <div>{t("date")}</div>
+              <div>{t("entity")}</div>
+              <div>{t("action")}</div>
+              <div>{t("entityId")}</div>
+              <div>{t("user")}</div>
+              <div className="text-right">{t("details")}</div>
             </div>
           </div>
 
@@ -457,9 +459,9 @@ export function AuditLogTable() {
           {(!auditLogs || auditLogs.length === 0) && !isLoading && (
             <div className="text-center py-8 text-muted-foreground">
               <Shield className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>No audit logs found</p>
+              <p>{t("noAuditLogsFound")}</p>
               {Object.values(filters).some((f) => f) && (
-                <p className="text-sm mt-1">Try adjusting your filters</p>
+                <p className="text-sm mt-1">{t("tryAdjustingFilters")}</p>
               )}
             </div>
           )}
@@ -472,13 +474,13 @@ export function AuditLogTable() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="text-sm text-muted-foreground">
-                Showing {(data.pagination.page - 1) * data.pagination.limit + 1}{" "}
-                to{" "}
+                {t("showingEntries")} {(data.pagination.page - 1) * data.pagination.limit + 1}{" "}
+                {t("to")}{" "}
                 {Math.min(
                   data.pagination.page * data.pagination.limit,
                   data.pagination.totalCount
                 )}{" "}
-                of {data.pagination.totalCount} entries
+                {t("of")} {data.pagination.totalCount} {t("entries")}
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -488,10 +490,10 @@ export function AuditLogTable() {
                   disabled={!data.pagination.hasPrev || isLoading}
                 >
                   <ChevronLeft className="h-4 w-4" />
-                  Previous
+                  {t("previous")}
                 </Button>
                 <span className="text-sm font-medium">
-                  Page {data.pagination.page} of {data.pagination.totalPages}
+                  {t("page")} {data.pagination.page} {t("of")} {data.pagination.totalPages}
                 </span>
                 <Button
                   variant="outline"
@@ -499,7 +501,7 @@ export function AuditLogTable() {
                   onClick={() => setPage(page + 1)}
                   disabled={!data.pagination.hasNext || isLoading}
                 >
-                  Next
+                  {t("next")}
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
