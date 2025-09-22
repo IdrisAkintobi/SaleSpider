@@ -13,6 +13,7 @@ import {
   ShoppingCart,
   Users,
   Settings,
+  Shield,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -60,6 +61,12 @@ const navItems: NavItem[] = [
     href: "/dashboard/staff",
     labelKey: "staff_management",
     icon: Users,
+    roles: ["SUPER_ADMIN", "MANAGER"],
+  },
+  {
+    href: "/dashboard/audit-logs",
+    labelKey: "Audit Logs",
+    icon: Shield,
     roles: ["SUPER_ADMIN", "MANAGER"],
   },
   {

@@ -33,9 +33,11 @@ export function Providers({ children }: Readonly<ProvidersProps>) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            // With SSR, we usually want to set some default staleTime
-            // above 0 to avoid refetching immediately on the client
-            staleTime: 60 * 1000, // 1 minute
+            // Balanced default: fresh enough for most data, but not too aggressive
+            staleTime: 30 * 1000, // 30 seconds (reduced from 1 minute)
+            gcTime: 5 * 60 * 1000, // 5 minutes (renamed from cacheTime)
+            refetchOnWindowFocus: true,
+            refetchOnMount: true,
             retry: (failureCount, error) => {
               // Don't retry on 4xx errors
               if (error instanceof Error && "status" in error) {
@@ -43,6 +45,17 @@ export function Providers({ children }: Readonly<ProvidersProps>) {
                 if (status >= 400 && status < 500) return false;
               }
               return failureCount < 3;
+            },
+          },
+          mutations: {
+            // Global mutation settings
+            retry: (failureCount, error) => {
+              // Don't retry mutations on client errors
+              if (error instanceof Error && "status" in error) {
+                const status = (error as any).status;
+                if (status >= 400 && status < 500) return false;
+              }
+              return failureCount < 2; // Retry mutations less aggressively
             },
           },
         },

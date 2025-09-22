@@ -134,7 +134,7 @@ export class DeshelvingService {
       // Log to audit trail
       await AuditTrailService.log({
         entityType: 'DESHELVING',
-        entityId: result.id,
+        entityId: request.productId, // Use productId as entityId for deshelving operations
         action: 'CREATE',
         changes: {
           productId: request.productId,
@@ -151,6 +151,7 @@ export class DeshelvingService {
         userEmail: manager.email,
         metadata: {
           ...metadata,
+          deshelvingRecordId: result.id, // Store the deshelving record ID in metadata
           deshelvingReason: request.reason,
           quantityDeshelved: request.quantity,
           valueImpact: request.quantity * product.price

@@ -31,10 +31,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { useToast } from "@/hooks/use-toast";
+import { useDeshelvingMutation } from "@/hooks/use-deshelving-mutations";
 import { DeshelvingReason } from "@prisma/client";
 import { Package, AlertTriangle } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
 
 const deshelvingReasons = [
   { value: "DAMAGED", label: "Damaged", icon: "🔧" },
@@ -74,7 +75,6 @@ interface DeshelvingDialogProps {
 
 export function DeshelvingDialog({ product, trigger, onSuccess }: DeshelvingDialogProps) {
   const [open, setOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<DeshelvingFormData>({
@@ -86,39 +86,31 @@ export function DeshelvingDialog({ product, trigger, onSuccess }: DeshelvingDial
     },
   });
 
+  // Use TanStack Query mutation for deshelving
+  const deshelvingMutation = useDeshelvingMutation();
+
   const onSubmit = async (data: DeshelvingFormData) => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(`/api/products/${product.id}/deshelve`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+    deshelvingMutation.mutate(
+      { productId: product.id, data },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Product Deshelved",
+            description: `Successfully deshelved ${data.quantity} units of ${product.name}`,
+          });
+          setOpen(false);
+          form.reset();
+          onSuccess?.();
         },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to deshelve product");
+        onError: (error) => {
+          toast({
+            title: "Error",
+            description: error instanceof Error ? error.message : "Failed to deshelve product",
+            variant: "destructive",
+          });
+        },
       }
-
-      toast({
-        title: "Product Deshelved",
-        description: `Successfully deshelved ${data.quantity} units of ${product.name}`,
-      });
-
-      setOpen(false);
-      form.reset();
-      onSuccess?.();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to deshelve product",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    );
   };
 
   const selectedReason = form.watch("reason");
@@ -251,12 +243,12 @@ export function DeshelvingDialog({ product, trigger, onSuccess }: DeshelvingDial
                 type="button"
                 variant="outline"
                 onClick={() => setOpen(false)}
-                disabled={isLoading}
+                disabled={deshelvingMutation.isPending}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isLoading} className="bg-orange-600 hover:bg-orange-700">
-                {isLoading ? "Deshelving..." : "Confirm Deshelve"}
+              <Button type="submit" disabled={deshelvingMutation.isPending} className="bg-orange-600 hover:bg-orange-700">
+                {deshelvingMutation.isPending ? "Deshelving..." : "Confirm Deshelve"}
               </Button>
             </DialogFooter>
           </form>
