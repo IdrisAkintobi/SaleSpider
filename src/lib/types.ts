@@ -56,7 +56,10 @@ export interface Sale {
   cashierId: string; // id of the cashier
   cashierName: string;
   items: SaleItem[];
-  totalAmount: number;
+  subtotal: number; // Amount before VAT
+  vatAmount: number; // VAT amount applied
+  vatPercentage: number; // VAT percentage used
+  totalAmount: number; // Total amount including VAT
   timestamp: number; // Timestamp of the sale
   paymentMode: PaymentMode;
 }

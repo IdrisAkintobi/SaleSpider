@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { name, description, price, category, lowStockMargin, quantity } =
+    const { name, description, price, category, lowStockMargin, quantity, imageUrl, gtin } =
       (await req.json()) as Product;
 
     if (
@@ -113,6 +113,8 @@ export async function POST(req: NextRequest) {
         category,
         lowStockMargin,
         quantity,
+        imageUrl,
+        gtin,
       },
     });
 
@@ -128,6 +130,8 @@ export async function POST(req: NextRequest) {
         category: newProduct.category,
         lowStockMargin: newProduct.lowStockMargin,
         quantity: newProduct.quantity,
+        imageUrl: newProduct.imageUrl,
+        gtin: newProduct.gtin,
       },
       userId,
       user.email,
