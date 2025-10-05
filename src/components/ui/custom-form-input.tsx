@@ -21,6 +21,7 @@ interface FormInputProps {
   step?: string | number;
   options?: string[]; // Add options prop for select
   onChange?: (value: string) => void;
+  disabled?: boolean;
 }
 
 export const FormInput = ({
@@ -34,6 +35,7 @@ export const FormInput = ({
   step,
   options,
   onChange,
+  disabled,
 }: FormInputProps) => {
   const renderSelectField = () => (
     <Controller
@@ -66,6 +68,7 @@ export const FormInput = ({
           type={type}
           step={step}
           placeholder={placeholder}
+          disabled={disabled}
           {...field}
           onChange={
             onChange
@@ -84,6 +87,7 @@ export const FormInput = ({
       type={type}
       step={step}
       placeholder={placeholder}
+      disabled={disabled}
     />
   );
 

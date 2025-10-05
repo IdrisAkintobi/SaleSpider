@@ -122,6 +122,7 @@ export function UpdateProductDialog({
           </DialogDescription>
         </DialogHeader>
         <form
+          key={product.id}
           onSubmit={handleSubmit(handleProductUpdate)}
           className="grid gap-4 py-4"
         >
@@ -176,6 +177,8 @@ export function UpdateProductDialog({
             name="gtin"
             register={register}
             error={errors.gtin?.message}
+            disabled={!!(product.gtin && product.gtin.trim())}
+            placeholder={product.gtin && product.gtin.trim() ? "GTIN cannot be changed once set" : "Enter GTIN"}
           />
 
           <DialogFooter>
