@@ -261,7 +261,7 @@ const translations: Record<string, Record<string, string>> = {
     subtotal: "Subtotal",
     vat: "VAT",
     total_amount: "Total Amount",
-    update_stock_description: "Set the new stock quantity for this product.",
+    update_stock_description: "Enter the quantity to add to current stock.",
     update_staff_details: "Update staff details below.",
     application_name: "Application Name",
     logo_url: "Logo URL",
@@ -537,7 +537,7 @@ const translations: Record<string, Record<string, string>> = {
     vat: "TVA",
     total_amount: "Montant total",
     update_stock_description:
-      "Définissez la nouvelle quantité de stock pour ce produit.",
+      "Entrez la quantité à ajouter au stock actuel.",
     update_staff_details:
       "Mettez à jour les informations du personnel ci-dessous.",
     application_name: "Nom de l'application",
@@ -813,7 +813,7 @@ const translations: Record<string, Record<string, string>> = {
     vat: "IVA",
     total_amount: "Monto total",
     update_stock_description:
-      "Establezca la nueva cantidad de stock para este producto.",
+      "Ingrese la cantidad a agregar al stock actual.",
     update_staff_details: "Actualice los detalles del personal a continuación.",
     application_name: "Nombre de la aplicación",
     logo_url: "URL del logo",
@@ -1089,7 +1089,7 @@ const translations: Record<string, Record<string, string>> = {
     vat: "MwSt",
     total_amount: "Gesamtbetrag",
     update_stock_description:
-      "Legen Sie die neue Lagerbestandsmenge für dieses Produkt fest.",
+      "Geben Sie die Menge ein, die zum aktuellen Bestand hinzugefügt werden soll.",
     update_staff_details: "Aktualisieren Sie unten die Personaldaten.",
     application_name: "Anwendungsname",
     logo_url: "Logo-URL",
