@@ -41,7 +41,6 @@ import { GenericTable } from "@/components/ui/generic-table";
 import { SalesTableSkeleton } from "@/components/dashboard/sales/sales-table-skeleton";
 import Link from "next/link";
 import { useFormatCurrency } from "@/lib/currency";
-import { useVatPercentage } from "@/lib/vat";
 import { useTranslation } from "@/lib/i18n";
 import { startOfToday, endOfToday, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import { PAYMENT_METHODS } from "@/lib/constants";
@@ -52,7 +51,6 @@ export default function SalesPage() {
   const { userIsManager, userIsCashier } = useAuth();
   const { toast } = useToast();
   const formatCurrency = useFormatCurrency();
-  const vatPercentage = useVatPercentage();
   const t = useTranslation();
   const { settings } = useSettingsContext();
   
@@ -532,11 +530,11 @@ export default function SalesPage() {
                                 <div className="border-t pt-4 space-y-2">
                                   <div className="flex justify-between items-center">
                                     <span className="text-sm text-muted-foreground">{t('subtotal')}</span>
-                                    <span className="text-sm">{formatCurrency(selectedSale.totalAmount / (1 + vatPercentage / 100))}</span>
+                                    <span className="text-sm">{formatCurrency(selectedSale.subtotal)}</span>
                                   </div>
                                   <div className="flex justify-between items-center">
-                                    <span className="text-sm text-muted-foreground">{t('vat')} ({vatPercentage}%)</span>
-                                    <span className="text-sm">{formatCurrency(selectedSale.totalAmount - (selectedSale.totalAmount / (1 + vatPercentage / 100)))}</span>
+                                    <span className="text-sm text-muted-foreground">{t('vat')} ({selectedSale.vatPercentage}%)</span>
+                                    <span className="text-sm">{formatCurrency(selectedSale.vatAmount)}</span>
                                   </div>
                                   <div className="flex justify-between items-center border-t pt-2">
                                     <span className="text-lg font-semibold">{t('total_amount')}</span>

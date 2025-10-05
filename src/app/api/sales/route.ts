@@ -174,6 +174,9 @@ export async function GET(req: NextRequest) {
       id: sale.id,
       cashierId: sale.cashierId,
       cashierName: sale.cashier.name,
+      subtotal: sale.subtotal,
+      vatAmount: sale.vatAmount,
+      vatPercentage: sale.vatPercentage,
       totalAmount: sale.totalAmount,
       paymentMode: sale.paymentMode,
       timestamp: new Date(sale.createdAt).getTime(), // Convert to timestamp

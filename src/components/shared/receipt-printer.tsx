@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useFormatCurrency } from "@/lib/currency";
-import { useVatPercentage } from "@/lib/vat";
 import { useTranslation } from "@/lib/i18n";
 import type { Sale } from "@/lib/types";
 
@@ -60,12 +59,12 @@ export function ReceiptPrinter({
 }: ReceiptPrinterProps) {
   const { toast } = useToast();
   const formatCurrency = useFormatCurrency();
-  const vatPercentage = useVatPercentage();
   const t = useTranslation();
 
   const generateReceiptContent = () => {
-    const subtotal = sale.totalAmount / (1 + vatPercentage / 100);
-    const vatAmount = sale.totalAmount - subtotal;
+    const subtotal = sale.subtotal;
+    const vatAmount = sale.vatAmount;
+    const vatPercentageUsed = sale.vatPercentage;
     const saleDate = new Date(sale.timestamp).toLocaleString();
 
     return `
@@ -208,7 +207,7 @@ export function ReceiptPrinter({
       <span>${formatCurrency(subtotal)}</span>
     </div>
     <div class="total-line">
-      <span>VAT (${vatPercentage}%):</span>
+      <span>VAT (${vatPercentageUsed}%):</span>
       <span>${formatCurrency(vatAmount)}</span>
     </div>
     <div class="total-line final-total">
