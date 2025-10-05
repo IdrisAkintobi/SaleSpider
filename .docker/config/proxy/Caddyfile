@@ -1,0 +1,125 @@
+# SaleSpider Caddy Configuration
+# HTTPS with internal self-signed certificates
+
+# Global options
+{
+	# Enable admin API
+	admin localhost:2019
+
+	# Enable access logs if configured
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 10MB
+			roll_keep 5
+		}
+		format json
+		level {$LOG_LEVEL:INFO}
+	}
+}
+
+# Production domain with self-signed HTTPS
+{$DOMAIN:localhost} {
+	# Use mounted self-signed certificates
+	tls /etc/caddy/certs/cert.pem /etc/caddy/certs/key.pem
+
+	# Reverse proxy to application
+	reverse_proxy {$APP_URL:http://app:3000} {
+		# Custom headers
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+	}
+
+	# Security headers
+	header {
+		Strict-Transport-Security "max-age={$HSTS_MAX_AGE:31536000}; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		X-XSS-Protection "1; mode=block"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+		-X-Powered-By
+	}
+
+	# CORS headers for API access
+	header {
+		Access-Control-Allow-Origin "*"
+		Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+		Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+		Access-Control-Max-Age "86400"
+	}
+
+	# Handle preflight requests
+	@options {
+		method OPTIONS
+	}
+	respond @options 204
+
+	# Compression
+	encode gzip zstd
+
+	# File server for static assets
+	handle /static/* {
+		file_server
+		root /var/www
+	}
+
+	# Error pages
+	handle_errors {
+		@5xx expression `{http.error.status_code} >= 500`
+		respond @5xx "Internal Server Error" 500
+
+		@4xx expression `{http.error.status_code} >= 400 && {http.error.status_code} < 500`
+		respond @4xx "Not Found" 404
+	}
+}
+
+# Network access via IP address (HTTPS with self-signed cert)
+{$HOST_IP:127.0.0.1} {
+	# Use mounted self-signed certificates
+	tls /etc/caddy/certs/cert.pem /etc/caddy/certs/key.pem
+
+	reverse_proxy {$APP_URL:http://app:3000} {
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+	}
+
+	header {
+		Access-Control-Allow-Origin "*"
+		Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+		Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+	}
+
+	@options method OPTIONS
+	respond @options 204
+
+	encode gzip zstd
+}
+
+# HTTP catch-all - redirect to HTTPS
+:80 {
+	# Redirect all HTTP traffic to HTTPS
+	redir https://{host}{uri} permanent
+}
+
+# HTTPS catch-all for any other access (development/local network)
+:443 {
+	# Self-signed certificate for local development
+	tls /etc/caddy/certs/cert.pem /etc/caddy/certs/key.pem
+
+	reverse_proxy {$APP_URL:http://app:3000} {
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+	}
+
+	# Permissive CORS for development
+	header {
+		Access-Control-Allow-Origin "*"
+		Access-Control-Allow-Methods "*"
+		Access-Control-Allow-Headers "*"
+	}
+
+	@options method OPTIONS
+	respond @options 204
+
+	encode gzip zstd
+}
