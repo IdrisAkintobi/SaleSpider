@@ -30,6 +30,8 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { DeshelvingDialog } from "@/components/dashboard/deshelving-dialog";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { X } from "lucide-react";
 
 export type SortField = "name" | "price" | "quantity" | "updatedAt";
 export type SortOrder = "asc" | "desc";
@@ -67,6 +69,7 @@ export function ProductTable({
 }: Readonly<ProductTableProps>) {
   const formatCurrency = useFormatCurrency();
   const t = useTranslation();
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // Define columns for the generic table
   const columns: GenericTableColumn<Product>[] = [
@@ -131,13 +134,21 @@ export function ProductTable({
             switch (col.key) {
               case "imageUrl":
                 return (
-                  <Image
-                    src={product.imageUrl ?? "https://placehold.co/64x64.png?text=N/A"}
-                    alt={product.name}
-                    width={48}
-                    height={48}
-                    className="rounded-md object-cover"
-                  />
+                  <div 
+                    className="w-12 h-12 flex-shrink-0 bg-muted rounded-md cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setImagePreview(product.imageUrl ?? "https://placehold.co/64x64.png?text=N/A");
+                    }}
+                  >
+                    <Image
+                      src={product.imageUrl ?? "https://placehold.co/64x64.png?text=N/A"}
+                      alt={product.name}
+                      width={48}
+                      height={48}
+                      className="rounded-md object-contain w-full h-full"
+                    />
+                  </div>
                 );
               case "name":
                 return (
@@ -203,6 +214,11 @@ export function ProductTable({
           }
         />
       </CardContent>
+
+      <ImagePreviewDialog 
+        imageUrl={imagePreview} 
+        onClose={() => setImagePreview(null)} 
+      />
     </Card>
   );
 }
@@ -309,5 +325,39 @@ function ProductActionsDropdown({ product, onUpdateStock, onUpdateProduct, onRef
         variant="default"
       />
     </DropdownMenu>
+  );
+}
+
+// Image Preview Dialog Component
+function ImagePreviewDialog({ 
+  imageUrl, 
+  onClose 
+}: { 
+  imageUrl: string | null; 
+  onClose: () => void;
+}) {
+  if (!imageUrl) return null;
+
+  return (
+    <Dialog open={!!imageUrl} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl p-0 overflow-hidden">
+        <div className="relative w-full h-[80vh] bg-black">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-2 right-2 z-10 bg-black/50 hover:bg-black/70 text-white"
+            onClick={onClose}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+          <Image
+            src={imageUrl}
+            alt="Product preview"
+            fill
+            className="object-contain"
+          />
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
