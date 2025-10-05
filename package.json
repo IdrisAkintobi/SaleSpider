@@ -1,27 +1,26 @@
 {
-  "name": "nextn",
+  "name": "salespider",
+  "description": "Salespider is a store inventory, sales, and staff management system",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev --turbopack -p 9002",
-    "dev:https": "npm run gen:cert && next dev --experimental-https --turbopack -p 443",
-    "gen:cert": "shx mkdir -p .cert && cd .cert && mkcert localhost 127.0.0.1 ::1",
+    "dev": "next dev --turbopack",
+    "dev:https": "next dev --turbopack --experimental-https -p 443",
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
     "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
-    "build": "next build",
+    "build": "next build --turbopack",
     "build:webpack": "next build",
-    "analyze": "ANALYZE=true npm run build:webpack",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit",
-    "seed": "tsx --env-file .env prisma/seeds/index.ts"
+    "analyze": "ANALYZE=true npm run build",
+    "seed": "tsx --env-file .env prisma/seeds/index.ts",
+    "seed:prod": "npx tsx prisma/seeds/seed-production.ts"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.8.0",
     "@hookform/resolvers": "^4.1.3",
     "@prisma/client": "^6.11.1",
-    "@radix-ui/react-accordion": "^1.2.3",
     "@radix-ui/react-alert-dialog": "^1.1.6",
     "@radix-ui/react-avatar": "^1.1.3",
     "@radix-ui/react-checkbox": "^1.1.4",
@@ -62,6 +61,7 @@
     "recharts": "^2.15.1",
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7",
+    "tsx": "^4.20.3",
     "zod": "^3.24.2"
   },
   "devDependencies": {
@@ -75,7 +75,6 @@
     "prisma": "^6.13.0",
     "shx": "^0.4.0",
     "tailwindcss": "^3.4.1",
-    "tsx": "^4.20.3",
     "typescript": "^5",
     "webpack-bundle-analyzer": "^4.10.2"
   },

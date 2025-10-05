@@ -45,4 +45,11 @@ firebase-debug.log
 firestore-debug.log
 /src/generated/prisma
 
-.cert
+/data
+certificates
+
+# SSL certificates (keep private keys secure)
+.docker/ssl/*.pem
+.docker/ssl/*.crt
+.docker/ssl/*.key
+.docker/ssl/*.cnf

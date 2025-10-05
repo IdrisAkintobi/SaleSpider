@@ -2,9 +2,16 @@ import { PrismaClient, Role } from "@prisma/client";
 import * as argon2 from "argon2";
 
 export async function seedSuperAdmin(client: PrismaClient) {
-  const superAdminEmail =
-    process.env.SUPER_ADMIN_EMAIL ?? "admin@salespider.com";
-  const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD ?? "Password123#";
+  const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
+  const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD;
+
+  if (!superAdminEmail) {
+    throw new Error("SUPER_ADMIN_EMAIL environment variable is required but not provided");
+  }
+
+  if (!superAdminPassword) {
+    throw new Error("SUPER_ADMIN_PASSWORD environment variable is required but not provided");
+  }
 
   // Check if super admin already exists
   const existingSuperAdmin = await client.user.findUnique({
@@ -20,7 +27,6 @@ export async function seedSuperAdmin(client: PrismaClient) {
 
   // Hash the super admin password
   const hashedSuperAdminPassword = await argon2.hash(superAdminPassword);
-
   // Create the super admin user
   const superAdmin = await client.user.create({
     data: {
