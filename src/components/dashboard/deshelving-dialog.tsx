@@ -61,16 +61,16 @@ const deshelvingSchema = z.object({
 type DeshelvingFormData = z.infer<typeof deshelvingSchema>;
 
 interface Product {
-  id: string;
-  name: string;
-  quantity: number;
-  price: number;
+  readonly id: string;
+  readonly name: string;
+  readonly quantity: number;
+  readonly price: number;
 }
 
 interface DeshelvingDialogProps {
-  product: Product;
-  trigger?: React.ReactNode;
-  onSuccess?: () => void;
+  readonly product: Product;
+  readonly trigger?: React.ReactNode;
+  readonly onSuccess?: () => void;
 }
 
 export function DeshelvingDialog({ product, trigger, onSuccess }: DeshelvingDialogProps) {
@@ -152,8 +152,14 @@ export function DeshelvingDialog({ product, trigger, onSuccess }: DeshelvingDial
                       type="number"
                       min="1"
                       max={product.quantity}
-                      {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      value={field.value ?? ""}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      ref={field.ref}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        field.onChange(value === "" ? "" : parseInt(value, 10) || 1);
+                      }}
                     />
                   </FormControl>
                   <FormDescription>
@@ -203,7 +209,7 @@ export function DeshelvingDialog({ product, trigger, onSuccess }: DeshelvingDial
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    Description
+                    Description{" "}
                     <span className="text-muted-foreground ml-1">(Optional)</span>
                   </FormLabel>
                   <FormControl>

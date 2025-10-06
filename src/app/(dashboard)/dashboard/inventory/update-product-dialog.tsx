@@ -49,7 +49,6 @@ export function UpdateProductDialog({
   const {
     register,
     handleSubmit,
-    setValue,
     reset,
     control,
     formState: { errors },
@@ -152,7 +151,6 @@ export function UpdateProductDialog({
             type="number"
             step="0.01"
             control={control}
-            onChange={(value) => setValue("price", parseFloat(value) || 0)}
             error={errors.price?.message}
           />
           <FormInput
@@ -160,9 +158,6 @@ export function UpdateProductDialog({
             name="lowStockMargin"
             type="number"
             control={control}
-            onChange={(value) =>
-              setValue("lowStockMargin", parseInt(value) || 0)
-            }
             error={errors.lowStockMargin?.message}
           />
           <FormInput

@@ -133,7 +133,7 @@ export function useAuth() {
 
   // Kick out inactive users
   useEffect(() => {
-    if (user && user.status && user.status !== "ACTIVE") {
+    if (user?.status && user.status !== "ACTIVE") {
       toast({
         title: "Account Inactive",
         description:

@@ -59,7 +59,6 @@ export function AddProductDialog({
   const {
     register,
     handleSubmit,
-    setValue,
     reset,
     control,
     formState: { errors },
@@ -153,16 +152,14 @@ export function AddProductDialog({
             type="number"
             step="0.01"
             control={control}
-            onChange={(value) => setValue("price", parseFloat(value) || 0)}
             error={errors.price?.message}
           />
           <FormInput
             label={t('new_quantity')}
             name="quantity"
+            type="number"
             control={control}
             error={errors.quantity?.message}
-            onChange={(value) => setValue("quantity", parseInt(value, 10) || 0)}
-            type="number"
           />
           <FormInput
             label={t('low_stock_margin')}
@@ -170,9 +167,6 @@ export function AddProductDialog({
             type="number"
             control={control}
             error={errors.lowStockMargin?.message}
-            onChange={(value) =>
-              setValue("lowStockMargin", parseInt(value, 10) || 0)
-            }
           />
           <FormInput
             label={t('image_url_optional')}

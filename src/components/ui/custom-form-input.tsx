@@ -69,11 +69,26 @@ export const FormInput = ({
           step={step}
           placeholder={placeholder}
           disabled={disabled}
-          {...field}
+          value={field.value ?? ""}
+          onBlur={field.onBlur}
+          name={field.name}
+          ref={field.ref}
           onChange={
             onChange
-              ? (e: ChangeEvent<HTMLInputElement>) => onChange(e.target.value)
-              : field.onChange
+              ? (e: ChangeEvent<HTMLInputElement>) => {
+                  const value = e.target.value;
+                  // Call custom onChange with the raw value
+                  onChange(value);
+                }
+              : (e: ChangeEvent<HTMLInputElement>) => {
+                  const value = e.target.value;
+                  // For number inputs, convert to number, otherwise keep as string
+                  if (type === "number") {
+                    field.onChange(value === "" ? "" : Number(value));
+                  } else {
+                    field.onChange(value);
+                  }
+                }
           }
         />
       )}
