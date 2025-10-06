@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/table";
 
 interface RecentSalesSkeletonProps {
-  className?: string;
-  rows?: number;
+  readonly className?: string;
+  readonly rows?: number;
 }
 
 export function RecentSalesSkeleton({ 
@@ -39,8 +39,8 @@ export function RecentSalesSkeleton({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {Array.from({ length: rows }).map((_, index) => (
-              <TableRow key={index}>
+            {Array.from({ length: rows }, (_, index) => `skeleton-row-${index}`).map((key) => (
+              <TableRow key={key}>
                 <TableCell>
                   <Skeleton className="h-4 w-[80px]" />
                 </TableCell>

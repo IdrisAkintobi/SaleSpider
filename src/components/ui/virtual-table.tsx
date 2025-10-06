@@ -2,12 +2,12 @@ import { cn } from "@/lib/utils";
 import { useMemo, useRef, useState } from "react";
 
 interface VirtualTableProps<T> {
-  data: T[];
-  itemHeight: number;
-  containerHeight: number;
-  renderItem: (item: T, index: number) => React.ReactNode;
-  className?: string;
-  overscan?: number;
+  readonly data: T[];
+  readonly itemHeight: number;
+  readonly containerHeight: number;
+  readonly renderItem: (item: T, index: number) => React.ReactNode;
+  readonly className?: string;
+  readonly overscan?: number;
 }
 
 export function VirtualTable<T>({

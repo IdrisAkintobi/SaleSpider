@@ -88,7 +88,7 @@ const navItems: NavItem[] = [
 ];
 
 interface SidebarNavProps {
-  onNavigate?: () => void;
+  readonly onNavigate?: () => void;
 }
 
 export function SidebarNav({ onNavigate }: SidebarNavProps) {

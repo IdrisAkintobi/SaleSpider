@@ -25,7 +25,7 @@ export function Logo({
 
   return (
     <Link href="/" className={`flex items-center gap-2 ${className}`}>
-      {appLogo ? (
+      {appLogo && appLogo.trim() !== "" ? (
         <Image
           src={appLogo}
           alt={appName}

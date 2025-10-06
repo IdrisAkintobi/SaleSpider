@@ -34,8 +34,8 @@ export function LoginForm() {
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
-    await login(data.username, data.password);
+  const onSubmit: SubmitHandler<LoginFormInputs> = (data) => {
+    login(data.username, data.password);
   };
 
   return (

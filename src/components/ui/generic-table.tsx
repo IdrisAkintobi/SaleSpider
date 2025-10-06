@@ -11,27 +11,27 @@ import {
 import { TablePagination } from "./table-pagination";
 
 export interface GenericTableColumn<T> {
-  key: keyof T | string;
-  label: React.ReactNode;
-  sortable?: boolean;
-  onSort?: () => void;
-  align?: "left" | "right" | "center";
-  className?: string;
+  readonly key: keyof T | string;
+  readonly label: React.ReactNode;
+  readonly sortable?: boolean;
+  readonly onSort?: () => void;
+  readonly align?: "left" | "right" | "center";
+  readonly className?: string;
 }
 
 export interface GenericTableProps<T> {
-  columns: GenericTableColumn<T>[];
-  data: T[];
-  renderCell?: (row: T, col: GenericTableColumn<T>, rowIndex: number) => React.ReactNode;
-  emptyMessage?: React.ReactNode;
-  paginationProps?: {
-    page: number;
-    pageSize: number;
-    total: number;
-    onPageChange: (page: number) => void;
-    onPageSizeChange: (size: number) => void;
+  readonly columns: GenericTableColumn<T>[];
+  readonly data: T[];
+  readonly renderCell?: (row: T, col: GenericTableColumn<T>, rowIndex: number) => React.ReactNode;
+  readonly emptyMessage?: React.ReactNode;
+  readonly paginationProps?: {
+    readonly page: number;
+    readonly pageSize: number;
+    readonly total: number;
+    readonly onPageChange: (page: number) => void;
+    readonly onPageSizeChange: (size: number) => void;
   };
-  rowKey?: (row: T, index: number) => React.Key;
+  readonly rowKey?: (row: T, index: number) => React.Key;
 }
 
 export function GenericTable<T extends object>({
