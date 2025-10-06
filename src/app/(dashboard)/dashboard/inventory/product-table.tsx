@@ -1,7 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { GenericTable, GenericTableColumn } from "@/components/ui/generic-table";
+import {
+  GenericTable,
+  GenericTableColumn,
+} from "@/components/ui/generic-table";
 import type { Product } from "@/lib/types";
 import {
   AlertTriangle,
@@ -13,13 +16,17 @@ import {
   RotateCcw,
   MoreHorizontal,
   Package,
+  X,
 } from "lucide-react";
 import Image from "next/image";
-import React from "react";
+import React, { useState } from "react";
 import { useFormatCurrency } from "@/lib/currency";
 import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/contexts/auth-context";
-import { useDeleteProduct, useRestoreProduct } from "@/hooks/use-delete-product";
+import {
+  useDeleteProduct,
+  useRestoreProduct,
+} from "@/hooks/use-delete-product";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,10 +35,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { DeshelvingDialog } from "@/components/dashboard/deshelving-dialog";
-import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { X } from "lucide-react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 export type SortField = "name" | "price" | "quantity" | "updatedAt";
 export type SortOrder = "asc" | "desc";
@@ -81,7 +86,20 @@ export function ProductTable({
     {
       key: "name",
       label: (
-        <div className="flex items-center cursor-pointer" onClick={() => onSort?.("name")}>{t("name")} {sortField === "name" && (sortOrder === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}</div>
+        <button
+          type="button"
+          className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={() => onSort?.("name")}
+          aria-label={`Sort by ${t("name")}`}
+        >
+          {t("name")}{" "}
+          {sortField === "name" &&
+            (sortOrder === "asc" ? (
+              <ArrowUp size={14} />
+            ) : (
+              <ArrowDown size={14} />
+            ))}
+        </button>
       ),
       sortable: true,
       onSort: () => onSort?.("name"),
@@ -89,7 +107,20 @@ export function ProductTable({
     {
       key: "price",
       label: (
-        <div className="flex items-center cursor-pointer" onClick={() => onSort?.("price")}>{t("price")} {sortField === "price" && (sortOrder === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}</div>
+        <button
+          type="button"
+          className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={() => onSort?.("price")}
+          aria-label={`Sort by ${t("price")}`}
+        >
+          {t("price")}{" "}
+          {sortField === "price" &&
+            (sortOrder === "asc" ? (
+              <ArrowUp size={14} />
+            ) : (
+              <ArrowDown size={14} />
+            ))}
+        </button>
       ),
       sortable: true,
       onSort: () => onSort?.("price"),
@@ -97,19 +128,41 @@ export function ProductTable({
     {
       key: "quantity",
       label: (
-        <div className="flex items-center cursor-pointer" onClick={() => onSort?.("quantity")}>{t("stock")} {sortField === "quantity" && (sortOrder === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}</div>
+        <button
+          type="button"
+          className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={() => onSort?.("quantity")}
+          aria-label={`Sort by ${t("stock")}`}
+        >
+          {t("stock")}{" "}
+          {sortField === "quantity" &&
+            (sortOrder === "asc" ? (
+              <ArrowUp size={14} />
+            ) : (
+              <ArrowDown size={14} />
+            ))}
+        </button>
       ),
       sortable: true,
       onSort: () => onSort?.("quantity"),
     },
     {
-      key: "status",
-      label: t("status"),
-    },
-    {
       key: "updatedAt",
       label: (
-        <div className="flex items-center cursor-pointer" onClick={() => onSort?.("updatedAt")}>{t("date_updated")} {sortField === "updatedAt" && (sortOrder === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}</div>
+        <button
+          type="button"
+          className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={() => onSort?.("updatedAt")}
+          aria-label={`Sort by ${t("date_updated")}`}
+        >
+          {t("date_updated")}{" "}
+          {sortField === "updatedAt" &&
+            (sortOrder === "asc" ? (
+              <ArrowUp size={14} />
+            ) : (
+              <ArrowDown size={14} />
+            ))}
+        </button>
       ),
       sortable: true,
       onSort: () => onSort?.("updatedAt"),
@@ -134,34 +187,49 @@ export function ProductTable({
             switch (col.key) {
               case "imageUrl":
                 return (
-                  <div 
-                    className="w-12 h-12 flex-shrink-0 bg-muted rounded-md cursor-pointer hover:opacity-80 transition-opacity"
+                  <button
+                    type="button"
+                    className="w-12 h-12 flex-shrink-0 bg-muted rounded-md cursor-pointer hover:opacity-80 transition-opacity p-0 border-0"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setImagePreview(product.imageUrl ?? "https://placehold.co/64x64.png?text=N/A");
+                      setImagePreview(
+                        product.imageUrl ??
+                          "https://placehold.co/64x64.png?text=N/A"
+                      );
                     }}
+                    aria-label={`Preview image for ${product.name}`}
                   >
                     <Image
-                      src={product.imageUrl ?? "https://placehold.co/64x64.png?text=N/A"}
+                      src={
+                        product.imageUrl ??
+                        "https://placehold.co/64x64.png?text=N/A"
+                      }
                       alt={product.name}
                       width={48}
                       height={48}
                       className="rounded-md object-contain w-full h-full"
                     />
-                  </div>
+                  </button>
                 );
               case "name":
                 return (
                   <div className="flex items-center gap-2">
-                    <span 
+                    <button
+                      type="button"
                       className={cn(
-                        "font-medium cursor-pointer",
-                        product.deletedAt && "line-through text-muted-foreground"
-                      )} 
-                      onClick={() => (onShowDetails ? onShowDetails(product) : onUpdateProduct(product))}
+                        "font-medium cursor-pointer hover:opacity-80 transition-opacity text-left",
+                        product.deletedAt &&
+                          "line-through text-muted-foreground"
+                      )}
+                      onClick={() =>
+                        onShowDetails
+                          ? onShowDetails(product)
+                          : onUpdateProduct(product)
+                      }
+                      aria-label={`View details for ${product.name}`}
                     >
                       {product.name}
-                    </span>
+                    </button>
                     {product.deletedAt && (
                       <Badge variant="secondary" className="text-xs">
                         Deleted
@@ -179,24 +247,35 @@ export function ProductTable({
                     <AlertTriangle className="h-3 w-3" /> Low Stock
                   </Badge>
                 ) : (
-                  <Badge variant="default" className="bg-green-500 hover:bg-green-600 items-center gap-1 text-white">
+                  <Badge
+                    variant="default"
+                    className="bg-green-500 hover:bg-green-600 items-center gap-1 text-white"
+                  >
                     <CheckCircle2 className="h-3 w-3" /> In Stock
                   </Badge>
                 );
               case "updatedAt":
-                return product.updatedAt ? new Date(product.updatedAt).toLocaleDateString() : "";
+                return product.updatedAt
+                  ? new Date(product.updatedAt).toLocaleDateString()
+                  : "";
               case "actions":
                 return userIsManager ? (
-                  <ProductActionsDropdown 
-                    product={product} 
+                  <ProductActionsDropdown
+                    product={product}
                     onUpdateStock={onUpdateStock}
                     onUpdateProduct={onUpdateProduct}
                     onRefresh={() => window.location.reload()}
                   />
                 ) : null;
               default: {
-                const value = (product as unknown as Record<string, unknown>)[col.key as string];
-                if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+                const value = (product as unknown as Record<string, unknown>)[
+                  col.key as string
+                ];
+                if (
+                  typeof value === "string" ||
+                  typeof value === "number" ||
+                  typeof value === "boolean"
+                ) {
                   return String(value);
                 }
                 if (React.isValidElement(value)) {
@@ -208,16 +287,20 @@ export function ProductTable({
           }}
           emptyMessage={t("no_products_found")}
           paginationProps={
-            typeof page === "number" && typeof pageSize === "number" && typeof total === "number" && onPageChange && onPageSizeChange
+            typeof page === "number" &&
+            typeof pageSize === "number" &&
+            typeof total === "number" &&
+            onPageChange &&
+            onPageSizeChange
               ? { page, pageSize, total, onPageChange, onPageSizeChange }
               : undefined
           }
         />
       </CardContent>
 
-      <ImagePreviewDialog 
-        imageUrl={imagePreview} 
-        onClose={() => setImagePreview(null)} 
+      <ImagePreviewDialog
+        imageUrl={imagePreview}
+        onClose={() => setImagePreview(null)}
       />
     </Card>
   );
@@ -231,7 +314,12 @@ interface ProductActionsDropdownProps {
   onRefresh: () => void;
 }
 
-function ProductActionsDropdown({ product, onUpdateStock, onUpdateProduct, onRefresh }: ProductActionsDropdownProps) {
+function ProductActionsDropdown({
+  product,
+  onUpdateStock,
+  onUpdateProduct,
+  onRefresh,
+}: ProductActionsDropdownProps) {
   const { user } = useAuth();
   const t = useTranslation();
   const deleteProductMutation = useDeleteProduct();
@@ -285,7 +373,7 @@ function ProductActionsDropdown({ product, onUpdateStock, onUpdateProduct, onRef
               onSuccess={onRefresh}
             />
             {isSuperAdmin && (
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={() => setShowDeleteDialog(true)}
                 className="text-destructive focus:text-destructive"
               >
@@ -329,11 +417,11 @@ function ProductActionsDropdown({ product, onUpdateStock, onUpdateProduct, onRef
 }
 
 // Image Preview Dialog Component
-function ImagePreviewDialog({ 
-  imageUrl, 
-  onClose 
-}: { 
-  imageUrl: string | null; 
+function ImagePreviewDialog({
+  imageUrl,
+  onClose,
+}: {
+  imageUrl: string | null;
   onClose: () => void;
 }) {
   if (!imageUrl) return null;
@@ -341,6 +429,7 @@ function ImagePreviewDialog({
   return (
     <Dialog open={!!imageUrl} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl p-0 overflow-hidden">
+        <DialogTitle className="sr-only">Product Image Preview</DialogTitle>
         <div className="relative w-full h-[80vh] bg-black">
           <Button
             variant="ghost"

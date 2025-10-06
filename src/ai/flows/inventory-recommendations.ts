@@ -32,17 +32,17 @@ const InventoryRecommendationsOutputSchema = z.object({
   optimalLevels: z
     .string()
     .describe(
-      "Strategic summary of inventory level recommendations focusing on overall patterns, categories, and turnover optimization for store management."
+      "Strategic summary of inventory level recommendations focusing on overall patterns, categories, and turnover optimization for store management. MUST be formatted as clean HTML with proper tags (p, ul, li, strong, em)."
     ),
   promotionalOpportunities: z
     .string()
     .describe(
-      "High-level promotional strategy recommendations based on sales trends and inventory movement for physical store operations."
+      "High-level promotional strategy recommendations based on sales trends and inventory movement for physical store operations. MUST be formatted as clean HTML with proper tags (p, ul, li, strong, em)."
     ),
   reorderAmounts: z
     .string()
     .describe(
-      "Strategic purchasing guidance focusing on category priorities, budget allocation, and supplier management for store inventory."
+      "Strategic purchasing guidance focusing on category priorities, budget allocation, and supplier management for store inventory. MUST be formatted as clean HTML with proper tags (p, ul, li, strong, em)."
     ),
 });
 export type InventoryRecommendationsOutput = z.infer<
@@ -105,6 +105,23 @@ const prompt = ai.definePrompt({
   - Security measures if theft is a significant factor
   
   Always provide positive, actionable recommendations that help store managers optimize their operations. Focus on inventory optimization, cash flow improvement, operational efficiency, and loss prevention based on the available data.
+  
+  **CRITICAL OUTPUT FORMAT REQUIREMENT:**
+  Format ALL responses as clean, semantic HTML using these tags ONLY:
+  - <p> for paragraphs
+  - <ul> and <li> for bullet lists
+  - <strong> for emphasis/bold text
+  - <em> for italic text
+  - <h4> for section headings within recommendations
+  
+  Do NOT use markdown syntax (**, *, -, #). Output ONLY valid HTML.
+  Example format:
+  <p>Based on your inventory analysis, here are key recommendations:</p>
+  <ul>
+    <li><strong>Category A:</strong> Consider reducing stock levels by 20%</li>
+    <li><strong>Category B:</strong> Increase promotional activities</li>
+  </ul>
+  <p>These changes will improve cash flow and reduce storage costs.</p>
   `,
 });
 

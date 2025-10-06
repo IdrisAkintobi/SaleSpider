@@ -35,7 +35,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/lib/i18n";
 import { useRenderTime, usePagePerformance, useSlowRenderDetector } from "@/hooks/use-performance";
 import { ChevronLeft, ChevronRight, Eye, Filter, RefreshCw, Search, Shield } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 const entityTypeLabels: Record<string, { label: string; color: string }> = {
   USER: {
@@ -79,6 +79,128 @@ const actionLabels: Record<string, { label: string; color: string }> = {
       "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400",
   },
 };
+
+// Helper functions
+const formatTimestamp = (timestamp: string) => {
+  return new Date(timestamp).toLocaleDateString();
+};
+
+const formatJsonData = (data: any) => {
+  if (!data) return "N/A";
+  return JSON.stringify(data, null, 2);
+};
+
+// Extracted component - now outside parent
+interface AuditLogRowProps {
+  readonly log: AuditLog;
+  readonly t: (key: string) => string;
+}
+
+function AuditLogRow({ log, t }: AuditLogRowProps) {
+  return (
+    <div
+      key={log.id}
+      className="flex items-center border-b border-border p-4 hover:bg-muted/50 transition-colors"
+      style={{ height: "80px" }}
+    >
+      <div className="flex-1 min-w-0 grid grid-cols-6 gap-4 items-center">
+        <div className="font-mono text-sm text-muted-foreground">
+          {formatTimestamp(log.timestamp)}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Badge
+            className={
+              entityTypeLabels[log.entityType]?.color ||
+              "bg-gray-100 text-gray-800"
+            }
+          >
+            {entityTypeLabels[log.entityType]?.label || log.entityType}
+          </Badge>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Badge
+            className={
+              actionLabels[log.action]?.color || "bg-gray-100 text-gray-800"
+            }
+          >
+            {actionLabels[log.action]?.label || log.action}
+          </Badge>
+        </div>
+
+        <div className="font-mono text-sm truncate">{log.entityId}</div>
+
+        <div className="text-sm text-muted-foreground truncate">
+          {log.userEmail || "System"}
+        </div>
+
+        <div className="flex justify-end">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <Eye className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-auto">
+              <DialogHeader>
+                <DialogTitle>{t("auditLogDetails")}</DialogTitle>
+                <DialogDescription>
+                  {log.entityType} {log.action} -{" "}
+                  {new Date(log.timestamp).toLocaleString()}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium">{t("entityId")}</Label>
+                    <p className="font-mono text-sm mt-1">{log.entityId}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">{t("user")}</Label>
+                    <p className="text-sm mt-1">{log.userEmail || t("system")}</p>
+                  </div>
+                </div>
+                {log.changes && (
+                  <div>
+                    <Label className="text-sm font-medium">{t("changes")}</Label>
+                    <pre className="bg-muted p-3 rounded-md text-xs overflow-auto mt-1">
+                      {formatJsonData(log.changes)}
+                    </pre>
+                  </div>
+                )}
+                {log.oldValues && (
+                  <div>
+                    <Label className="text-sm font-medium">{t("oldValues")}</Label>
+                    <pre className="bg-muted p-3 rounded-md text-xs overflow-auto mt-1">
+                      {formatJsonData(log.oldValues)}
+                    </pre>
+                  </div>
+                )}
+                {log.newValues && (
+                  <div>
+                    <Label className="text-sm font-medium">{t("newValues")}</Label>
+                    <pre className="bg-muted p-3 rounded-md text-xs overflow-auto mt-1">
+                      {formatJsonData(log.newValues)}
+                    </pre>
+                  </div>
+                )}
+                {log.metadata && (
+                  <div>
+                    <Label className="text-sm font-medium">{t("metadata")}</Label>
+                    <pre className="bg-muted p-3 rounded-md text-xs overflow-auto mt-1">
+                      {formatJsonData(log.metadata)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function AuditLogTable() {
   const [page, setPage] = useState(1);
@@ -152,122 +274,6 @@ export function AuditLogTable() {
     });
   }
 
-  const formatTimestamp = (timestamp: string) => {
-    return new Date(timestamp).toLocaleDateString();
-  };
-
-  const formatJsonData = (data: any) => {
-    if (!data) return "N/A";
-    return JSON.stringify(data, null, 2);
-  };
-
-  const AuditLogRow = useMemo(() => {
-    const Component = ({ log }: { log: AuditLog }) => (
-      <div
-        key={log.id}
-        className="flex items-center border-b border-border p-4 hover:bg-muted/50 transition-colors"
-        style={{ height: "80px" }}
-      >
-        <div className="flex-1 min-w-0 grid grid-cols-6 gap-4 items-center">
-          <div className="font-mono text-sm text-muted-foreground">
-            {formatTimestamp(log.timestamp)}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Badge
-              className={
-                entityTypeLabels[log.entityType]?.color ||
-                "bg-gray-100 text-gray-800"
-              }
-            >
-              {entityTypeLabels[log.entityType]?.label || log.entityType}
-            </Badge>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Badge
-              className={
-                actionLabels[log.action]?.color || "bg-gray-100 text-gray-800"
-              }
-            >
-              {actionLabels[log.action]?.label || log.action}
-            </Badge>
-          </div>
-
-          <div className="font-mono text-sm truncate">{log.entityId}</div>
-
-          <div className="text-sm text-muted-foreground truncate">
-            {log.userEmail || "System"}
-          </div>
-
-          <div className="flex justify-end">
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <Eye className="h-4 w-4" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[80vh] overflow-auto">
-                <DialogHeader>
-                  <DialogTitle>{t("auditLogDetails")}</DialogTitle>
-                  <DialogDescription>
-                    {log.entityType} {log.action} -{" "}
-                    {new Date(log.timestamp).toLocaleString()}
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium">{t("entityId")}</Label>
-                      <p className="font-mono text-sm mt-1">{log.entityId}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium">{t("user")}</Label>
-                      <p className="text-sm mt-1">{log.userEmail || t("system")}</p>
-                    </div>
-                  </div>
-                  {log.changes && (
-                    <div>
-                      <Label className="text-sm font-medium">{t("changes")}</Label>
-                      <pre className="bg-muted p-3 rounded-md text-xs overflow-auto mt-1">
-                        {formatJsonData(log.changes)}
-                      </pre>
-                    </div>
-                  )}
-                  {log.oldValues && (
-                    <div>
-                      <Label className="text-sm font-medium">{t("oldValues")}</Label>
-                      <pre className="bg-muted p-3 rounded-md text-xs overflow-auto mt-1">
-                        {formatJsonData(log.oldValues)}
-                      </pre>
-                    </div>
-                  )}
-                  {log.newValues && (
-                    <div>
-                      <Label className="text-sm font-medium">{t("newValues")}</Label>
-                      <pre className="bg-muted p-3 rounded-md text-xs overflow-auto mt-1">
-                        {formatJsonData(log.newValues)}
-                      </pre>
-                    </div>
-                  )}
-                  {log.metadata && (
-                    <div>
-                      <Label className="text-sm font-medium">{t("metadata")}</Label>
-                      <pre className="bg-muted p-3 rounded-md text-xs overflow-auto mt-1">
-                        {formatJsonData(log.metadata)}
-                      </pre>
-                    </div>
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
-      </div>
-    );
-    Component.displayName = 'AuditLogRow';
-    return Component;
-  }, []);
   const auditLogs = data?.auditLogs || [];
   const shouldUseVirtualScrolling = auditLogs.length > 50;
 
@@ -423,13 +429,13 @@ export function AuditLogTable() {
               data={auditLogs}
               itemHeight={80}
               containerHeight={600}
-              renderItem={(log: AuditLog) => <AuditLogRow log={log} />}
+              renderItem={(log: AuditLog) => <AuditLogRow log={log} t={t} />}
               className="border-0"
             />
           ) : (
             <div className="max-h-[600px] overflow-auto">
               {auditLogs.map((log: AuditLog) => (
-                <AuditLogRow key={log.id} log={log} />
+                <AuditLogRow key={log.id} log={log} t={t} />
               ))}
             </div>
           )}

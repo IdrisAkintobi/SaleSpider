@@ -39,6 +39,7 @@ import { RecentSalesSkeleton } from "./recent-sales-skeleton";
 interface DailySalesData {
   name: string;
   sales: number;
+  [key: string]: string | number;
 }
 
 interface User {
@@ -54,7 +55,7 @@ interface Product {
 }
 
 interface ManagerOverviewProps {
-  period: string;
+  readonly period: string;
 }
 
 async function fetchProductsData() {
@@ -65,6 +66,118 @@ async function fetchProductsData() {
   }
   const data = await res.json();
   return data.products as Product[];
+}
+
+// Helper: Calculate stats from data
+function calculateStats(sales: Sale[], users: User[], products: Product[]) {
+  const totalSales = sales.reduce((sum: number, sale: Sale) => sum + sale.totalAmount, 0);
+  const totalOrders = sales.length;
+  const activeStaff = users.filter((u: User) => u.status === "ACTIVE" && u.role === "CASHIER").length;
+  const lowStockItems = products.filter((p: Product) => p.quantity <= p.lowStockMargin).length;
+  return { totalSales, totalOrders, activeStaff, lowStockItems };
+}
+
+// Helper: Calculate daily sales data
+function calculateDailySalesData(sales: Sale[], t: (key: string) => string): DailySalesData[] {
+  const today = new Date();
+  const dailyData: DailySalesData[] = Array(7)
+    .fill(null)
+    .map((_, i) => {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const dayNameKey = d.toLocaleDateString("en-US", { weekday: "short" }).toLowerCase();
+      const translatedDay = t(dayNameKey);
+      return { name: translatedDay, sales: 0 };
+    })
+    .reverse();
+
+  sales.forEach((sale: Sale) => {
+    const saleDate = new Date(sale.timestamp);
+    const diffDays = Math.floor(
+      (today.getTime() - saleDate.getTime()) / (1000 * 3600 * 24)
+    );
+    if (diffDays < 7) {
+      const dayIndex = 6 - diffDays;
+      if (dailyData[dayIndex]) {
+        dailyData[dayIndex].sales += sale.totalAmount;
+      }
+    }
+  });
+
+  return dailyData.map((d) => ({ ...d, sales: parseFloat(d.sales.toFixed(2)) }));
+}
+
+// Helper: Check if dates match
+function isSameDate(date1: Date, date2: Date): boolean {
+  return (
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate()
+  );
+}
+
+// Helper: Calculate sales for a specific date
+function calculateSalesForDate(sales: Sale[], targetDate: Date): number {
+  return sales
+    .filter((sale: Sale) => {
+      const saleDate = new Date(sale.timestamp);
+      return isSameDate(saleDate, targetDate);
+    })
+    .reduce((sum: number, sale: Sale) => sum + sale.totalAmount, 0);
+}
+
+// Helper: Calculate weekly sales comparison data
+function calculateWeeklySalesData(sales: Sale[], t: (key: string) => string) {
+  const today = new Date();
+  const days = Array(7)
+    .fill(null)
+    .map((_, i) => {
+      const d = new Date(today);
+      d.setDate(today.getDate() - (6 - i));
+      const dayNameKey = d.toLocaleDateString("en-US", { weekday: "short" }).toLowerCase();
+      return {
+        date: new Date(d.getFullYear(), d.getMonth(), d.getDate()),
+        name: t(dayNameKey),
+      };
+    });
+
+  return days.map((day) => {
+    const thisWeekSales = calculateSalesForDate(sales, day.date);
+    
+    const lastWeekDate = new Date(day.date);
+    lastWeekDate.setDate(lastWeekDate.getDate() - 7);
+    const lastWeekSales = calculateSalesForDate(sales, lastWeekDate);
+
+    return {
+      name: day.name,
+      thisWeek: parseFloat(thisWeekSales.toFixed(2)),
+      lastWeek: parseFloat(lastWeekSales.toFixed(2)),
+    };
+  });
+}
+
+// Helper: Format monthly chart data
+function formatMonthlyChartData(monthlyData: any[] | undefined, t: (key: string) => string) {
+  if (!monthlyData) return [];
+  return monthlyData.map(m => {
+    const monthDate = new Date(m.month + '-01');
+    const monthKey = monthDate.toLocaleString('en-US', { month: 'short' }).toLowerCase();
+    const translated = t(monthKey);
+    const capitalized = translated.charAt(0).toUpperCase() + translated.slice(1);
+    return {
+      name: capitalized,
+      sales: m.sales
+    };
+  });
+}
+
+// Helper: Get period description
+function getPeriodDescription(period: string, t: (key: string) => string, suffix: string): string {
+  if (period === "today") return t("today") + suffix;
+  if (period === "week") return t("this_week") + suffix;
+  if (period === "month") return t("this_month") + suffix;
+  if (period === "year") return t("this_year") + suffix;
+  return "All-time" + suffix;
 }
 
 export function ManagerOverview({ period }: ManagerOverviewProps) {
@@ -110,124 +223,111 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
   useEffect(() => {
     const error = salesError || usersError || productsError || statsError || monthlyError;
     if (error) {
+      console.error('Manager overview data fetch failed:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : String(error),
+        description: error instanceof Error ? error.message : t("failedToLoadData"),
         variant: "destructive",
       });
     }
-  }, [salesError, usersError, productsError, statsError, monthlyError, toast]);
+  }, [salesError, usersError, productsError, statsError, monthlyError, toast, t]);
 
   // Stabilize derived arrays to avoid changing deps in useMemo
   const sales: Sale[] = useMemo(() => salesData?.data ?? [], [salesData]);
   const users = useMemo(() => usersData?.data ?? [], [usersData]);
 
-  const statsMemo = useMemo(() => {
-    const totalSales = sales.reduce((sum: number, sale: Sale) => sum + sale.totalAmount, 0);
-    const totalOrders = sales.length;
-    const activeStaff = users.filter((u: User) => u.status === "ACTIVE" && u.role === "CASHIER").length;
-    const lowStockItems = products.filter((p: Product) => p.quantity <= p.lowStockMargin).length;
+  const statsMemo = useMemo(() => calculateStats(sales, users, products), [sales, users, products]);
 
-    return { totalSales, totalOrders, activeStaff, lowStockItems };
-  }, [sales, users, products]);
+  const dailySalesData = useMemo(() => calculateDailySalesData(sales, t), [sales, t]);
 
-  const dailySalesData = useMemo(() => {
-    const today = new Date();
-    const dailyData: DailySalesData[] = Array(7)
-      .fill(null)
-      .map((_, i) => {
-        const d = new Date(today);
-        d.setDate(today.getDate() - i);
-        const dayNameKey = d.toLocaleDateString("en-US", { weekday: "short" }).toLowerCase();
-        const translatedDay = t(dayNameKey);
-        return { name: translatedDay, sales: 0 };
-      })
-      .reverse();
-
-    sales.forEach((sale: Sale) => {
-      const saleDate = new Date(sale.timestamp);
-      const diffDays = Math.floor(
-        (today.getTime() - saleDate.getTime()) / (1000 * 3600 * 24)
-      );
-      if (diffDays < 7) {
-        const dayIndex = 6 - diffDays;
-        if (dailyData[dayIndex]) {
-          dailyData[dayIndex].sales += sale.totalAmount;
-        }
-      }
-    });
-
-    return dailyData.map((d) => ({ ...d, sales: parseFloat(d.sales.toFixed(2)) }));
-  }, [sales, t]);
-
-  // For weeklySalesData, map day.name to translation keys (e.g., t(dayNameKey))
-  const weeklySalesData = useMemo(() => {
-    const today = new Date();
-    const days = Array(7)
-      .fill(null)
-      .map((_, i) => {
-        const d = new Date(today);
-        d.setDate(today.getDate() - (6 - i));
-        const dayNameKey = d.toLocaleDateString("en-US", { weekday: "short" }).toLowerCase();
-        return {
-          date: new Date(d.getFullYear(), d.getMonth(), d.getDate()),
-          name: t(dayNameKey),
-        };
-      });
-
-    const weeklyData = days.map((day) => {
-      const thisWeekSales = sales
-        .filter((sale: Sale) => {
-          const saleDate = new Date(sale.timestamp);
-          return (
-            saleDate.getFullYear() === day.date.getFullYear() &&
-            saleDate.getMonth() === day.date.getMonth() &&
-            saleDate.getDate() === day.date.getDate()
-          );
-        })
-        .reduce((sum: number, sale: Sale) => sum + sale.totalAmount, 0);
-
-      const lastWeekDate = new Date(day.date);
-      lastWeekDate.setDate(lastWeekDate.getDate() - 7);
-      const lastWeekSales = sales
-        .filter((sale: Sale) => {
-          const saleDate = new Date(sale.timestamp);
-          return (
-            saleDate.getFullYear() === lastWeekDate.getFullYear() &&
-            saleDate.getMonth() === lastWeekDate.getMonth() &&
-            saleDate.getDate() === lastWeekDate.getDate()
-          );
-        })
-        .reduce((sum: number, sale: Sale) => sum + sale.totalAmount, 0);
-
-      return {
-        name: day.name,
-        thisWeek: parseFloat(thisWeekSales.toFixed(2)),
-        lastWeek: parseFloat(lastWeekSales.toFixed(2)),
-      };
-    });
-
-    return weeklyData;
-  }, [sales, t]);
+  const weeklySalesData = useMemo(() => calculateWeeklySalesData(sales, t), [sales, t]);
 
   const recentSales = useMemo(() => {
     return sales.slice(0, 5);
   }, [sales]);
 
-  // For monthlyChartData, map month names to translation keys (e.g., t('jan'), t('feb'), etc.)
-  const monthlyChartData = useMemo(() => {
-    if (!monthlyData) return [];
-    return monthlyData.map(m => {
-      const monthDate = new Date(m.month + '-01');
-      const monthKey = monthDate.toLocaleString('en-US', { month: 'short' }).toLowerCase();
-      const translated = t(monthKey);
-      const capitalized = translated.charAt(0).toUpperCase() + translated.slice(1);
-      return {
-        name: capitalized,
-        sales: m.sales
-      };
-    });
-  }, [monthlyData, t]);
+  const monthlyChartData = useMemo(() => formatMonthlyChartData(monthlyData, t), [monthlyData, t]);
+
+  // Helper function to render monthly chart with proper state handling
+  const renderMonthlyChart = () => {
+    if (isLoadingMonthly) {
+      return (
+        <div className="flex items-center justify-center h-[300px]">
+          {t("loading_data")}
+        </div>
+      );
+    }
+
+    if (monthlyError) {
+      return (
+        <div className="flex items-center justify-center h-[300px] text-destructive">
+          {t("failedToFetchMonthlySales")}
+        </div>
+      );
+    }
+
+    return (
+      <PerformanceChart
+        data={monthlyChartData}
+        title={t("monthly_sales_comparison")}
+        description={t("total_sales_per_month")}
+        xAxisDataKey="name"
+        barDataKey="sales"
+        comparisonType={comparisonType}
+        onComparisonTypeChange={v => setComparisonType(v as 'weekly' | 'monthly')}
+        comparisonOptions={[
+          { value: 'weekly', label: t("weekly") },
+          { value: 'monthly', label: t("monthly_last_6_months") },
+        ]}
+      />
+    );
+  };
+
+  // Helper function to render recent sales table with proper state handling
+  const renderRecentSalesTable = () => {
+    if (isLoadingSales) {
+      return <RecentSalesSkeleton />;
+    }
+
+    if (recentSales.length === 0) {
+      return (
+        <div className="text-center py-8 text-muted-foreground">
+          {t("no_recent_sales")}
+        </div>
+      );
+    }
+
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{t("order_id")}</TableHead>
+            <TableHead>{t("cashier")}</TableHead>
+            <TableHead>{t("amount")}</TableHead>
+            <TableHead>{t("date")}</TableHead>
+            <TableHead>{t("status")}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {recentSales.map((sale) => (
+            <TableRow key={sale.id}>
+              <TableCell className="font-medium">
+                {sale.id.substring(0, 8)}...
+              </TableCell>
+              <TableCell>{sale.cashierName}</TableCell>
+              <TableCell>{formatCurrency(sale.totalAmount)}</TableCell>
+              <TableCell>
+                {new Date(sale.timestamp).toLocaleDateString()}
+              </TableCell>
+              <TableCell>
+                <Badge variant="default">{t("completed")}</Badge>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    );
+  };
 
   // Loading state
   const isLoading = isLoadingSales || isLoadingUsers || isLoadingProducts || isLoadingStats || isLoadingMonthly;
@@ -264,13 +364,13 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
           title={t("total_revenue")}
           value={formatCurrency(stats?.totalSales ?? 0)}
           icon={DollarSign}
-          description={period === "today" ? t("today") + "'s sales" : period === "week" ? t("this_week") + "'s sales" : period === "month" ? t("this_month") + "'s sales" : period === "year" ? t("this_year") + "'s sales" : "All-time sales"}
+          description={getPeriodDescription(period, t, "'s sales")}
         />
         <StatsCard
           title={t("total_orders")}
           value={stats?.totalOrders ?? 0}
           icon={ShoppingCart}
-          description={period === "today" ? t("today") + "'s orders" : period === "week" ? t("this_week") + "'s orders" : period === "month" ? t("this_month") + "'s orders" : period === "year" ? t("this_year") + "'s orders" : "All-time orders"}
+          description={getPeriodDescription(period, t, "'s orders")}
         />
         <StatsCard
           title={t("active_cashiers")}
@@ -314,27 +414,7 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
             ]}
           />
         )}
-        {comparisonType === 'monthly' && (
-          isLoadingMonthly ? (
-            <div className="flex items-center justify-center h-[300px]">{t("loading_data")}</div>
-          ) : monthlyError ? (
-            <div className="flex items-center justify-center h-[300px] text-destructive">Failed to fetch monthly sales: {monthlyError.message}</div>
-          ) : (
-            <PerformanceChart
-              data={monthlyChartData}
-              title={t("monthly_sales_comparison")}
-              description={t("total_sales_per_month")}
-              xAxisDataKey="name"
-              barDataKey="sales"
-              comparisonType={comparisonType}
-              onComparisonTypeChange={v => setComparisonType(v as 'weekly' | 'monthly')}
-              comparisonOptions={[
-                { value: 'weekly', label: t("weekly") },
-                { value: 'monthly', label: t("monthly_last_6_months") },
-              ]}
-            />
-          )
-        )}
+        {comparisonType === 'monthly' && renderMonthlyChart()}
       </div>
 
       <Card className="shadow-lg">
@@ -345,42 +425,7 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
           </Button>
         </CardHeader>
         <CardContent>
-          {isLoadingSales ? (
-            <RecentSalesSkeleton />
-          ) : recentSales.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("order_id")}</TableHead>
-                  <TableHead>{t("cashier")}</TableHead>
-                  <TableHead>{t("amount")}</TableHead>
-                  <TableHead>{t("date")}</TableHead>
-                  <TableHead>{t("status")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recentSales.map((sale) => (
-                  <TableRow key={sale.id}>
-                    <TableCell className="font-medium">
-                      {sale.id.substring(0, 8)}...
-                    </TableCell>
-                    <TableCell>{sale.cashierName}</TableCell>
-                    <TableCell>{formatCurrency(sale.totalAmount)}</TableCell>
-                    <TableCell>
-                      {new Date(sale.timestamp).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="default">{t("completed")}</Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              {t("no_recent_sales")}
-            </div>
-          )}
+          {renderRecentSalesTable()}
         </CardContent>
       </Card>
     </div>

@@ -6,6 +6,69 @@ import { createChildLogger } from "@/lib/logger";
 
 const logger = createChildLogger('api:sales:stats');
 
+// Helper: Build date range where clause
+function buildDateRangeWhere(from?: Date, to?: Date) {
+  const where: any = { deletedAt: null };
+  
+  if (from && to) {
+    where.createdAt = { gte: from, lte: to };
+  } else if (from) {
+    where.createdAt = { gte: from };
+  } else if (to) {
+    where.createdAt = { lte: to };
+  }
+  
+  return where;
+}
+
+// Helper: Get stats for custom date range
+async function getCustomRangeStats(from?: Date, to?: Date) {
+  const rangeWhere = buildDateRangeWhere(from, to);
+  
+  const [todaySales, weekSales, monthSales] = await Promise.all([
+    prisma.sale.aggregate({ _sum: { totalAmount: true }, where: rangeWhere }),
+    prisma.sale.aggregate({ _sum: { totalAmount: true }, where: rangeWhere }),
+    prisma.sale.aggregate({ _sum: { totalAmount: true }, where: rangeWhere }),
+  ]);
+  
+  const monthly = (from && to) ? await getMonthlySales(prisma, from, to) : [];
+  
+  return { todaySales, weekSales, monthSales, monthly };
+}
+
+// Helper: Get default time-based stats (today, week, month)
+async function getDefaultStats() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  
+  const now = new Date();
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7)); // Monday
+  weekStart.setHours(0, 0, 0, 0);
+  
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  
+  const [todaySales, weekSales, monthSales, monthly] = await Promise.all([
+    prisma.sale.aggregate({
+      _sum: { totalAmount: true },
+      where: { deletedAt: null, createdAt: { gte: today, lt: tomorrow } },
+    }),
+    prisma.sale.aggregate({
+      _sum: { totalAmount: true },
+      where: { deletedAt: null, createdAt: { gte: weekStart } },
+    }),
+    prisma.sale.aggregate({
+      _sum: { totalAmount: true },
+      where: { deletedAt: null, createdAt: { gte: monthStart } },
+    }),
+    getMonthlySales(prisma),
+  ]);
+  
+  return { todaySales, weekSales, monthSales, monthly };
+}
+
 // Function to get sales stats
 export async function GET(req: NextRequest) {
   // Read the X-User-Id header set by the middleware
@@ -21,16 +84,8 @@ export async function GET(req: NextRequest) {
     const from = searchParams.get("from") ? new Date(searchParams.get("from")!) : undefined;
     const to = searchParams.get("to") ? new Date(searchParams.get("to")!) : undefined;
 
-    const aggregateWhere: any = { deletedAt: null };
-    if (from && to) {
-      aggregateWhere.createdAt = { gte: from, lte: to };
-    } else if (from) {
-      aggregateWhere.createdAt = { gte: from };
-    } else if (to) {
-      aggregateWhere.createdAt = { lte: to };
-    }
-
     // Total sales value, total orders, average sale value (optionally filtered by date range)
+    const aggregateWhere = buildDateRangeWhere(from, to);
     const aggregate = await prisma.sale.aggregate({
       _sum: { totalAmount: true },
       _count: { id: true },
@@ -38,96 +93,20 @@ export async function GET(req: NextRequest) {
       where: aggregateWhere,
     });
 
-    // Today's sales
-    let todaySales: { _sum: { totalAmount: number | null } } = { _sum: { totalAmount: 0 } };
-    let weekSales: { _sum: { totalAmount: number | null } } = { _sum: { totalAmount: 0 } };
-    let monthSales: { _sum: { totalAmount: number | null } } = { _sum: { totalAmount: 0 } };
-    let monthly: any[] = [];
-
-    if (from || to) {
-      // If a date range is provided, use it for all stats
-      const rangeWhere: Record<string, any> = { deletedAt: null };
-      if (from && to) {
-        rangeWhere["createdAt"] = { gte: from, lte: to };
-      } else if (from) {
-        rangeWhere["createdAt"] = { gte: from };
-      } else if (to) {
-        rangeWhere["createdAt"] = { lte: to };
-      }
-
-      todaySales = await prisma.sale.aggregate({
-        _sum: { totalAmount: true },
-        where: rangeWhere,
-      });
-      weekSales = await prisma.sale.aggregate({
-        _sum: { totalAmount: true },
-        where: rangeWhere,
-      });
-      monthSales = await prisma.sale.aggregate({
-        _sum: { totalAmount: true },
-        where: rangeWhere,
-      });
-
-      // Monthly stats: group by month within the range
-      if (from && to) {
-        monthly = await getMonthlySales(prisma, from, to);
-      }
-    } else {
-      // Default logic (no date range)
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(today.getDate() + 1);
-      todaySales = await prisma.sale.aggregate({
-        _sum: { totalAmount: true },
-        where: {
-          deletedAt: null,
-          createdAt: {
-            gte: today,
-            lt: tomorrow,
-          },
-        },
-      });
-
-      // This week's sales (from Monday)
-      const now = new Date();
-      const weekStart = new Date(now);
-      weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7)); // Monday
-      weekStart.setHours(0, 0, 0, 0);
-      weekSales = await prisma.sale.aggregate({
-        _sum: { totalAmount: true },
-        where: {
-          deletedAt: null,
-          createdAt: {
-            gte: weekStart,
-          },
-        },
-      });
-
-      // This month's sales
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      monthSales = await prisma.sale.aggregate({
-        _sum: { totalAmount: true },
-        where: {
-          deletedAt: null,
-          createdAt: {
-            gte: monthStart,
-          },
-        },
-      });
-
-      // Monthly sales for last 6 months
-      monthly = await getMonthlySales(prisma);
-    }
+    // Get period-specific stats based on whether date range is provided
+    const hasDateRange = from || to;
+    const stats = hasDateRange 
+      ? await getCustomRangeStats(from, to)
+      : await getDefaultStats();
 
     return jsonOk({
       totalSales: aggregate._sum.totalAmount ?? 0,
       totalOrders: aggregate._count.id ?? 0,
       averageSale: aggregate._avg.totalAmount ?? 0,
-      todaySales: todaySales._sum.totalAmount ?? 0,
-      weekSales: weekSales._sum.totalAmount ?? 0,
-      monthSales: monthSales._sum.totalAmount ?? 0,
-      monthly,
+      todaySales: stats.todaySales._sum.totalAmount ?? 0,
+      weekSales: stats.weekSales._sum.totalAmount ?? 0,
+      monthSales: stats.monthSales._sum.totalAmount ?? 0,
+      monthly: stats.monthly,
     });
   } catch (error) {
     logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to fetch sales stats');

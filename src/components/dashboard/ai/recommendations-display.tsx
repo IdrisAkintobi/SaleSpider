@@ -45,21 +45,8 @@ interface AIInsightsData {
 }
 
 interface AIRecommendationsDisplayProps {
-  recommendations: AIInsightsData | null;
+  readonly recommendations: AIInsightsData | null;
 }
-
-// Helper function to convert markdown-like text to HTML
-const formatRecommendationText = (text: string) => {
-  return text
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    .replace(/^- (.*$)/gim, '<li>$1</li>')
-    .replace(/(<li>[\s\S]*?<\/li>)/g, '<ul>$1</ul>')
-    .replace(/\n\n/g, '</p><p>')
-    .replace(/^(.*)$/gm, '<p>$1</p>')
-    .replace(/<p><\/p>/g, '')
-    .replace(/<p>(<ul>[\s\S]*?<\/ul>)<\/p>/g, '$1');
-};
 
 export function AIRecommendationsDisplay({ recommendations }: AIRecommendationsDisplayProps) {
   if (!recommendations) {
@@ -98,7 +85,7 @@ export function AIRecommendationsDisplay({ recommendations }: AIRecommendationsD
               <div 
                 className="prose prose-sm max-w-none text-foreground"
                 dangerouslySetInnerHTML={{ 
-                  __html: formatRecommendationText(aiRecs.optimalLevels) 
+                  __html: aiRecs.optimalLevels 
                 }}
               />
             </TabsContent>
@@ -107,7 +94,7 @@ export function AIRecommendationsDisplay({ recommendations }: AIRecommendationsD
               <div 
                 className="prose prose-sm max-w-none text-foreground"
                 dangerouslySetInnerHTML={{ 
-                  __html: formatRecommendationText(aiRecs.promotionalOpportunities) 
+                  __html: aiRecs.promotionalOpportunities 
                 }}
               />
             </TabsContent>
@@ -116,7 +103,7 @@ export function AIRecommendationsDisplay({ recommendations }: AIRecommendationsD
               <div 
                 className="prose prose-sm max-w-none text-foreground"
                 dangerouslySetInnerHTML={{ 
-                  __html: formatRecommendationText(aiRecs.reorderAmounts) 
+                  __html: aiRecs.reorderAmounts 
                 }}
               />
             </TabsContent>

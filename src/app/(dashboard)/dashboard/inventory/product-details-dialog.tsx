@@ -50,9 +50,11 @@ export function ProductDetailsDialog({
 
           <div className="grid gap-4 py-2">
             <div className="flex items-start gap-4">
-              <div 
-                className="w-24 h-24 flex-shrink-0 bg-muted rounded-md cursor-pointer hover:opacity-80 transition-opacity"
+              <button 
+                type="button"
+                className="w-24 h-24 flex-shrink-0 bg-muted rounded-md cursor-pointer hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 onClick={() => setImagePreview(product.imageUrl ?? "https://placehold.co/120x120.png?text=N/A")}
+                aria-label={`${t("view_full_image")}: ${product.name}`}
               >
                 <Image
                   src={product.imageUrl ?? "https://placehold.co/120x120.png?text=N/A"}
@@ -61,7 +63,7 @@ export function ProductDetailsDialog({
                   height={96}
                   className="rounded-md object-contain border w-full h-full"
                 />
-              </div>
+              </button>
               <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
                 <div className="text-muted-foreground">{t("category")}</div>
                 <div>{product.category}</div>
@@ -102,6 +104,7 @@ export function ProductDetailsDialog({
       {/* Image Preview Dialog */}
       <Dialog open={!!imagePreview} onOpenChange={() => setImagePreview(null)}>
         <DialogContent className="max-w-4xl p-0 overflow-hidden">
+          <DialogTitle className="sr-only">Product Image Preview</DialogTitle>
           <div className="relative w-full h-[80vh] bg-black">
             <Button
               variant="ghost"
@@ -111,12 +114,14 @@ export function ProductDetailsDialog({
             >
               <X className="h-4 w-4" />
             </Button>
-            <Image
-              src={imagePreview ?? ""}
-              alt="Product preview"
-              fill
-              className="object-contain"
-            />
+            {imagePreview && (
+              <Image
+                src={imagePreview}
+                alt="Product preview"
+                fill
+                className="object-contain"
+              />
+            )}
           </div>
         </DialogContent>
       </Dialog>

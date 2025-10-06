@@ -10,6 +10,7 @@ const productDetailsDialogTranslations: Record<string, Record<string, string>> =
   en: {
     product_details: "Product Details",
     view_product_information: "View product information",
+    view_full_image: "View full image",
     created_at: "Date Created",
     category: "Category",
     description: "Description",
@@ -18,6 +19,7 @@ const productDetailsDialogTranslations: Record<string, Record<string, string>> =
   fr: {
     product_details: "Détails du produit",
     view_product_information: "Voir les informations du produit",
+    view_full_image: "Voir l'image complète",
     created_at: "Date de création",
     category: "Catégorie",
     description: "Description",
@@ -26,6 +28,7 @@ const productDetailsDialogTranslations: Record<string, Record<string, string>> =
   es: {
     product_details: "Detalles del producto",
     view_product_information: "Ver información del producto",
+    view_full_image: "Ver imagen completa",
     created_at: "Fecha de creación",
     category: "Categoría",
     description: "Descripción",
@@ -34,6 +37,7 @@ const productDetailsDialogTranslations: Record<string, Record<string, string>> =
   de: {
     product_details: "Produktdetails",
     view_product_information: "Produktinformationen anzeigen",
+    view_full_image: "Vollbild anzeigen",
     created_at: "Erstellungsdatum",
     category: "Kategorie",
     description: "Beschreibung",
@@ -187,6 +191,8 @@ const translations: Record<string, Record<string, string>> = {
     no_data_found: "No data found",
     loading_data: "Loading data...",
     retry: "Retry",
+    failedToLoadData: "Failed to load data",
+    failedToFetchMonthlySales: "Failed to fetch monthly sales",
     // Cashier Overview
     my_total_sales_value: "My Total Sales Value",
     all_sales_recorded: "All sales you've recorded.",
@@ -461,6 +467,8 @@ const translations: Record<string, Record<string, string>> = {
     no_data_found: "Aucune donnée trouvée",
     loading_data: "Chargement des données...",
     retry: "Réessayer",
+    failedToLoadData: "Échec du chargement des données",
+    failedToFetchMonthlySales: "Échec de la récupération des ventes mensuelles",
     // Cashier Overview
     my_total_sales_value: "Ma valeur totale des ventes",
     all_sales_recorded: "Toutes les ventes que vous avez enregistrées.",
@@ -738,6 +746,8 @@ const translations: Record<string, Record<string, string>> = {
     no_data_found: "No se encontraron datos",
     loading_data: "Cargando datos...",
     retry: "Reintentar",
+    failedToLoadData: "Error al cargar datos",
+    failedToFetchMonthlySales: "Error al obtener ventas mensuales",
     // Cashier Overview
     my_total_sales_value: "Mi valor total de ventas",
     all_sales_recorded: "Todas las ventas que has registrado.",
@@ -1014,6 +1024,8 @@ const translations: Record<string, Record<string, string>> = {
     no_data_found: "Keine Daten gefunden",
     loading_data: "Daten werden geladen...",
     retry: "Erneut versuchen",
+    failedToLoadData: "Fehler beim Laden der Daten",
+    failedToFetchMonthlySales: "Fehler beim Abrufen der monatlichen Verkäufe",
     // Cashier Overview
     my_total_sales_value: "Mein Gesamtverkaufswert",
     all_sales_recorded: "Alle Verkäufe, die Sie aufgezeichnet haben.",
@@ -1208,10 +1220,11 @@ export function formatTime(date: Date, timeFormat?: string): string {
   switch (format) {
     case "HH:mm":
       return `${hours.toString().padStart(2, "0")}:${minutes}`;
-    case "hh:mm a":
+    case "hh:mm a": {
       const period = hours >= 12 ? "PM" : "AM";
       const displayHours = hours % 12 || 12;
       return `${displayHours}:${minutes} ${period}`;
+    }
     default:
       return date.toLocaleTimeString();
   }
