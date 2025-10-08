@@ -91,6 +91,6 @@ docker-compose restart postgres backup  # Apply changes
 - Stanza-specific settings
 
 ### Dynamic (conf.d/repo.conf)
-- Repository type (posix, s3, azure, gcs)
+- Repository type (none, posix, s3, azure, gcs)
 - Repository path
 - Cloud storage credentials (S3/Azure/GCS)

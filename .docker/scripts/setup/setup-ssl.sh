@@ -45,6 +45,18 @@ DOMAIN="${DOMAIN:-salespider.local}"
 HOST_IP="${HOST_IP:-127.0.0.1}"
 CERT_DAYS="${CERT_DAYS:-3650}"  # 10 years
 
+# Auto-detect or validate HOST_IP
+if [ "$HOST_IP" = "auto" ]; then
+    echo -e "${BLUE}Auto-detecting server IP address...${NC}"
+    # Try to get the server's external IP
+    HOST_IP=$(hostname -I 2>/dev/null | awk '{print $1}' || hostname -i 2>/dev/null | awk '{print $1}' || ip route get 1 2>/dev/null | awk '{print $7; exit}' || echo "127.0.0.1")
+    echo -e "${GREEN}Detected IP: $HOST_IP${NC}"
+elif ! echo "$HOST_IP" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'; then
+    echo -e "${YELLOW}⚠ Invalid HOST_IP format: $HOST_IP${NC}"
+    echo -e "${BLUE}Using fallback IP: 127.0.0.1${NC}"
+    HOST_IP="127.0.0.1"
+fi
+
 # Check if certificates already exist
 if [ -f "${SSL_DIR}/cert.pem" ] && [ -f "${SSL_DIR}/key.pem" ]; then
     echo -e "${YELLOW}⚠ Certificates already exist!${NC}"
@@ -55,7 +67,7 @@ if [ -f "${SSL_DIR}/cert.pem" ] && [ -f "${SSL_DIR}/key.pem" ]; then
         echo ""
         read -p "$(echo -e ${YELLOW}Do you want to regenerate them? [y/N]: ${NC})" -n 1 -r
         echo ""
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        if [ "$REPLY" != "y" ] && [ "$REPLY" != "Y" ]; then
             echo -e "${BLUE}Using existing certificates${NC}"
             exit 0
         fi
@@ -107,17 +119,17 @@ IP.2 = 127.0.0.1
 IP.3 = ::1
 EOF
 
-# Generate private key
+# Generate private key using Docker
 echo -e "${YELLOW}→ Generating private key...${NC}"
-openssl genrsa -out "${SSL_DIR}/key.pem" 2048 2>/dev/null
+docker run --rm -v "${SSL_DIR}:/ssl" alpine/openssl genrsa -out /ssl/key.pem 2048
 
-# Generate certificate
+# Generate certificate using Docker
 echo -e "${YELLOW}→ Generating certificate...${NC}"
-openssl req -new -x509 \
-    -key "${SSL_DIR}/key.pem" \
-    -out "${SSL_DIR}/cert.pem" \
+docker run --rm -v "${SSL_DIR}:/ssl" alpine/openssl req -new -x509 \
+    -key /ssl/key.pem \
+    -out /ssl/cert.pem \
     -days ${CERT_DAYS} \
-    -config "${SSL_DIR}/openssl.cnf" 2>/dev/null
+    -config /ssl/openssl.cnf
 
 # Set proper permissions
 chmod 644 "${SSL_DIR}/cert.pem"
@@ -132,9 +144,9 @@ echo -e "  • ${SSL_DIR}/key.pem (private key)"
 echo -e "  • ${SSL_DIR}/openssl.cnf (configuration)"
 echo ""
 
-# Display certificate info
+# Display certificate info using Docker
 echo -e "${BLUE}Certificate details:${NC}"
-openssl x509 -in "${SSL_DIR}/cert.pem" -noout -subject -issuer -dates -ext subjectAltName | sed 's/^/  /'
+docker run --rm -v "${SSL_DIR}:/ssl" alpine/openssl x509 -in /ssl/cert.pem -noout -subject -issuer -dates -ext subjectAltName | sed 's/^/  /'
 echo ""
 
 echo -e "${GREEN}╔════════════════════════════════════════════════════════════╗${NC}"

@@ -3,7 +3,8 @@ services:
     build:
       context: ../postgres
       dockerfile: Dockerfile
-    image: salespider-postgres:17
+      tags:
+        - salespider-postgres:17
     container_name: ${COMPOSE_PROJECT_NAME:-salespider}-postgres
 
     environment:
@@ -32,7 +33,7 @@ services:
       - POSTGRES_LOG_MIN_DURATION_STATEMENT=${POSTGRES_LOG_MIN_DURATION_STATEMENT:-1000}
 
       # pgBackRest Configuration
-      - PGBACKREST_REPO1_TYPE=${PGBACKREST_REPO1_TYPE:-posix}
+      - PGBACKREST_REPO1_TYPE=${PGBACKREST_REPO1_TYPE:-none}
       - PGBACKREST_REPO1_PATH=${PGBACKREST_REPO1_PATH:-/var/lib/pgbackrest}
       - PGBACKREST_REPO1_S3_BUCKET=${AWS_S3_BUCKET:-}
       - PGBACKREST_REPO1_S3_ENDPOINT=${AWS_S3_ENDPOINT:-}

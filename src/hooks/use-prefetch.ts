@@ -30,7 +30,7 @@ export function usePrefetchOnHover() {
     queryClient.prefetchQuery({
       queryKey: queryKeys.auditLogs.lists(),
       queryFn: () => fetch('/api/audit-logs').then(res => res.json()),
-      staleTime: 0, // Always fresh for compliance
+      staleTime: 1000 * 30, // 30 seconds - same as regular cache
     });
   };
 
@@ -82,6 +82,7 @@ export function useIntelligentPrefetch() {
       queryClient.prefetchQuery({
         queryKey: queryKeys.auditLogs.lists(),
         queryFn: () => fetch('/api/audit-logs').then(res => res.json()),
+        staleTime: 1000 * 30, // 30 seconds - same as regular cache
       });
     }
   };

@@ -14,7 +14,7 @@ The pgBackRest configuration system uses a **centralized generation approach** w
 │     config/pgbackrest/pgbackrest.conf                       │
 │                                                              │
 │  2. Reads environment variables:                            │
-│     - PGBACKREST_REPO1_TYPE (posix/s3/azure/gcs)           │
+│     - PGBACKREST_REPO1_TYPE (none/posix/s3/azure/gcs)           │
 │     - S3/Azure/GCS credentials                             │
 │                                                              │
 │  3. Generates complete configuration:                       │
@@ -116,7 +116,7 @@ The pgBackRest configuration system uses a **centralized generation approach** w
 **Location:** Generated at `/etc/pgbackrest/conf.d/repo.conf`
 
 **Contains:**
-- Repository type (posix/s3/azure/gcs)
+- Repository type (none/posix/s3/azure/gcs)
 - Repository path
 - Cloud storage credentials (S3/Azure/GCS)
 
