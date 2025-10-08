@@ -195,7 +195,7 @@ export default function InventoryPage() {
       />
 
       <ProductDetailsDialog
-        isOpen={isDetailsDialogOpen}
+        open={isDetailsDialogOpen}
         onOpenChange={handleCloseDetailsDialog}
         product={selectedProductForDetails}
       />

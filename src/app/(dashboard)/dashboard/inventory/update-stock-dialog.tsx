@@ -82,12 +82,9 @@ export function UpdateStockDialog({
           <FormInput
             label={t('quantity')}
             name="quantity"
+            type="number"
             control={stockForm.control}
             error={stockForm.formState.errors.quantity?.message}
-            onChange={(value) =>
-              stockForm.setValue("quantity", parseInt(value, 10) || 0)
-            }
-            type="number"
           />
           <DialogFooter>
             <DialogClose asChild>

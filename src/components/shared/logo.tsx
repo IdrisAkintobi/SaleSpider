@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSettingsContext } from "@/contexts/settings-context";
@@ -25,7 +25,7 @@ export function Logo({
 
   return (
     <Link href="/" className={`flex items-center gap-2 ${className}`}>
-      {appLogo ? (
+      {appLogo && appLogo.trim() !== "" ? (
         <Image
           src={appLogo}
           alt={appName}
@@ -37,7 +37,7 @@ export function Logo({
         />
       ) : (
         <div className="p-1.5 bg-primary rounded-lg">
-          <Activity size={iconSize} className="text-primary-foreground" />
+          <ShoppingCart size={iconSize} className="text-primary-foreground" />
         </div>
       )}
       {showText && (

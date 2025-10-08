@@ -124,46 +124,54 @@ export function CashierOverview() {
           </Button>
         </CardHeader>
         <CardContent>
-          {isLoadingSales ? (
-            <RecentSalesSkeleton />
-          ) : recentSales.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("order_id")}</TableHead>
-                  <TableHead>{t("amount")}</TableHead>
-                  <TableHead>{t("payment_mode")}</TableHead>
-                  <TableHead>{t("date")}</TableHead>
-                  <TableHead>{t("status")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recentSales.map((sale) => (
-                  <TableRow key={sale.id}>
-                    <TableCell className="font-medium">
-                      {sale.id.substring(0, 8)}...
-                    </TableCell>
-                    <TableCell>{formatCurrency(sale.totalAmount)}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{sale.paymentMode}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(sale.timestamp).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-white">
-                        {t("completed")}
-                      </Badge>
-                    </TableCell>
+          {(() => {
+            if (isLoadingSales) {
+              return <RecentSalesSkeleton />;
+            }
+
+            if (recentSales.length === 0) {
+              return (
+                <div className="text-center py-8 text-muted-foreground">
+                  {t("no_recent_sales")}
+                </div>
+              );
+            }
+
+            return (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("order_id")}</TableHead>
+                    <TableHead>{t("amount")}</TableHead>
+                    <TableHead>{t("payment_mode")}</TableHead>
+                    <TableHead>{t("date")}</TableHead>
+                    <TableHead>{t("status")}</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              {t("no_recent_sales")}
-            </div>
-          )}
+                </TableHeader>
+                <TableBody>
+                  {recentSales.map((sale) => (
+                    <TableRow key={sale.id}>
+                      <TableCell className="font-medium">
+                        {sale.id.substring(0, 8)}...
+                      </TableCell>
+                      <TableCell>{formatCurrency(sale.totalAmount)}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{sale.paymentMode}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {new Date(sale.timestamp).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-white">
+                          {t("completed")}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            );
+          })()}
         </CardContent>
       </Card>
     </div>

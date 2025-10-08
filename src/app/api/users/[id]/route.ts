@@ -1,8 +1,10 @@
-import { PrismaClient, Role, UserStatus } from "@prisma/client";
+import { Role, UserStatus } from "@prisma/client";
 import { NextRequest } from "next/server";
 import { jsonOk, jsonError, handleException } from "@/lib/api-response";
+import { createChildLogger } from "@/lib/logger";
 
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
+const logger = createChildLogger('api:users:id');
 
 // Function to update user status
 export async function PATCH(
@@ -56,6 +58,7 @@ export async function PATCH(
 
     return jsonOk(updatedUser);
   } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to update user status');
     return handleException(error, "Failed to update user status", 500);
   }
 }

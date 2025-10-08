@@ -1,0 +1,141 @@
+services:
+  setup:
+    image: alpine:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-salespider}-setup
+    
+    environment:
+      # Database Configuration
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_DB=${POSTGRES_DB:-salespider}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      
+      # Application Configuration
+      - SUPER_ADMIN_EMAIL=${SUPER_ADMIN_EMAIL:-admin@salespider.local}
+      - SUPER_ADMIN_PASSWORD=${SUPER_ADMIN_PASSWORD}
+      - APP_URL=${APP_URL:-https://${DOMAIN:-salespider.local}}
+      
+      # SSL Configuration
+      - DOMAIN=${DOMAIN:-salespider.local}
+      - HOST_IP=${HOST_IP:-127.0.0.1}
+      - CERT_DAYS=${CERT_DAYS:-3650}
+      
+      # pgBackRest Configuration
+      - PGBACKREST_REPO1_TYPE=${PGBACKREST_REPO1_TYPE:-posix}
+      - PGBACKREST_REPO1_PATH=${PGBACKREST_REPO1_PATH:-/var/lib/pgbackrest}
+      - PGBACKREST_REPO1_S3_BUCKET=${AWS_S3_BUCKET:-}
+      - PGBACKREST_REPO1_S3_ENDPOINT=${AWS_S3_ENDPOINT:-}
+      - PGBACKREST_REPO1_S3_REGION=${AWS_REGION:-}
+      - PGBACKREST_REPO1_S3_KEY=${AWS_ACCESS_KEY_ID:-}
+      - PGBACKREST_REPO1_S3_KEY_SECRET=${AWS_SECRET_ACCESS_KEY:-}
+      - PGBACKREST_REPO1_AZURE_ACCOUNT=${AZURE_STORAGE_ACCOUNT:-}
+      - PGBACKREST_REPO1_AZURE_KEY=${AZURE_STORAGE_KEY:-}
+      - PGBACKREST_REPO1_AZURE_CONTAINER=${AZURE_STORAGE_CONTAINER:-}
+      - PGBACKREST_REPO1_GCS_BUCKET=${GCS_BUCKET:-}
+      - PGBACKREST_REPO1_GCS_KEY=${GCS_KEY:-}
+      
+      # Setup Options
+      - SKIP_SEED=${SKIP_SEED:-false}
+      - FORCE_RESET=${FORCE_RESET:-false}
+      - SETUP_BACKUP=${SETUP_BACKUP:-true}
+    
+    volumes:
+      - ../scripts/setup:/scripts:ro
+      - ../config/pgbackrest/pgbackrest.conf:/base-config/pgbackrest.conf:ro
+      - ${DATA_PATH:-../data}/ssl:/ssl
+      - backup-data:/backup-data
+      - pgbackrest-config:/pgbackrest-config
+      - app-logs:/logs
+    
+    command: |
+      sh -c '
+        set -e  # exit on any error
+        echo "Starting SaleSpider setup..."
+
+        # Install required packages
+        apk add --no-cache curl postgresql-client openssl
+
+        # Wait for PostgreSQL to be ready
+        echo "Waiting for PostgreSQL to be ready..."
+        until pg_isready -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER; do
+          echo "PostgreSQL is unavailable - sleeping"
+          sleep 2
+        done
+
+        echo "PostgreSQL is ready - executing setup scripts"
+
+        # Run database setup
+        if [ -f /scripts/setup-database.sh ]; then
+          echo "Setting up database..."
+          sh /scripts/setup-database.sh
+        fi
+
+        # Run SSL setup
+        if [ -f /scripts/setup-ssl.sh ]; then
+          echo "Setting up SSL certificates..."
+          sh /scripts/setup-ssl.sh
+        fi
+
+        # Run pgBackRest configuration
+        if [ -f /scripts/configure-pgbackrest.sh ]; then
+          echo "Configuring pgBackRest..."
+          sh /scripts/configure-pgbackrest.sh
+        fi
+
+        # Run application setup
+        if [ -f /scripts/setup-application.sh ]; then
+          echo "Setting up application..."
+          sh /scripts/setup-application.sh
+        fi
+
+        # Run custom setup scripts
+        for script in /scripts/custom/*.sh; do
+          if [ -f "$script" ]; then
+            echo "Running custom setup script: $script"
+            "$script"
+          fi
+        done
+
+        echo "Setup completed successfully"
+
+        # Create completion marker
+        touch /logs/setup-completed
+
+        # Keep container running if requested
+        if [ "$KEEP_RUNNING" = "true" ]; then
+          tail -f /dev/null
+        fi
+      '
+
+    restart: "no"
+    
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+    
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+    
+    networks:
+      - salespider-net
+
+volumes:
+  backup-data:
+    external: true
+  pgbackrest-config:
+    external: true
+  app-logs:
+    external: true
+
+networks:
+  salespider-net:
+    external: true

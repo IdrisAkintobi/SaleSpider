@@ -17,7 +17,7 @@ import { useForm, type SubmitHandler } from "react-hook-form";
 import * as z from "zod";
 
 const loginSchema = z.object({
-  username: z.string().min(1, "Username is required"),
+  username: z.string().min(1, "Email or username is required"),
   password: z.string().min(1, "Password is required"),
 });
 
@@ -34,14 +34,14 @@ export function LoginForm() {
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
-    await login(data.username, data.password);
+  const onSubmit: SubmitHandler<LoginFormInputs> = (data) => {
+    login(data.username, data.password);
   };
 
   return (
     <Card className="w-full shadow-xl">
       <CardHeader>
-        <CardTitle className="text-3xl font-bold text-center text-primary">
+        <CardTitle className="text-3xl font-bold text-center text-blue-600 dark:text-blue-400">
           Welcome Back!
         </CardTitle>
         <CardDescription className="text-center">
@@ -51,11 +51,11 @@ export function LoginForm() {
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="username">Email or Username</Label>
             <Input
               id="username"
               type="text"
-              placeholder="e.g., manager01"
+              placeholder="e.g., manager01 or user@example.com"
               {...register("username")}
               className={errors.username ? "border-destructive" : ""}
             />

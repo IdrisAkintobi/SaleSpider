@@ -49,7 +49,6 @@ export function UpdateProductDialog({
   const {
     register,
     handleSubmit,
-    setValue,
     reset,
     control,
     formState: { errors },
@@ -122,6 +121,7 @@ export function UpdateProductDialog({
           </DialogDescription>
         </DialogHeader>
         <form
+          key={product.id}
           onSubmit={handleSubmit(handleProductUpdate)}
           className="grid gap-4 py-4"
         >
@@ -151,7 +151,6 @@ export function UpdateProductDialog({
             type="number"
             step="0.01"
             control={control}
-            onChange={(value) => setValue("price", parseFloat(value) || 0)}
             error={errors.price?.message}
           />
           <FormInput
@@ -159,9 +158,6 @@ export function UpdateProductDialog({
             name="lowStockMargin"
             type="number"
             control={control}
-            onChange={(value) =>
-              setValue("lowStockMargin", parseInt(value) || 0)
-            }
             error={errors.lowStockMargin?.message}
           />
           <FormInput
@@ -176,6 +172,8 @@ export function UpdateProductDialog({
             name="gtin"
             register={register}
             error={errors.gtin?.message}
+            disabled={!!(product.gtin && product.gtin.trim())}
+            placeholder={product.gtin && product.gtin.trim() ? "GTIN cannot be changed once set" : "Enter GTIN"}
           />
 
           <DialogFooter>

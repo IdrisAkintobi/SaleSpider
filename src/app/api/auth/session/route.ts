@@ -3,10 +3,9 @@ import { jwtVerify } from "jose";
 import { JWTExpired } from "jose/errors";
 import { NextRequest, NextResponse } from "next/server";
 import { clearAuthToken } from "@/app/api/auth/lib/cookie-handler";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { createChildLogger } from "@/lib/logger";
 
-const prisma = new PrismaClient();
 const logger = createChildLogger('api:auth:session');
 
 // Function to get session

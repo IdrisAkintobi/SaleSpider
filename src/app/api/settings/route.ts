@@ -148,6 +148,7 @@ export async function PATCH(request: NextRequest) {
     logger.info({ userId: user.id, settingsId: updatedSettings.id }, 'PATCH /api/settings success');
     return jsonOk(updatedSettings);
   } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to update settings');
     return handleException(error, 'Failed to update settings', 500);
   }
 }

@@ -38,8 +38,6 @@ import { useFormatCurrency } from "@/lib/currency";
 import { useTranslation } from "@/lib/i18n";
 import { PAYMENT_METHODS } from "@/lib/constants";
 import { useSettingsContext } from "@/contexts/settings-context";
-// IntersectionObserver is handled inside ProductGrid
-// import { useIntersectionObserver } from "@/hooks/use-intersection-observer";
 import { ProductSearch } from "@/components/dashboard/record-sale/product-search";
 import { ProductGrid } from "@/components/dashboard/record-sale/product-grid";
 import { useProducts } from "@/hooks/use-products";

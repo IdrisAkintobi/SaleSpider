@@ -1,0 +1,123 @@
+services:
+  postgres:
+    build:
+      context: ../postgres
+      dockerfile: Dockerfile
+    image: salespider-postgres:17
+    container_name: ${COMPOSE_PROJECT_NAME:-salespider}-postgres
+
+    environment:
+      # PostgreSQL Configuration
+      - POSTGRES_DB=${POSTGRES_DB:-salespider}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_INITDB_ARGS=${POSTGRES_INITDB_ARGS:---auth-host=md5}
+
+      # Performance Tuning
+      - POSTGRES_SHARED_BUFFERS=${POSTGRES_SHARED_BUFFERS:-256MB}
+      - POSTGRES_EFFECTIVE_CACHE_SIZE=${POSTGRES_EFFECTIVE_CACHE_SIZE:-1GB}
+      - POSTGRES_WORK_MEM=${POSTGRES_WORK_MEM:-4MB}
+      - POSTGRES_MAINTENANCE_WORK_MEM=${POSTGRES_MAINTENANCE_WORK_MEM:-64MB}
+      - POSTGRES_MAX_CONNECTIONS=${POSTGRES_MAX_CONNECTIONS:-100}
+
+      # WAL Configuration for Backup (pgBackRest)
+      - POSTGRES_WAL_LEVEL=replica
+      - POSTGRES_ARCHIVE_MODE=on
+      - POSTGRES_ARCHIVE_COMMAND=pgbackrest --stanza=salespider archive-push %p
+      - POSTGRES_MAX_WAL_SENDERS=${POSTGRES_MAX_WAL_SENDERS:-3}
+      - POSTGRES_WAL_KEEP_SIZE=${POSTGRES_WAL_KEEP_SIZE:-1GB}
+
+      # Logging
+      - POSTGRES_LOG_STATEMENT=${POSTGRES_LOG_STATEMENT:-none}
+      - POSTGRES_LOG_MIN_DURATION_STATEMENT=${POSTGRES_LOG_MIN_DURATION_STATEMENT:-1000}
+
+      # pgBackRest Configuration
+      - PGBACKREST_REPO1_TYPE=${PGBACKREST_REPO1_TYPE:-posix}
+      - PGBACKREST_REPO1_PATH=${PGBACKREST_REPO1_PATH:-/var/lib/pgbackrest}
+      - PGBACKREST_REPO1_S3_BUCKET=${AWS_S3_BUCKET:-}
+      - PGBACKREST_REPO1_S3_ENDPOINT=${AWS_S3_ENDPOINT:-}
+      - PGBACKREST_REPO1_S3_REGION=${AWS_REGION:-}
+      - PGBACKREST_REPO1_S3_KEY=${AWS_ACCESS_KEY_ID:-}
+      - PGBACKREST_REPO1_S3_KEY_SECRET=${AWS_SECRET_ACCESS_KEY:-}
+
+      # pgBackRest Performance & Logging
+      - BACKUP_RETENTION_FULL=${BACKUP_RETENTION_FULL:-8}
+      - BACKUP_RETENTION_DIFF=${BACKUP_RETENTION_DIFF:-14}
+      - PGBACKREST_LOG_LEVEL_CONSOLE=${PGBACKREST_LOG_LEVEL_CONSOLE:-info}
+      - PGBACKREST_LOG_LEVEL_FILE=${PGBACKREST_LOG_LEVEL_FILE:-debug}
+      - PGBACKREST_COMPRESS_TYPE=${PGBACKREST_COMPRESS_TYPE:-lz4}
+      - PGBACKREST_COMPRESS_LEVEL=${PGBACKREST_COMPRESS_LEVEL:-3}
+      - PGBACKREST_PROCESS_MAX=${PGBACKREST_PROCESS_MAX:-2}
+      - PGBACKREST_CONFIG=/pgbackrest-config/pgbackrest.conf
+      - POSTGRES_DATA_PATH=/var/lib/postgresql/data
+      - POSTGRES_SOCKET_PATH=/var/run/postgresql
+
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - postgres-backups:/var/lib/postgresql/backups
+      - backup-data:/var/lib/pgbackrest
+      - backup-logs:/var/log/pgbackrest
+      - ../config/postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ../config/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+      - pgbackrest-config:/pgbackrest-config:ro
+      - ../scripts/postgres:/docker-entrypoint-initdb.d:ro
+
+    command: >
+      postgres
+      -c config_file=/etc/postgresql/postgresql.conf
+      -c hba_file=/etc/postgresql/pg_hba.conf
+      -c shared_buffers=${POSTGRES_SHARED_BUFFERS:-256MB}
+      -c effective_cache_size=${POSTGRES_EFFECTIVE_CACHE_SIZE:-1GB}
+      -c work_mem=${POSTGRES_WORK_MEM:-4MB}
+      -c maintenance_work_mem=${POSTGRES_MAINTENANCE_WORK_MEM:-64MB}
+      -c max_connections=${POSTGRES_MAX_CONNECTIONS:-100}
+      -c wal_level=replica
+      -c archive_mode=on
+      -c archive_command='pgbackrest --stanza=salespider archive-push %p'
+      -c max_wal_senders=${POSTGRES_MAX_WAL_SENDERS:-3}
+      -c wal_keep_size=${POSTGRES_WAL_KEEP_SIZE:-1GB}
+      -c log_statement=${POSTGRES_LOG_STATEMENT:-none}
+      -c log_min_duration_statement=${POSTGRES_LOG_MIN_DURATION_STATEMENT:-1000}
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-salespider}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+    restart: unless-stopped
+
+    deploy:
+      resources:
+        limits:
+          memory: ${POSTGRES_MEMORY_LIMIT:-1G}
+          cpus: '${POSTGRES_CPU_LIMIT:-1.0}'
+        reservations:
+          memory: ${POSTGRES_MEMORY_RESERVATION:-512M}
+          cpus: '${POSTGRES_CPU_RESERVATION:-0.5}'
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    networks:
+      - salespider-net
+
+volumes:
+  postgres-data:
+    external: true
+  postgres-backups:
+    external: true
+  backup-data:
+    external: true
+  backup-logs:
+    external: true
+  pgbackrest-config:
+    external: true
+
+networks:
+  salespider-net:
+    external: true

@@ -1,11 +1,11 @@
-import { PrismaClient, Role, PaymentMode } from "@prisma/client";
+import { PaymentMode, Role } from "@prisma/client";
 import { NextRequest } from "next/server";
 import { calculateSaleTotals } from "@/lib/vat";
 import { startOfDay, endOfDay } from "date-fns";
 import { createChildLogger } from "@/lib/logger";
 import { jsonOk, jsonError, handleException } from "@/lib/api-response";
 
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 const logger = createChildLogger('sales-api');
 
 // Helper function to map payment mode string to enum
@@ -19,6 +19,95 @@ function mapPaymentMode(paymentModeString: string): PaymentMode {
   };
   
   return mapping[paymentModeString] || PaymentMode.CASH;
+}
+
+// Helper to build order by clause
+function buildOrderBy(sort: string, order: 'asc' | 'desc') {
+  if (sort === "cashierName") {
+    return { cashier: { name: order } };
+  }
+  if (sort === "totalAmount") {
+    return { totalAmount: order };
+  }
+  if (sort === "paymentMode") {
+    return { paymentMode: order };
+  }
+  return { createdAt: order };
+}
+
+// Helper to build base where clause with filters
+function buildBaseWhereClause(
+  userRole: Role,
+  userId: string,
+  cashierId: string | null,
+  paymentMethod: string | null,
+  from: string | null,
+  to: string | null
+) {
+  const where: any = { deletedAt: null };
+  
+  // Cashiers can only see their own sales
+  if (userRole === Role.CASHIER) {
+    where.cashierId = userId;
+  }
+  
+  // Manager filter by cashier
+  if (cashierId && cashierId !== "all") {
+    where.cashierId = cashierId;
+  }
+  
+  // Payment method filter
+  if (paymentMethod && paymentMethod !== "all") {
+    where.paymentMode = paymentMethod as PaymentMode;
+  }
+  
+  // Date range filter with proper time boundaries
+  if (from && to) {
+    where.createdAt = { 
+      gte: startOfDay(new Date(from)), 
+      lte: endOfDay(new Date(to)) 
+    };
+  } else if (from) {
+    where.createdAt = { gte: startOfDay(new Date(from)) };
+  } else if (to) {
+    where.createdAt = { lte: endOfDay(new Date(to)) };
+  }
+  
+  return where;
+}
+
+// Helper to get payment mode matches from search term
+function getPaymentModeMatches(searchLower: string): PaymentMode[] {
+  const labelToEnum: Array<{ label: string; value: PaymentMode }> = [
+    { label: "cash", value: PaymentMode.CASH },
+    { label: "card", value: PaymentMode.CARD },
+    { label: "bank transfer", value: PaymentMode.BANK_TRANSFER },
+    { label: "crypto", value: PaymentMode.CRYPTO },
+    { label: "other", value: PaymentMode.OTHER },
+  ];
+  
+  return labelToEnum
+    .filter(entry => entry.label.includes(searchLower))
+    .map(entry => entry.value);
+}
+
+// Helper to add search filter to where clause
+function addSearchFilter(where: any, search: string) {
+  const searchLower = search.toLowerCase();
+  const paymentModeMatches = getPaymentModeMatches(searchLower);
+  
+  where.OR = [
+    { id: { contains: search, mode: 'insensitive' } },
+    { cashier: { name: { contains: search, mode: 'insensitive' } } },
+    { cashier: { username: { contains: search, mode: 'insensitive' } } },
+    { items: { some: { product: { name: { contains: search, mode: 'insensitive' } } } } },
+  ];
+  
+  if (paymentModeMatches.length > 0) {
+    where.OR.push({ paymentMode: { in: paymentModeMatches } });
+  }
+  
+  return where;
 }
 
 // Function to get sales
@@ -51,73 +140,16 @@ export async function GET(req: NextRequest) {
   const to = searchParams.get("to");
   const search = (searchParams.get("search") || "").trim();
 
-  // Map sort field to Prisma
-  let orderBy: any = {};
-  if (sort === "cashierName") {
-    orderBy = { cashier: { name: order } };
-  } else if (sort === "totalAmount") {
-    orderBy = { totalAmount: order };
-  } else if (sort === "paymentMode") {
-    orderBy = { paymentMode: order };
-  } else {
-    orderBy = { createdAt: order };
-  }
+  // Build order by clause
+  const orderBy = buildOrderBy(sort, order);
 
   try {
-    // Build where clause
-    const where: any = { deletedAt: null };
-    if (user.role === Role.CASHIER) {
-      where.cashierId = userId;
-    }
-    // Manager filter by cashier
-    if (cashierId && cashierId !== "all") {
-      where.cashierId = cashierId;
-    }
-    // Payment method filter
-    if (paymentMethod && paymentMethod !== "all") {
-      where.paymentMode = paymentMethod as PaymentMode;
-    }
-    // Date range filter with proper time boundaries
-    if (from && to) {
-      where.createdAt = { 
-        gte: startOfDay(new Date(from)), 
-        lte: endOfDay(new Date(to)) 
-      };
-    } else if (from) {
-      where.createdAt = { gte: startOfDay(new Date(from)) };
-    } else if (to) {
-      where.createdAt = { lte: endOfDay(new Date(to)) };
-    }
-
-    // Apply search filter (by sale ID, cashier name/username, product name, or payment mode label)
+    // Build where clause with filters
+    let where = buildBaseWhereClause(user.role, userId, cashierId, paymentMethod, from, to);
+    
+    // Apply search filter if provided
     if (search) {
-      const searchLower = search.toLowerCase();
-      // Map payment mode label search to enum values if matched
-      const paymentModeMatches: PaymentMode[] = [];
-      const labelToEnum: Array<{ label: string; value: PaymentMode }> = [
-        { label: "cash", value: PaymentMode.CASH },
-        { label: "card", value: PaymentMode.CARD },
-        { label: "bank transfer", value: PaymentMode.BANK_TRANSFER },
-        { label: "crypto", value: PaymentMode.CRYPTO },
-        { label: "other", value: PaymentMode.OTHER },
-      ];
-      for (const entry of labelToEnum) {
-        if (entry.label.includes(searchLower)) paymentModeMatches.push(entry.value);
-      }
-
-      where.OR = [
-        // Case-insensitive sale ID match
-        { id: { contains: search, mode: 'insensitive' } },
-        // Cashier name/username contains
-        { cashier: { name: { contains: search, mode: 'insensitive' } } },
-        { cashier: { username: { contains: search, mode: 'insensitive' } } },
-        // Product name on any sale item contains
-        { items: { some: { product: { name: { contains: search, mode: 'insensitive' } } } } },
-      ];
-
-      if (paymentModeMatches.length > 0) {
-        where.OR.push({ paymentMode: { in: paymentModeMatches } });
-      }
+      where = addSearchFilter(where, search);
     }
 
     // Get total count for pagination
@@ -174,6 +206,9 @@ export async function GET(req: NextRequest) {
       id: sale.id,
       cashierId: sale.cashierId,
       cashierName: sale.cashier.name,
+      subtotal: sale.subtotal,
+      vatAmount: sale.vatAmount,
+      vatPercentage: sale.vatPercentage,
       totalAmount: sale.totalAmount,
       paymentMode: sale.paymentMode,
       timestamp: new Date(sale.createdAt).getTime(), // Convert to timestamp
@@ -187,6 +222,7 @@ export async function GET(req: NextRequest) {
 
     return jsonOk({ data: transformedSales, total, paymentMethodTotals, totalSalesValue });
   } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to fetch sales');
     return handleException(error, "Failed to fetch sales", 500);
   }
 }
@@ -308,6 +344,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to record sale');
     return handleException(error, "Failed to record sale", 500);
   }
 } 

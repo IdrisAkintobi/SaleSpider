@@ -28,12 +28,12 @@ import { useToast } from "@/hooks/use-toast";
 import { useSales } from "@/hooks/use-sales";
 import { useQuery } from "@tanstack/react-query";
 import type { Sale } from "@/lib/types";
-import { CalendarDays, Filter, UserCircle, Eye, ArrowUp, ArrowDown, ShoppingCart, Search } from "lucide-react";
+import { exportSalesCSV } from "@/lib/csv-export";
+import { CalendarDays, Filter, UserCircle, Eye, ArrowUp, ArrowDown, ShoppingCart, Search, Download, CalendarIcon } from "lucide-react";
 import React, { useMemo, useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DateRange } from "react-day-picker";
 import { useTableControls } from "@/hooks/use-table-controls";
@@ -41,7 +41,6 @@ import { GenericTable } from "@/components/ui/generic-table";
 import { SalesTableSkeleton } from "@/components/dashboard/sales/sales-table-skeleton";
 import Link from "next/link";
 import { useFormatCurrency } from "@/lib/currency";
-import { useVatPercentage } from "@/lib/vat";
 import { useTranslation } from "@/lib/i18n";
 import { startOfToday, endOfToday, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import { PAYMENT_METHODS } from "@/lib/constants";
@@ -52,7 +51,6 @@ export default function SalesPage() {
   const { userIsManager, userIsCashier } = useAuth();
   const { toast } = useToast();
   const formatCurrency = useFormatCurrency();
-  const vatPercentage = useVatPercentage();
   const t = useTranslation();
   const { settings } = useSettingsContext();
   
@@ -75,6 +73,7 @@ export default function SalesPage() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Fetch all cashiers for dropdown (independent of current filter)
   const { data: allCashiers } = useQuery({
@@ -109,7 +108,7 @@ export default function SalesPage() {
   const enabledPaymentOptions = React.useMemo(
     () =>
       PAYMENT_METHODS.filter(m =>
-        !enabledPaymentEnums ? true : enabledPaymentEnums.includes(m.enum)
+        enabledPaymentEnums ? enabledPaymentEnums.includes(m.enum) : true
       ),
     [enabledPaymentEnums]
   );
@@ -194,14 +193,55 @@ export default function SalesPage() {
     }
   };
 
-  // Record New Sale button for cashiers
-  const recordSaleAction = !userIsManager ? (
-    <Button size="lg" asChild>
-      <Link href="/dashboard/record-sale">
-        <ShoppingCart className="mr-2 h-5 w-5" /> {t("record_new_sale")}
-      </Link>
-    </Button>
-  ) : null;
+  // Export CSV function
+  const handleExportCSV = async () => {
+    setIsExporting(true);
+    try {
+      const filters = {
+        searchTerm,
+        cashierId: filterCashier,
+        paymentMethod: filterPaymentMethod,
+        from: dateRange?.from?.toISOString(),
+        to: dateRange?.to?.toISOString(),
+      };
+      await exportSalesCSV(filters);
+      toast({
+        title: t("exportSuccess"),
+        description: t("exportSuccess"),
+      });
+    } catch (error) {
+      console.error('Error exporting sales:', error);
+      toast({
+        title: t("exportError"),
+        description: error instanceof Error ? error.message : t("exportError"),
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Actions for page header
+  const pageActions = (
+    <div className="flex gap-2">
+      <Button 
+        onClick={handleExportCSV}
+        disabled={isExporting}
+        variant="outline"
+        size="lg"
+      >
+        <Download className="mr-2 h-4 w-4" />
+        {isExporting ? t("exportingData") : t("exportCSV")}
+      </Button>
+      {!userIsManager && (
+        <Button size="lg" asChild>
+          <Link href="/dashboard/record-sale">
+            <ShoppingCart className="mr-2 h-5 w-5" /> {t("record_new_sale")}
+          </Link>
+        </Button>
+      )}
+    </div>
+  );
 
   if (isLoading) {
     return (
@@ -263,7 +303,7 @@ export default function SalesPage() {
       <PageHeader
         title={t("sales")}
         description={t("sales_history_description")}
-        actions={recordSaleAction}
+        actions={pageActions}
       />
 
       <div className="mb-6 space-y-4">
@@ -490,11 +530,11 @@ export default function SalesPage() {
                                 <div className="border-t pt-4 space-y-2">
                                   <div className="flex justify-between items-center">
                                     <span className="text-sm text-muted-foreground">{t('subtotal')}</span>
-                                    <span className="text-sm">{formatCurrency(selectedSale.totalAmount / (1 + vatPercentage / 100))}</span>
+                                    <span className="text-sm">{formatCurrency(selectedSale.subtotal)}</span>
                                   </div>
                                   <div className="flex justify-between items-center">
-                                    <span className="text-sm text-muted-foreground">{t('vat')} ({vatPercentage}%)</span>
-                                    <span className="text-sm">{formatCurrency(selectedSale.totalAmount - (selectedSale.totalAmount / (1 + vatPercentage / 100)))}</span>
+                                    <span className="text-sm text-muted-foreground">{t('vat')} ({selectedSale.vatPercentage}%)</span>
+                                    <span className="text-sm">{formatCurrency(selectedSale.vatAmount)}</span>
                                   </div>
                                   <div className="flex justify-between items-center border-t pt-2">
                                     <span className="text-lg font-semibold">{t('total_amount')}</span>

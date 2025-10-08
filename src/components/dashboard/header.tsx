@@ -117,18 +117,7 @@ export function DashboardHeader() {
         ))}
       </div>
 
-      <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-        <form className="ml-auto flex-1 sm:flex-initial">
-          {/* Search can be enabled later if needed */}
-          {/* <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder={t("search_general")}
-              className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
-            />
-          </div> */}
-        </form>
+      <div className="flex items-center gap-2 ml-auto">
         <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

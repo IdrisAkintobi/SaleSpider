@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useSettings } from "@/hooks/use-settings";
 import { DEFAULT_SETTINGS, PAYMENT_MODE_VALUES, type PaymentMode } from "@/lib/constants";
 import { applyDynamicStyles } from "@/lib/dynamic-styles";
@@ -52,12 +52,12 @@ const defaultSettings: AppSettings = {
   theme: process.env.NEXT_PUBLIC_THEME || DEFAULT_SETTINGS.theme,
   maintenanceMode: process.env.NEXT_PUBLIC_MAINTENANCE_MODE === "true" || DEFAULT_SETTINGS.maintenanceMode,
   showDeletedProducts: process.env.NEXT_PUBLIC_SHOW_DELETED_PRODUCTS === "true" || DEFAULT_SETTINGS.showDeletedProducts,
-  enabledPaymentMethods: (process.env.NEXT_PUBLIC_ENABLED_PAYMENT_METHODS
+  enabledPaymentMethods: process.env.NEXT_PUBLIC_ENABLED_PAYMENT_METHODS
     ? process.env.NEXT_PUBLIC_ENABLED_PAYMENT_METHODS
         .split(",")
         .map((s) => s.trim().toUpperCase())
         .filter((v): v is PaymentMode => (PAYMENT_MODE_VALUES as readonly string[]).includes(v))
-    : [...DEFAULT_SETTINGS.enabledPaymentMethods]) as PaymentMode[],
+    : [...DEFAULT_SETTINGS.enabledPaymentMethods],
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };
@@ -69,7 +69,7 @@ const SettingsContext = createContext<SettingsContextType>({
   isMaintenanceMode: defaultSettings.maintenanceMode,
 });
 
-export function SettingsProvider({ children }: { children: React.ReactNode }) {
+export function SettingsProvider({ children }: { readonly children: React.ReactNode }) {
   const { data: settings, isLoading, error } = useSettings();
   const [currentSettings, setCurrentSettings] = useState<AppSettings>(defaultSettings);
 
@@ -92,12 +92,15 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     applyDynamicStyles(defaultSettings);
   }, []);
 
-  const value: SettingsContextType = {
-    settings: currentSettings,
-    isLoading,
-    error,
-    isMaintenanceMode: currentSettings.maintenanceMode,
-  };
+  const value: SettingsContextType = useMemo(
+    () => ({
+      settings: currentSettings,
+      isLoading,
+      error,
+      isMaintenanceMode: currentSettings.maintenanceMode,
+    }),
+    [currentSettings, isLoading, error]
+  );
 
   return (
     <SettingsContext.Provider value={value}>

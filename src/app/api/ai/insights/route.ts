@@ -2,12 +2,11 @@ import { NextRequest } from "next/server";
 import { Role } from "@prisma/client";
 import { createChildLogger } from "@/lib/logger";
 import { SalesAnalyticsService } from "@/lib/sales-analytics";
-import { getInventoryRecommendations } from "@/ai/flows/inventory-recommendations";
-import { PrismaClient } from "@prisma/client";
 import { jsonOk, jsonError, handleException } from "@/lib/api-response";
+import { prisma } from "@/lib/prisma";
+import { getInventoryRecommendations } from "@/ai/flows/inventory-recommendations";
 
-const prisma = new PrismaClient();
-const logger = createChildLogger('ai-insights-api');
+const logger = createChildLogger('api:ai:insights');
 
 export async function GET(req: NextRequest) {
   const startTime = Date.now();
@@ -136,7 +135,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { daysBack = 7, storeName = "Your Store", includeDetailedAnalysis = false } = body;
+    const { daysBack = 7, storeName = "Sale Spider", includeDetailedAnalysis = false } = body;
     const limitedDaysBack = Math.min(daysBack, 7); // Limit to 7 days max
 
     logger.info({ 

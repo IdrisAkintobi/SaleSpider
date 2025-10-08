@@ -1,0 +1,116 @@
+
+services:
+  # SaleSpider Application
+  app:
+    extends:
+      file: compose/app.yml
+      service: app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - salespider-net
+
+  # PostgreSQL Primary Database
+  postgres:
+    extends:
+      file: compose/postgres.yml
+      service: postgres
+    networks:
+      - salespider-net
+
+  # Reverse Proxy with SSL
+  proxy:
+    extends:
+      file: compose/proxy.yml
+      service: proxy
+    depends_on:
+      - app
+    networks:
+      - salespider-net
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+
+  # Database Backup with pgBackRest
+  backup:
+    extends:
+      file: compose/backup.yml
+      service: backup
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - salespider-net
+
+  # Setup and Initialization
+  setup:
+    extends:
+      file: compose/setup.yml
+      service: setup
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - salespider-net
+
+networks:
+  salespider-net:
+    driver: bridge
+
+volumes:
+  # Database volumes
+  postgres-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_PATH:-./data}/postgres
+
+  postgres-backups:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${BACKUP_PATH:-./data/backups}/postgres
+
+  # Application volumes
+  app-uploads:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_PATH:-./data}/uploads
+
+  app-logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_PATH:-./data}/logs
+
+  # Proxy volumes
+  proxy-data:
+    driver: local
+
+  proxy-config:
+    driver: local
+
+  # Backup volumes
+  backup-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${BACKUP_PATH:-./data/backups}/pgBackRest
+
+  backup-logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_PATH:-./data}/logs/backup
+
+  # pgBackRest configuration (shared across services)
+  pgbackrest-config:
+    external: true

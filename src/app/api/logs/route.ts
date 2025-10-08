@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { createChildLogger } from "@/lib/logger";
 import { jsonOk, handleException } from "@/lib/api-response";
 
-const logger = createChildLogger('client-logs-api');
+const logger = createChildLogger('api:logs');
 
 export async function POST(req: NextRequest) {
   try {

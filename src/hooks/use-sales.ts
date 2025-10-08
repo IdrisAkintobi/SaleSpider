@@ -1,6 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Sale, SaleItem, PaymentMode } from "@/lib/types";
 import { usePaginatedQuery } from "./use-paginated-query";
+import { queryKeys, dataTypeCache } from "@/lib/query-keys";
+import { useQueryInvalidator, optimisticUpdates } from "@/lib/query-invalidation";
 
 export interface UseSalesParams {
   page?: number;
@@ -42,10 +44,9 @@ async function fetchSalesData(params: UseSalesParams = {}) {
 
 export function useSales(params: UseSalesParams = {}) {
   return usePaginatedQuery<SaleQueryResult>({
-    queryKey: ["sales", params],
+    queryKey: queryKeys.sales.list(params),
     queryFn: () => fetchSalesData(params),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    ...dataTypeCache.sales, // Use centralized cache config
   });
 }
 
@@ -71,12 +72,25 @@ async function createSale(saleData: {
 
 export function useCreateSale() {
   const queryClient = useQueryClient();
+  const invalidator = useQueryInvalidator();
   
   return useMutation({
     mutationFn: createSale,
+    onMutate: async (newSale) => {
+      // Optimistic update: add the sale immediately to the UI
+      optimisticUpdates.addSale(queryClient, {
+        ...newSale,
+        id: `temp-${Date.now()}`, // Temporary ID
+        createdAt: new Date().toISOString(),
+      });
+    },
     onSuccess: () => {
-      // Invalidate and refetch sales data after successful sale
-      queryClient.invalidateQueries({ queryKey: ['sales'] });
+      // Use centralized invalidation pattern
+      invalidator.invalidateAfterSaleChange();
+    },
+    onError: () => {
+      // If mutation fails, invalidate to revert optimistic updates
+      invalidator.invalidateAfterSaleChange();
     },
   });
 } 

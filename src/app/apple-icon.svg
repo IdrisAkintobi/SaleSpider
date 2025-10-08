@@ -1,0 +1,31 @@
+<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Apple touch icon version -->
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1D4ED8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background with rounded corners for iOS -->
+  <rect width="180" height="180" rx="40" fill="url(#gradient)"/>
+  
+  <!-- Shopping cart (scaled up) -->
+  <path d="M35 35h11l9.4 47.2a11 11 0 0 0 11 9.05h54.6a11 11 0 0 0 11-9.05L145 50H47" 
+        stroke="white" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Cart wheels (scaled up) -->
+  <circle cx="62" cy="140" r="8" fill="white"/>
+  <circle cx="118" cy="140" r="8" fill="white"/>
+  
+  <!-- Spider web pattern overlay (subtle) -->
+  <path d="M90 20 L90 160 M20 90 L160 90 M45 45 L135 135 M135 45 L45 135" 
+        stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+  
+  <!-- Sales tag (scaled up) -->
+  <path d="M115 30 L150 30 L150 65 L132.5 47.5 Z" fill="white" opacity="0.9"/>
+  <circle cx="140" cy="45" r="6" fill="url(#gradient)"/>
+  
+  <!-- SaleSpider text -->
+  <text x="90" y="25" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="12" font-weight="bold">SaleSpider</text>
+</svg>

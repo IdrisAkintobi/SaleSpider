@@ -24,17 +24,17 @@ import {
 import { useCurrencySettings } from "@/lib/currency";
 
 interface PerformanceChartProps {
-  data: Array<{ name: string } & Record<string, number | string>>;
-  title: string;
-  description?: string;
-  xAxisDataKey?: string;
-  barDataKey?: string;
-  extraBarDataKey?: string;
-  barLabels?: Record<string, string>;
-  className?: string;
-  comparisonType?: string;
-  onComparisonTypeChange?: (type: string) => void;
-  comparisonOptions?: { value: string; label: string }[];
+  readonly data: Array<{ name: string } & Record<string, number | string>>;
+  readonly title: string;
+  readonly description?: string;
+  readonly xAxisDataKey?: string;
+  readonly barDataKey?: string;
+  readonly extraBarDataKey?: string;
+  readonly barLabels?: Readonly<Record<string, string>>;
+  readonly className?: string;
+  readonly comparisonType?: string;
+  readonly onComparisonTypeChange?: (type: string) => void;
+  readonly comparisonOptions?: ReadonlyArray<{ readonly value: string; readonly label: string }>;
 }
 
 const chartConfig = {

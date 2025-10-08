@@ -1,7 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { DEFAULT_SETTINGS, PAYMENT_MODE_VALUES, type PaymentMode } from "@/lib/constants";
 
-const prisma = new PrismaClient();
 
 const defaultSettings = {
   appName: process.env.APP_NAME || DEFAULT_SETTINGS.appName,

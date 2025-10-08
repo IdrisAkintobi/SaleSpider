@@ -59,13 +59,14 @@ export const config = {
     /*
      * Match all request paths except for the ones starting with:
      * - api/auth (authentication routes)
+     * - api/health (health check endpoint)
      * - login, register (auth pages)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder
      */
-    "/((?!api/auth|login|register|_next/static|_next/image|favicon.ico|public).*)",
+    "/((?!api/auth|api/health|login|register|_next/static|_next/image|favicon.ico|public).*)",
     "/dashboard/:path*",
   ],
 };

@@ -1,10 +1,12 @@
-import { PrismaClient, Role } from "@prisma/client";
+import { Role } from "@prisma/client";
 import { NextRequest } from "next/server";
 import { AuditTrailService } from "@/lib/audit-trail";
 import * as argon2 from "argon2";
 import { jsonOk, jsonError, handleException } from "@/lib/api-response";
+import { createChildLogger } from "@/lib/logger";
 
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
+const logger = createChildLogger('api:users');
 
 // Function to get users
 export async function GET(request: NextRequest) {
@@ -63,6 +65,7 @@ export async function GET(request: NextRequest) {
 
     return jsonOk({ data: users, total });
   } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to fetch users');
     return handleException(error, "Failed to fetch users", 500);
   }
 }
@@ -119,8 +122,27 @@ export async function POST(request: NextRequest) {
 
     return jsonOk(newUser, { status: 201 });
   } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to create user');
     return handleException(error, "Failed to create user", 500);
   }
+}
+
+// Validate user permissions for editing
+async function validateUserEditPermissions(actingUser: any, targetUserId: string) {
+  const targetUser = await prisma.user.findUnique({ 
+    where: { id: targetUserId },
+    select: { id: true, role: true }
+  });
+  
+  if (!targetUser) {
+    return { error: jsonError("User not found", 404, { code: "NOT_FOUND" }) };
+  }
+  
+  if (actingUser.role === "MANAGER" && targetUser.role !== "CASHIER") {
+    return { error: jsonError("Managers can only edit cashiers", 403, { code: "FORBIDDEN" }) };
+  }
+  
+  return { targetUser };
 }
 
 // Function to update a user
@@ -143,16 +165,10 @@ export async function PATCH(request: NextRequest) {
     if (!id) {
       return jsonError("User ID is required", 400, { code: "BAD_REQUEST" });
     }
-    // Only super-admin can edit all, manager can only edit cashiers
-    const targetUser = await prisma.user.findUnique({ 
-      where: { id },
-      select: { id: true, role: true }
-    });
-    if (!targetUser) {
-      return jsonError("User not found", 404, { code: "NOT_FOUND" });
-    }
-    if (actingUser.role === "MANAGER" && targetUser.role !== "CASHIER") {
-      return jsonError("Managers can only edit cashiers", 403, { code: "FORBIDDEN" });
+    
+    const validation = await validateUserEditPermissions(actingUser, id);
+    if (validation.error) {
+      return validation.error;
     }
     if (actingUser.role !== "SUPER_ADMIN" && actingUser.role !== "MANAGER") {
       return jsonError("Forbidden", 403, { code: "FORBIDDEN" });
@@ -199,6 +215,7 @@ export async function PATCH(request: NextRequest) {
 
     return jsonOk(updatedUser);
   } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to update user');
     return handleException(error, "Failed to update user", 500);
   }
 } 

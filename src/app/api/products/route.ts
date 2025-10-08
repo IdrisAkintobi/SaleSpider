@@ -1,12 +1,12 @@
 import { Product } from "@/lib/types";
-import { Prisma, PrismaClient, ProductCategory, Role } from "@prisma/client";
+import { Prisma, ProductCategory, Role } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { NextRequest } from "next/server";
 import { createChildLogger } from "@/lib/logger";
 import { AuditTrailService } from "@/lib/audit-trail";
 import { jsonOk, jsonError, handleException } from "@/lib/api-response";
 
-const prisma = new PrismaClient();
-const logger = createChildLogger('products-api');
+const logger = createChildLogger('api:products');
 
 // Function to get products
 export async function GET(req: NextRequest) {
@@ -67,6 +67,7 @@ export async function GET(req: NextRequest) {
       totalPages: Math.ceil(totalProducts / pageSize),
     });
   } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to fetch products');
     return handleException(error, "Failed to fetch products", 500);
   }
 }
@@ -90,7 +91,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { name, description, price, category, lowStockMargin, quantity } =
+    const { name, description, price, category, lowStockMargin, quantity, imageUrl, gtin } =
       (await req.json()) as Product;
 
     if (
@@ -112,6 +113,8 @@ export async function POST(req: NextRequest) {
         category,
         lowStockMargin,
         quantity,
+        imageUrl,
+        gtin,
       },
     });
 
@@ -127,6 +130,8 @@ export async function POST(req: NextRequest) {
         category: newProduct.category,
         lowStockMargin: newProduct.lowStockMargin,
         quantity: newProduct.quantity,
+        imageUrl: newProduct.imageUrl,
+        gtin: newProduct.gtin,
       },
       userId,
       user.email,
@@ -144,6 +149,7 @@ export async function POST(req: NextRequest) {
     
     return jsonOk(newProduct, { status: 201 });
   } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to create product');
     return handleException(error, "Failed to create product", 500);
   }
 }

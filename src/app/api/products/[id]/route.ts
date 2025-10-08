@@ -1,13 +1,13 @@
 import { NextRequest } from "next/server";
-import { PrismaClient, Role } from "@prisma/client";
-import { createChildLogger } from "@/lib/logger";
+import { Role } from "@prisma/client";
 import { SoftDeleteService } from "@/lib/soft-delete";
 import { AuditTrailService } from "@/lib/audit-trail";
 import { jsonOk, jsonError, handleException } from "@/lib/api-response";
 import { getUserFromHeader } from "@/lib/api-auth";
 import { getProductBasic, productExists } from "@/lib/products";
+import { createChildLogger } from "@/lib/logger";
 
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 const logger = createChildLogger('api:products:id');
 
 // Function to get product by ID
@@ -31,6 +31,7 @@ export async function GET(
 
     return jsonOk(product);
   } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to fetch product');
     return handleException(error, "Failed to fetch product", 500);
   }
 }
@@ -79,11 +80,11 @@ export async function PATCH(
     }
     
     // Track other changed fields for audit trail
-    Object.keys(updateData).forEach(key => {
+    for (const key of Object.keys(updateData)) {
       if (key !== 'quantity') {
         changedFields[key] = updateData[key];
       }
-    });
+    }
 
     const updatedProduct = await prisma.product.update({
       where: { id },
@@ -104,6 +105,7 @@ export async function PATCH(
 
     return jsonOk(updatedProduct);
   } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to update product');
     return handleException(error, "Failed to update product", 500);
   }
 }
@@ -148,6 +150,7 @@ export async function DELETE(
       productId: id 
     });
   } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to delete product');
     return handleException(error, "Failed to delete product", 500);
   }
 }

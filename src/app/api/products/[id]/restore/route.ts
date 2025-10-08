@@ -1,11 +1,11 @@
-import { PrismaClient, Role } from "@prisma/client";
+import { Role } from "@prisma/client";
 import { SoftDeleteService } from "@/lib/soft-delete";
 import { logger } from "@/lib/logger";
 import { jsonOk, jsonError, handleException } from "@/lib/api-response";
 import { getUserFromHeader } from "@/lib/api-auth";
 import { getProductBasic } from "@/lib/products";
 
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 // Function to restore a soft deleted product (Super Admin only)
 export async function POST(

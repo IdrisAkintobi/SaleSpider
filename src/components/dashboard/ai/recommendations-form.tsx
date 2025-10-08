@@ -1,5 +1,3 @@
-"use client";
-
 import type { InventoryRecommendationsInput } from "@/ai/flows/inventory-recommendations";
 import { Button } from "@/components/ui/button";
 import {
