@@ -253,7 +253,7 @@ export default function SettingsPage() {
     <>
       <PageHeader
         title={t("settings")}
-        description="Configure application appearance, currency, and system preferences."
+        description={t("settings_page_description")}
       />
 
       <form onSubmit={form.handleSubmit(onSubmit)}>

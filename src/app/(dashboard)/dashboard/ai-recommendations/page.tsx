@@ -67,14 +67,14 @@ export default function AIRecommendationsPage() {
       setInsights(data);
       
       toast({
-        title: "AI Insights Generated",
-        description: "Fresh insights have been generated from your latest data.",
+        title: t("ai_insights_generated"),
+        description: t("ai_insights_generated_description"),
       });
     } catch (error) {
       console.error("Error fetching AI insights:", error);
       toast({
-        title: "Error",
-        description: "Failed to generate AI insights. Please try again.",
+        title: t("error"),
+        description: t("ai_insights_failed"),
         variant: "destructive",
       });
     } finally {
@@ -100,7 +100,7 @@ export default function AIRecommendationsPage() {
     <>
       <PageHeader
         title={t("ai_insights")}
-        description="Get AI-powered insights and recommendations based on your sales data"
+        description={t("ai_insights_description")}
         actions={
           <Button
             onClick={fetchInsights}
@@ -108,7 +108,7 @@ export default function AIRecommendationsPage() {
             variant="outline"
           >
             <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-{isLoading ? 'Generating...' : insights ? 'Refresh Insights' : 'Generate Insights'}
+{isLoading ? t("generating") : insights ? t("refresh_insights") : t("generate_insights")}
           </Button>
         }
       />
@@ -119,7 +119,7 @@ export default function AIRecommendationsPage() {
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">Generating AI insights...</p>
+              <p className="text-muted-foreground">{t("generating_ai_insights")}</p>
             </div>
           </div>
         )}
@@ -127,9 +127,9 @@ export default function AIRecommendationsPage() {
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <Lightbulb className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2">Ready to Generate AI Insights</h3>
+              <h3 className="text-lg font-semibold mb-2">{t("ready_to_generate_insights")}</h3>
               <p className="text-muted-foreground mb-4">
-                Click the &quot;Generate Insights&quot; button above to analyze your store&apos;s performance and get strategic recommendations.
+                {t("generate_insights_description")}
               </p>
             </div>
           </div>

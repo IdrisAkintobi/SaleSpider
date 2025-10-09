@@ -35,11 +35,16 @@ export async function GET(req: NextRequest) {
     const daysBack = Math.min(parseInt(url.searchParams.get("daysBack") ?? "7", 10), 7);
     const storeName = url.searchParams.get("storeName") ?? "Your Store";
 
-    logger.info({ 
-      userId, 
-      userEmail: user.email, 
-      daysBack, 
-      storeName 
+    // Get current language setting
+    const settings = await prisma.appSettings.findFirst();
+    const language = settings?.language ?? "en";
+
+    logger.info({
+      userId,
+      userEmail: user.email,
+      daysBack,
+      storeName,
+      language
     }, 'Generating AI insights');
 
     // Get fresh data directly from database (no caching) - limited to 1000 records max
@@ -62,7 +67,22 @@ export async function GET(req: NextRequest) {
       salesData: aiInputData.salesData,
       currentInventory: aiInputData.currentInventory,
       storeName,
+      language,
     });
+
+    // Assess data completeness for better user feedback
+    const dataAssessment = {
+      isEmpty: analytics.totalSales === 0 && inventory.length === 0,
+      isLimitedData: analytics.totalSales < 5 && inventory.length < 10,
+      hasSalesActivity: analytics.totalSales > 0,
+      hasInventoryData: inventory.length > 0,
+      completenessScore: Math.min(100,
+        (analytics.totalSales > 0 ? 30 : 0) +
+        (inventory.length > 0 ? 30 : 0) +
+        (productPerformance.length > 0 ? 20 : 0) +
+        (analytics.salesTrends.length > 0 ? 20 : 0)
+      )
+    };
 
     // Prepare response
     const response = {
@@ -79,6 +99,7 @@ export async function GET(req: NextRequest) {
         promotionalOpportunities: aiRecommendations.promotionalOpportunities,
         reorderAmounts: aiRecommendations.reorderAmounts,
       },
+      dataAssessment,
       metadata: {
         generatedAt: new Date().toISOString(),
         dataRange: {
@@ -138,12 +159,17 @@ export async function POST(req: NextRequest) {
     const { daysBack = 7, storeName = "Sale Spider", includeDetailedAnalysis = false } = body;
     const limitedDaysBack = Math.min(daysBack, 7); // Limit to 7 days max
 
-    logger.info({ 
-      userId, 
-      userEmail: user.email, 
-      daysBack, 
+    // Get current language setting
+    const settings = await prisma.appSettings.findFirst();
+    const language = settings?.language ?? "en";
+
+    logger.info({
+      userId,
+      userEmail: user.email,
+      daysBack,
       storeName,
       includeDetailedAnalysis,
+      language,
     }, 'Generating custom AI insights');
 
     // Get fresh data with custom parameters - limited to 1000 records max
@@ -164,6 +190,7 @@ export async function POST(req: NextRequest) {
       salesData: aiInputData.salesData,
       currentInventory: aiInputData.currentInventory,
       storeName,
+      language,
     });
 
     const response = {

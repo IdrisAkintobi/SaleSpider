@@ -77,10 +77,33 @@ const translations: Record<string, Record<string, string>> = {
     // Breadcrumbs
     dashboard: "Dashboard",
     overview: "Overview",
+    // Navigation
+    audit_logs: "Audit Logs",
+    ai_insights: "AI Insights",
+    // AI Insights Page
+    ai_insights_description: "Get AI-powered insights and recommendations based on your sales data",
+    ai_insights_generated: "AI Insights Generated",
+    ai_insights_generated_description: "Fresh insights have been generated from your latest data.",
+    ai_insights_failed: "Failed to generate AI insights. Please try again.",
+    generating: "Generating...",
+    refresh_insights: "Refresh Insights",
+    generate_insights: "Generate Insights",
+    generating_ai_insights: "Generating AI insights...",
+    ready_to_generate_insights: "Ready to Generate AI Insights",
+    generate_insights_description: "Click the \"Generate Insights\" button above to analyze your store's performance and get strategic recommendations.",
+    // AI Recommendations Display
+    ai_generated_recommendations: "AI Generated Recommendations",
+    ai_recommendations_description: "Based on your sales data from the last {days} days, here are AI-powered insights to optimize your inventory.",
+    inventory_strategy: "Inventory Strategy",
+    sales_strategy: "Sales Strategy",
+    purchasing_strategy: "Purchasing Strategy",
+    sales_promotion_strategy: "Sales & Promotion Strategy",
     // Route labels
     "routes.ai_recommendations": "AI Recommendations",
     "routes.staff": "Staff Management",
     // Settings Descriptions
+    settings_page_description:
+      "Configure application appearance, currency, and system preferences.",
     general_settings_description:
       "Configure basic application information and branding.",
     appearance_settings_description:
@@ -349,10 +372,33 @@ const translations: Record<string, Record<string, string>> = {
     // Breadcrumbs
     dashboard: "Tableau de bord",
     overview: "Aperçu",
+    // Navigation
+    audit_logs: "Journaux d'audit",
+    ai_insights: "Insights IA",
+    // AI Insights Page
+    ai_insights_description: "Obtenez des insights et des recommandations alimentés par l'IA basés sur vos données de vente",
+    ai_insights_generated: "Insights IA Générés",
+    ai_insights_generated_description: "De nouveaux insights ont été générés à partir de vos dernières données.",
+    ai_insights_failed: "Échec de la génération des insights IA. Veuillez réessayer.",
+    generating: "Génération...",
+    refresh_insights: "Actualiser les Insights",
+    generate_insights: "Générer des Insights",
+    generating_ai_insights: "Génération d'insights IA...",
+    ready_to_generate_insights: "Prêt à Générer des Insights IA",
+    generate_insights_description: "Cliquez sur le bouton \"Générer des Insights\" ci-dessus pour analyser les performances de votre magasin et obtenir des recommandations stratégiques.",
+    // AI Recommendations Display
+    ai_generated_recommendations: "Recommandations Générées par l'IA",
+    ai_recommendations_description: "Basé sur vos données de vente des {days} derniers jours, voici des insights alimentés par l'IA pour optimiser votre inventaire.",
+    inventory_strategy: "Stratégie d'Inventaire",
+    sales_strategy: "Stratégie de Vente",
+    purchasing_strategy: "Stratégie d'Achat",
+    sales_promotion_strategy: "Stratégie de Vente et Promotion",
     // Route labels
     "routes.ai_recommendations": "Recommandations IA",
     "routes.staff": "Gestion du personnel",
     // Settings Descriptions
+    settings_page_description:
+      "Configurer l'apparence de l'application, la devise et les préférences système.",
     general_settings_description:
       "Configurer les informations de base de l'application et la marque.",
     appearance_settings_description:
@@ -630,10 +676,33 @@ const translations: Record<string, Record<string, string>> = {
     // Breadcrumbs
     dashboard: "Panel de control",
     overview: "Resumen",
+    // Navigation
+    audit_logs: "Registros de auditoría",
+    ai_insights: "Insights de IA",
+    // AI Insights Page
+    ai_insights_description: "Obtenga insights y recomendaciones impulsados por IA basados en sus datos de ventas",
+    ai_insights_generated: "Insights de IA Generados",
+    ai_insights_generated_description: "Se han generado nuevos insights a partir de sus datos más recientes.",
+    ai_insights_failed: "Error al generar insights de IA. Por favor, inténtelo de nuevo.",
+    generating: "Generando...",
+    refresh_insights: "Actualizar Insights",
+    generate_insights: "Generar Insights",
+    generating_ai_insights: "Generando insights de IA...",
+    ready_to_generate_insights: "Listo para Generar Insights de IA",
+    generate_insights_description: "Haga clic en el botón \"Generar Insights\" arriba para analizar el rendimiento de su tienda y obtener recomendaciones estratégicas.",
+    // AI Recommendations Display
+    ai_generated_recommendations: "Recomendaciones Generadas por IA",
+    ai_recommendations_description: "Basado en sus datos de ventas de los últimos {days} días, aquí están los insights impulsados por IA para optimizar su inventario.",
+    inventory_strategy: "Estrategia de Inventario",
+    sales_strategy: "Estrategia de Ventas",
+    purchasing_strategy: "Estrategia de Compras",
+    sales_promotion_strategy: "Estrategia de Ventas y Promoción",
     // Route labels
     "routes.ai_recommendations": "Recomendaciones de IA",
     "routes.staff": "Gestión de personal",
     // Settings Descriptions
+    settings_page_description:
+      "Configurar la apariencia de la aplicación, la moneda y las preferencias del sistema.",
     general_settings_description:
       "Configurar información básica de la aplicación y la marca.",
     appearance_settings_description:
@@ -907,10 +976,33 @@ const translations: Record<string, Record<string, string>> = {
     // Breadcrumbs
     dashboard: "Dashboard",
     overview: "Übersicht",
+    // Navigation
+    audit_logs: "Audit-Protokolle",
+    ai_insights: "KI-Einblicke",
+    // AI Insights Page
+    ai_insights_description: "Erhalten Sie KI-gestützte Einblicke und Empfehlungen basierend auf Ihren Verkaufsdaten",
+    ai_insights_generated: "KI-Einblicke Generiert",
+    ai_insights_generated_description: "Neue Einblicke wurden aus Ihren neuesten Daten generiert.",
+    ai_insights_failed: "Fehler beim Generieren von KI-Einblicken. Bitte versuchen Sie es erneut.",
+    generating: "Generiere...",
+    refresh_insights: "Einblicke Aktualisieren",
+    generate_insights: "Einblicke Generieren",
+    generating_ai_insights: "Generiere KI-Einblicke...",
+    ready_to_generate_insights: "Bereit zum Generieren von KI-Einblicken",
+    generate_insights_description: "Klicken Sie auf die Schaltfläche \"Einblicke Generieren\" oben, um die Leistung Ihres Geschäfts zu analysieren und strategische Empfehlungen zu erhalten.",
+    // AI Recommendations Display
+    ai_generated_recommendations: "KI-Generierte Empfehlungen",
+    ai_recommendations_description: "Basierend auf Ihren Verkaufsdaten der letzten {days} Tage, hier sind KI-gestützte Einblicke zur Optimierung Ihres Inventars.",
+    inventory_strategy: "Inventar-Strategie",
+    sales_strategy: "Verkaufs-Strategie",
+    purchasing_strategy: "Einkaufs-Strategie",
+    sales_promotion_strategy: "Verkaufs- und Werbe-Strategie",
     // Route labels
     "routes.ai_recommendations": "KI-Empfehlungen",
     "routes.staff": "Personalverwaltung",
     // Settings Descriptions
+    settings_page_description:
+      "Konfigurieren Sie das Erscheinungsbild der Anwendung, die Währung und die Systemeinstellungen.",
     general_settings_description:
       "Konfigurieren Sie grundlegende Anwendungsinformationen und Branding.",
     appearance_settings_description:

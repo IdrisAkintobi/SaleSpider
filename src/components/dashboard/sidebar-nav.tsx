@@ -69,7 +69,7 @@ const navItems: NavItem[] = [
   },
   {
     href: "/dashboard/audit-logs",
-    labelKey: "Audit Logs",
+    labelKey: "audit_logs",
     icon: Shield,
     roles: ["SUPER_ADMIN", "MANAGER"],
   },
