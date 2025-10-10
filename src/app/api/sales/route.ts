@@ -245,23 +245,21 @@ export async function POST(req: NextRequest) {
     return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
   }
 
-  // Only cashiers can record sales
-  if (user.role !== Role.CASHIER) {
-    return jsonError("Only cashiers can record sales", 403, { code: "FORBIDDEN" });
+  // Only cashiers and managers can record sales
+  if (![Role.CASHIER, Role.MANAGER].includes(user.role)) {
+    return jsonError("Only cashiers and managers can record sales", 403, { code: "FORBIDDEN" });
   }
 
   try {
-    const { cashierId, items, totalAmount, paymentMode } = await req.json();
+    const { items, totalAmount, paymentMode } = await req.json();
 
     // Validate input
-    if (!cashierId || !items || !Array.isArray(items) || items.length === 0 || !totalAmount || !paymentMode) {
+    if (!items || !Array.isArray(items) || items.length === 0 || !totalAmount || !paymentMode) {
       return jsonError("Invalid sale data", 400, { code: "BAD_REQUEST" });
     }
 
-    // Verify cashier ID matches the authenticated user
-    if (cashierId !== userId) {
-      return jsonError("Cashier ID mismatch", 403, { code: "FORBIDDEN" });
-    }
+    // Use the authenticated user's ID as the cashier ID
+    const cashierId = userId;
 
     // Validate items and check stock
     for (const item of items) {

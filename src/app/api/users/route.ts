@@ -27,7 +27,13 @@ export async function GET(request: NextRequest) {
 
     // Handle role filtering with super admin exclusion
     if (role) {
-      where.role = role as Role;
+      // Support multiple roles separated by comma (e.g., "CASHIER,MANAGER")
+      if (role.includes(',')) {
+        const roles = role.split(',').map(r => r.trim() as Role);
+        where.role = { in: roles };
+      } else {
+        where.role = role as Role;
+      }
     } else {
       // Exclude super admin users from the list when no specific role is requested
       where.role = {

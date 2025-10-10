@@ -39,7 +39,8 @@ import { RecentSalesSkeleton } from "./recent-sales-skeleton";
 interface DailySalesData {
   name: string;
   sales: number;
-  [key: string]: string | number;
+  date?: Date;
+  [key: string]: string | number | Date | undefined;
 }
 
 interface User {
@@ -80,31 +81,43 @@ function calculateStats(sales: Sale[], users: User[], products: Product[]) {
 // Helper: Calculate daily sales data
 function calculateDailySalesData(sales: Sale[], t: (key: string) => string): DailySalesData[] {
   const today = new Date();
+
+  // Generate the last 7 days (including today)
   const dailyData: DailySalesData[] = Array(7)
     .fill(null)
     .map((_, i) => {
       const d = new Date(today);
-      d.setDate(today.getDate() - i);
+      d.setDate(today.getDate() - (6 - i)); // Start from 6 days ago to today
+      d.setHours(0, 0, 0, 0); // Normalize to start of day
       const dayNameKey = d.toLocaleDateString("en-US", { weekday: "short" }).toLowerCase();
       const translatedDay = t(dayNameKey);
-      return { name: translatedDay, sales: 0 };
-    })
-    .reverse();
+      return {
+        name: translatedDay,
+        sales: 0,
+        date: new Date(d) // Store the date for matching
+      };
+    });
 
+  // Calculate sales for each day
   sales.forEach((sale: Sale) => {
     const saleDate = new Date(sale.timestamp);
-    const diffDays = Math.floor(
-      (today.getTime() - saleDate.getTime()) / (1000 * 3600 * 24)
+    saleDate.setHours(0, 0, 0, 0); // Normalize to start of day
+
+    // Find matching day in our array
+    const matchingDay = dailyData.find(day =>
+      day.date && day.date.getTime() === saleDate.getTime()
     );
-    if (diffDays < 7) {
-      const dayIndex = 6 - diffDays;
-      if (dailyData[dayIndex]) {
-        dailyData[dayIndex].sales += sale.totalAmount;
-      }
+
+    if (matchingDay) {
+      matchingDay.sales += sale.totalAmount;
     }
   });
 
-  return dailyData.map((d) => ({ ...d, sales: parseFloat(d.sales.toFixed(2)) }));
+  // Remove the date property and return clean data
+  return dailyData.map((d) => ({
+    name: d.name,
+    sales: parseFloat(d.sales.toFixed(2))
+  }));
 }
 
 // Helper: Check if dates match
@@ -129,21 +142,24 @@ function calculateSalesForDate(sales: Sale[], targetDate: Date): number {
 // Helper: Calculate weekly sales comparison data
 function calculateWeeklySalesData(sales: Sale[], t: (key: string) => string) {
   const today = new Date();
+
+  // Generate the last 7 days (including today)
   const days = Array(7)
     .fill(null)
     .map((_, i) => {
       const d = new Date(today);
-      d.setDate(today.getDate() - (6 - i));
+      d.setDate(today.getDate() - (6 - i)); // Start from 6 days ago to today
       const dayNameKey = d.toLocaleDateString("en-US", { weekday: "short" }).toLowerCase();
       return {
         date: new Date(d.getFullYear(), d.getMonth(), d.getDate()),
         name: t(dayNameKey),
+        dayIndex: i, // For debugging
       };
     });
 
   return days.map((day) => {
     const thisWeekSales = calculateSalesForDate(sales, day.date);
-    
+
     const lastWeekDate = new Date(day.date);
     lastWeekDate.setDate(lastWeekDate.getDate() - 7);
     const lastWeekSales = calculateSalesForDate(sales, lastWeekDate);
@@ -185,8 +201,27 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
   const formatCurrency = useFormatCurrency();
   const t = useTranslation();
 
+  // Get recent sales for charts (last 14 days to cover both weeks for comparison)
+  // Memoize with stable dates to prevent excessive re-renders
+  const chartDateRange = useMemo(() => {
+    const now = new Date();
+    const twoWeeksAgo = new Date(now);
+    twoWeeksAgo.setDate(now.getDate() - 14);
+    return {
+      from: twoWeeksAgo.toISOString(),
+      to: now.toISOString()
+    };
+  }, []); // Empty deps - only calculate once per mount
+
+  // Memoize sales params to prevent re-renders
+  const salesParams = useMemo(() => ({
+    from: chartDateRange.from,
+    to: chartDateRange.to,
+    pageSize: 1000
+  }), [chartDateRange.from, chartDateRange.to]);
+
   // All hooks must be called in the same order every render
-  const { data: salesData, isLoading: isLoadingSales, error: salesError } = useSales();
+  const { data: salesData, isLoading: isLoadingSales, error: salesError } = useSales(salesParams);
   const { data: usersData, isLoading: isLoadingUsers, error: usersError } = useStaff();
   const { data: products = [], isLoading: isLoadingProducts, error: productsError } = useQuery({
     queryKey: ['products-overview'],
@@ -210,27 +245,32 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
     return { from: undefined, to: undefined };
   }, [period]);
 
-  const { data: stats, isLoading: isLoadingStats, error: statsError } = useSalesStats(
-    (statsDateRange.from && statsDateRange.to) 
+  const statsParams = useMemo(() => {
+    return (statsDateRange.from && statsDateRange.to)
       ? { from: statsDateRange.from, to: statsDateRange.to }
-      : undefined
-  );
+      : undefined;
+  }, [statsDateRange.from, statsDateRange.to]);
+
+  const { data: stats, isLoading: isLoadingStats, error: statsError } = useSalesStats(statsParams);
 
   const [comparisonType, setComparisonType] = useState<'weekly' | 'monthly'>('weekly');
   const { data: monthlyData, isLoading: isLoadingMonthly, error: monthlyError } = useSalesMonthly();
 
-  // Handle errors in useEffect
+  // Handle errors in useEffect - memoize error check
+  const hasError = useMemo(() => {
+    return salesError || usersError || productsError || statsError || monthlyError;
+  }, [salesError, usersError, productsError, statsError, monthlyError]);
+
   useEffect(() => {
-    const error = salesError || usersError || productsError || statsError || monthlyError;
-    if (error) {
-      console.error('Manager overview data fetch failed:', error);
+    if (hasError) {
+      console.error('Manager overview data fetch failed:', hasError);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : t("failedToLoadData"),
+        description: hasError instanceof Error ? hasError.message : t("failedToLoadData"),
         variant: "destructive",
       });
     }
-  }, [salesError, usersError, productsError, statsError, monthlyError, toast, t]);
+  }, [hasError, toast, t]);
 
   // Stabilize derived arrays to avoid changing deps in useMemo
   const sales: Sale[] = useMemo(() => salesData?.data ?? [], [salesData]);

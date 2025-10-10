@@ -13,14 +13,20 @@ export async function seedSuperAdmin(client: PrismaClient) {
     throw new Error("SUPER_ADMIN_PASSWORD environment variable is required but not provided");
   }
 
-  // Check if super admin already exists
-  const existingSuperAdmin = await client.user.findUnique({
+  // Check if super admin already exists by email or ID
+  const existingSuperAdminByEmail = await client.user.findUnique({
     where: {
       email: superAdminEmail,
     },
   });
 
-  if (existingSuperAdmin) {
+  const existingSuperAdminById = await client.user.findUnique({
+    where: {
+      id: "super_admin",
+    },
+  });
+
+  if (existingSuperAdminByEmail || existingSuperAdminById) {
     console.log("Super admin user already exists.");
     return;
   }

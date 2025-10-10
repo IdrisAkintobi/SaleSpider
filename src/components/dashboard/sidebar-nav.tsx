@@ -59,7 +59,7 @@ const navItems: NavItem[] = [
     href: "/dashboard/record-sale",
     labelKey: "record_sale",
     icon: ShoppingCart,
-    roles: ["CASHIER"],
+    roles: ["CASHIER", "MANAGER"],
   },
   {
     href: "/dashboard/staff",

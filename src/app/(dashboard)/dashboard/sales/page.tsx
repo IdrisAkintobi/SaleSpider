@@ -27,6 +27,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { useSales } from "@/hooks/use-sales";
 import { useQuery } from "@tanstack/react-query";
+import { Role } from "@prisma/client";
 import type { Sale } from "@/lib/types";
 import { exportSalesCSV } from "@/lib/csv-export";
 import { CalendarDays, Filter, UserCircle, Eye, ArrowUp, ArrowDown, ShoppingCart, Search, Download, CalendarIcon } from "lucide-react";
@@ -75,12 +76,12 @@ export default function SalesPage() {
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
-  // Fetch all cashiers for dropdown (independent of current filter)
+  // Fetch all cashiers and managers for dropdown (independent of current filter)
   const { data: allCashiers } = useQuery({
     queryKey: ['users', 'cashiers'],
     queryFn: async () => {
-      const res = await fetch('/api/users?role=CASHIER');
-      if (!res.ok) throw new Error('Failed to fetch cashiers');
+      const res = await fetch(`/api/users?role=${Role.CASHIER},${Role.MANAGER}`);
+      if (!res.ok) throw new Error('Failed to fetch cashiers and managers');
       return res.json();
     },
     staleTime: Infinity
