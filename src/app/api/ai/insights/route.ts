@@ -33,11 +33,11 @@ export async function GET(req: NextRequest) {
     // Get query parameters - limit to 7 days max to avoid overloading
     const url = new URL(req.url);
     const daysBack = Math.min(parseInt(url.searchParams.get("daysBack") ?? "7", 10), 7);
-    const storeName = url.searchParams.get("storeName") ?? "Your Store";
 
-    // Get current language setting
+    // Get current language setting and store name from app settings
     const settings = await prisma.appSettings.findFirst();
     const language = settings?.language ?? "en";
+    const storeName = url.searchParams.get("storeName") ?? settings?.appName ?? "Your Store";
 
     logger.info({
       userId,
@@ -156,12 +156,13 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { daysBack = 7, storeName = "Sale Spider", includeDetailedAnalysis = false } = body;
+    const { daysBack = 7, includeDetailedAnalysis = false } = body;
     const limitedDaysBack = Math.min(daysBack, 7); // Limit to 7 days max
 
-    // Get current language setting
+    // Get current language setting and store name from app settings
     const settings = await prisma.appSettings.findFirst();
     const language = settings?.language ?? "en";
+    const storeName = body.storeName ?? settings?.appName ?? "Sale Spider";
 
     logger.info({
       userId,
