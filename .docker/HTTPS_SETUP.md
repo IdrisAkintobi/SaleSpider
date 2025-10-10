@@ -200,22 +200,34 @@ If `salespider.local` doesn't work:
 
 ---
 
-## Production Deployment
+## Internal Production Deployment
 
-For production with a real domain, update `.env`:
+For internal production deployment with a real domain, simply update `.env`:
 
 ```bash
-# Use your real domain
-DOMAIN=yourdomain.com
-
-# Caddy will automatically get Let's Encrypt certificates
-# Change tls directive in Caddyfile to:
-# tls your-email@example.com
+# Use your real internal domain
+DOMAIN=salespider.yourcompany.com
 ```
+
+The system will continue using self-signed certificates, which is appropriate for internal tools where:
+- Users can trust the certificate in their browsers/systems (see instructions above)
+- The domain is only accessible within your organization
+- You want to avoid external CA dependencies
 
 Then restart:
 ```bash
 docker compose restart proxy
+```
+
+### Public Production (External Access)
+
+If you need to deploy this for external/public access, you would need to modify the Caddyfile to use Let's Encrypt:
+
+```bash
+# In Caddyfile, change:
+# tls /etc/caddy/certs/cert.pem /etc/caddy/certs/key.pem
+# to:
+# tls your-email@example.com
 ```
 
 ---
