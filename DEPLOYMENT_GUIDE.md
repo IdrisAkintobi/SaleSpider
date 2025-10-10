@@ -334,16 +334,91 @@ docker exec salespider-postgres psql -U postgres -d salespider -c "\dt"
 ```
 
 #### **SSL Certificate Issues**
-```bash
-# Regenerate certificates
-.docker/scripts/setup/setup-ssl.sh
 
-# Check Caddy configuration
-docker exec salespider-proxy cat /etc/caddy/Caddyfile
+**Problem:** Browser shows certificate warnings or API calls fail with `ERR_CERT_AUTHORITY_INVALID`
 
-# Restart proxy
-docker compose restart proxy
-```
+**Cause:** Self-signed certificates are not trusted by browsers (this is normal for internal deployments)
+
+**Solutions:**
+
+1. **Accept certificate in browser** (affects all API calls):
+   ```
+   1. Visit https://your-domain-or-ip
+   2. Click "Advanced" → "Proceed to site"
+   3. This will fix API calls automatically
+   ```
+
+2. **Regenerate certificates** if corrupted:
+   ```bash
+   .docker/scripts/setup/setup-ssl.sh
+   docker compose restart proxy
+   ```
+
+3. **Trust certificate system-wide** (optional):
+
+   **On the server machine:**
+   ```bash
+   # macOS
+   sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain .docker/ssl/cert.pem
+
+   # Linux
+   sudo cp .docker/ssl/cert.pem /usr/local/share/ca-certificates/salespider.crt
+   sudo update-ca-certificates
+   ```
+
+   **On other PCs in the network:**
+
+   **Step 1: Get the certificate**
+
+   Option A - Copy certificate file:
+   ```bash
+   # Share via network folder, USB, or email
+   # From server: cp .docker/ssl/cert.pem /shared/folder/
+
+   # Or serve temporarily via HTTP
+   cd .docker/ssl && python3 -m http.server 8000
+   # Other PCs visit: http://192.168.1.133:8000/cert.pem
+   ```
+
+   Option B - Export via browser:
+   ```
+   1. Visit https://192.168.1.133 (accept warning)
+   2. Click padlock icon → "Certificate"
+   3. Click "Details" tab → "Export" or "Copy to File"
+   4. Save as cert.pem
+   ```
+
+   **Step 2: Install the certificate**
+
+   System-wide installation:
+   ```bash
+   # macOS
+   sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain cert.pem
+
+   # Linux (Ubuntu/Debian)
+   sudo cp cert.pem /usr/local/share/ca-certificates/salespider.crt
+   sudo update-ca-certificates
+
+   # Windows (PowerShell as Administrator)
+   Import-Certificate -FilePath "cert.pem" -CertStoreLocation "Cert:\LocalMachine\Root"
+   ```
+
+   Browser-only installation:
+   ```
+   Chrome/Edge: Settings → Privacy → Security → Manage Certificates → Trusted Root → Import
+   Firefox: Settings → Privacy → Certificates → View Certificates → Authorities → Import
+   ```
+
+4. **Check configuration**:
+   ```bash
+   # Check Caddy configuration
+   docker exec salespider-proxy cat /etc/caddy/Caddyfile
+
+   # View Caddy logs
+   docker logs salespider-proxy
+   ```
+
+**Note:** Certificate warnings are normal and expected for internal tools using self-signed certificates.
 
 #### **Memory Issues**
 For systems with limited memory, reduce resource limits in `.env`:

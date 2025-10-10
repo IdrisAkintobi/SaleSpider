@@ -13,6 +13,7 @@ interface ColorPickerProps {
   onChange: (color: string) => void;
   label?: string;
   className?: string;
+  id?: string;
 }
 
 const PRESET_COLORS = [
@@ -26,7 +27,7 @@ const PRESET_COLORS = [
   "#f97316", "#ea580c", "#c2410c", "#9a3412", "#7c2d12", // Oranges
 ];
 
-export function ColorPicker({ value, onChange, label, className }: ColorPickerProps) {
+export function ColorPicker({ value, onChange, label, className, id }: ColorPickerProps) {
   const [inputValue, setInputValue] = useState(value);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,9 +47,10 @@ export function ColorPicker({ value, onChange, label, className }: ColorPickerPr
 
   return (
     <div className={cn("space-y-2", className)}>
-      {label && <Label>{label}</Label>}
+      {label && <Label htmlFor={id}>{label}</Label>}
       <div className="flex gap-2">
         <Input
+          id={id}
           value={inputValue}
           onChange={handleInputChange}
           placeholder="#000000"
