@@ -256,7 +256,7 @@ export async function seedSales(client: PrismaClient, count: number = 12000) {
   });
 
   // Sales by month
-  const monthlySales = await client.$queryRaw`
+  const monthlySales = await client.$queryRaw<Array<{month: Date, sales_count: bigint, total_revenue: number}>>`
     SELECT
       DATE_TRUNC('month', "createdAt") as month,
       COUNT(*) as sales_count,
@@ -265,7 +265,7 @@ export async function seedSales(client: PrismaClient, count: number = 12000) {
     WHERE "createdAt" >= ${startDate}
     GROUP BY DATE_TRUNC('month', "createdAt")
     ORDER BY month;
-  ` as Array<{month: Date, sales_count: bigint, total_revenue: number}>;
+  `;
 
   console.log('\n📈 Monthly Sales:');
   monthlySales.forEach(month => {
