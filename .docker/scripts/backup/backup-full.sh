@@ -6,8 +6,7 @@ set -e
 # Configuration
 LOG_FILE="/var/log/pgbackrest/backup-full.log"
 WEBHOOK_URL="${BACKUP_WEBHOOK_URL:-}"
-SLACK_WEBHOOK="${BACKUP_SLACK_WEBHOOK:-}"
-STANZA="salespider"
+STANZA="${PGBACKREST_STANZA:-salespider}"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
 # Logging function
@@ -27,12 +26,6 @@ handle_error() {
             >/dev/null 2>&1 || true
     fi
     
-    if [ -n "$SLACK_WEBHOOK" ]; then
-        curl -s -X POST "$SLACK_WEBHOOK" \
-            -H "Content-Type: application/json" \
-            -d "{\"text\":\"🚨 SaleSpider Backup Failed (exit code: $exit_code)\"}" \
-            >/dev/null 2>&1 || true
-    fi
     
     exit $exit_code
 }
@@ -66,11 +59,5 @@ if [ -n "$WEBHOOK_URL" ]; then
         >/dev/null 2>&1 || true
 fi
 
-if [ -n "$SLACK_WEBHOOK" ]; then
-    curl -s -X POST "$SLACK_WEBHOOK" \
-        -H "Content-Type: application/json" \
-        -d "{\"text\":\"✅ SaleSpider Full Backup Completed\",\"attachments\":[{\"color\":\"good\",\"fields\":[{\"title\":\"Duration\",\"value\":\"${duration}s\",\"short\":true},{\"title\":\"Type\",\"value\":\"Full\",\"short\":true}]}]}" \
-        >/dev/null 2>&1 || true
-fi
 
 log "pgBackRest backup process completed successfully"

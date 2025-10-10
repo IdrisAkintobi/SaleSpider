@@ -24,7 +24,7 @@ services:
       # WAL Configuration for Backup (pgBackRest)
       - POSTGRES_WAL_LEVEL=replica
       - POSTGRES_ARCHIVE_MODE=on
-      - POSTGRES_ARCHIVE_COMMAND=pgbackrest --stanza=salespider archive-push %p
+      - POSTGRES_ARCHIVE_COMMAND=pgbackrest --stanza=${PGBACKREST_STANZA:-salespider} archive-push %p
       - POSTGRES_MAX_WAL_SENDERS=${POSTGRES_MAX_WAL_SENDERS:-3}
       - POSTGRES_WAL_KEEP_SIZE=${POSTGRES_WAL_KEEP_SIZE:-1GB}
 
@@ -74,7 +74,7 @@ services:
       -c max_connections=${POSTGRES_MAX_CONNECTIONS:-100}
       -c wal_level=replica
       -c archive_mode=on
-      -c archive_command='pgbackrest --stanza=salespider archive-push %p'
+      -c archive_command='pgbackrest --stanza=${PGBACKREST_STANZA:-salespider} archive-push %p'
       -c max_wal_senders=${POSTGRES_MAX_WAL_SENDERS:-3}
       -c wal_keep_size=${POSTGRES_WAL_KEEP_SIZE:-1GB}
       -c log_statement=${POSTGRES_LOG_STATEMENT:-none}

@@ -4,18 +4,15 @@ SaleSpider is a modern, Next.js-based application designed for small and medium-
 
 ## 📖 Table of Contents
 
-- [🚀 Quick Deployment](#-quick-deployment)
-- [✨ Key Features](#key-features)
-- [🛠️ Tech Stack](#tech-stack)
-- [💻 Development Setup](#development-setup)
+- [🚀 Quick Start](#-quick-start)
+- [✨ Key Features](#-key-features)
+- [🛠️ Tech Stack](#-tech-stack)
+- [💻 Development Setup](#-development-setup)
 - [📚 Documentation](#-documentation)
-  - [Deployment & Operations](#-deployment--operations)
-  - [Architecture & Development](#-architecture--development)
-  - [Quick Reference](#-quick-reference)
 
-## 🚀 Quick Deployment
+## 🚀 Quick Start
 
-**Deploy SaleSpider with Makefile commands:**
+**Deploy SaleSpider in 3 commands:**
 
 ```bash
 # 1. Initial setup
@@ -36,10 +33,9 @@ make help      # Show all available commands
 make status    # Check service status
 make logs      # View logs
 make backup    # Create manual backup
-make restore   # Restore from backup
 ```
 
-👉 **See [📚 Complete Documentation](#-documentation) below**
+📖 **For complete deployment instructions:** [Deployment Guide](DEPLOYMENT_GUIDE.md)
 
 ## ✨ Key Features
 
@@ -149,11 +145,10 @@ Available aliases:
 
 ### 🚀 Deployment & Operations
 
-- **[Makefile Quick Reference](MAKEFILE_GUIDE.md)** - All available `make` commands with examples
-- **[Docker Deployment Guide](.docker/README.md)** - Comprehensive Docker deployment documentation
-- **[HTTPS Setup Guide](.docker/HTTPS_SETUP.md)** - SSL/TLS certificate configuration for production
-- **[Database Restore Guide](.docker/RESTORE_GUIDE.md)** - Complete restore procedures (latest, PITR, specific backups)
-- **[Backup Configuration](.docker/BACKUP_CONFIG.md)** - pgBackRest backup system configuration
+- **[Deployment Guide](DEPLOYMENT_GUIDE.md)** - Complete deployment instructions for all environments
+- **[Environment Variables Reference](ENVIRONMENT_VARIABLES.md)** - All configuration options
+- **[Backup Guide](BACKUP_GUIDE.md)** - Database backup and restore procedures
+- **[Makefile Commands](MAKEFILE_GUIDE.md)** - Available automation commands
 
 ### 🏗️ Architecture & Development
 
@@ -170,32 +165,10 @@ make stop          # Stop services
 make status        # Service status
 make logs          # View logs
 make backup        # Manual backup
-make restore       # Restore from latest backup
-make db-verify     # Verify database
 make help          # All commands
 ```
 
-**Database Restore:**
-```bash
-make restore                                    # Latest backup
-make restore-pitr TIME="2024-10-04 15:30:00"  # Point-in-time
-make restore-specific SET="20241004-163303F"  # Specific backup
-make backup-info                               # List backups
-```
-
-**Development:**
-```bash
-make dev-logs          # Tail logs
-make app-shell         # Application shell
-make db-shell          # Database shell
-make dev-restart-app   # Restart app only
-```
-
-### 📖 Additional Resources
-
-- **[Deployment Script](deploy.sh)** - Platform-agnostic deployment automation
-- **[Makefile](Makefile)** - Command automation with 42+ commands
-- **[Environment Template](env.example)** - Configuration template with 80+ variables
+**For detailed command references, see [Makefile Commands](MAKEFILE_GUIDE.md)**
 
 ---
 

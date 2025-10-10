@@ -16,11 +16,12 @@ services:
       # PGBACKREST_REPO1_AZURE_CONTAINER: ${AZURE_STORAGE_CONTAINER:-}
       # PGBACKREST_REPO1_GCS_BUCKET: ${GCS_BUCKET:-}
       # PGBACKREST_REPO1_GCS_KEY: ${GCS_KEY:-}
-      PGHOST: postgres
+      PGHOST: ${POSTGRES_HOST:-postgres}
       PGPORT: ${POSTGRES_PORT:-5432}
       PGUSER: ${POSTGRES_USER:-postgres}
       PGPASSWORD: ${POSTGRES_PASSWORD}
       PGDATABASE: ${POSTGRES_DB:-salespider}
+      PGBACKREST_STANZA: ${PGBACKREST_STANZA:-salespider}
       BACKUP_SCHEDULE_FULL: ${BACKUP_SCHEDULE_FULL:-0 2 * * 0}
       BACKUP_SCHEDULE_DIFF: ${BACKUP_SCHEDULE_DIFF:-0 2 * * 1-6}
       BACKUP_RETENTION_FULL: ${BACKUP_RETENTION_FULL:-8}
@@ -46,7 +47,7 @@ services:
     command: ["sh", "/scripts/start-pgbackrest.sh"]
     
     healthcheck:
-      test: ["CMD", "pgbackrest", "--stanza=salespider", "info"]
+      test: ["CMD", "sh", "-c", "pgbackrest --stanza=${PGBACKREST_STANZA:-salespider} info"]
       interval: 60s
       timeout: 30s
       retries: 3
