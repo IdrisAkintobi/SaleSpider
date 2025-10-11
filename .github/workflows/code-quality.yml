@@ -2,70 +2,70 @@ name: Code Quality
 
 on:
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 jobs:
   code-quality:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Use Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
 
-    - name: Install dependencies
-      run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-    - name: Run linting
-      run: npm run lint
+      - name: Run linting
+        run: npm run lint
 
-    - name: Run type checking
-      run: npx tsc --noEmit
+      - name: Run type checking
+        run: npx tsc --noEmit
 
-    - name: Check code formatting
-      run: npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,md}"
-      continue-on-error: true
+      - name: Check code formatting
+        run: npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,md}"
+        continue-on-error: true
 
-    - name: Run tests with coverage
-      run: npm run test:coverage
+      - name: Run tests with coverage
+        run: npm run test:coverage
 
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        fail_ci_if_error: false
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@54bcd8715eee62d40e33596ef5e8f0f48dbbccab # v4.1.0
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
 
-    - name: Comment PR with test results
-      uses: actions/github-script@v7
-      if: github.event_name == 'pull_request'
-      with:
-        script: |
-          const fs = require('fs');
+      - name: Comment PR with test results
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        with:
+          script: |
+            const fs = require('fs');
 
-          // Read test results and add as PR comment
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: '## 🧪 Test Results\n\nTests completed successfully! ✅'
-          });
+            // Read test results and add as PR comment
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '## 🧪 Test Results\n\nTests completed successfully! ✅'
+            });
 
   dependency-review:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Dependency Review
-      uses: actions/dependency-review-action@v4
-      with:
-        fail-on-severity: high
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high

@@ -28,6 +28,7 @@ make deploy
 **That's it!** Your production-ready SaleSpider instance will be running with HTTPS, automated backups, and monitoring.
 
 ### Quick Commands
+
 ```bash
 make help      # Show all available commands
 make status    # Check service status
@@ -49,9 +50,25 @@ make backup    # Create manual backup
 - **🌍 Multi-Language Support**: Full internationalization (English, French, Spanish, German)
 - **⚡ Performance Optimized**: Virtual scrolling, smart prefetching, and TanStack Query caching
 
+### Design Decisions
+
+**📸 Product Images**: The app supports product images via image URLs rather than direct file uploads. Users can set up their own image processing service (local or cloud with CDN) and simply provide the image links for products. This approach provides flexibility while avoiding the complexity of built-in file storage, processing, and CDN management. You maintain full control over your image infrastructure and can choose the solution that best fits your needs.
+
+**🔧 Extensibility**: The clean, modular architecture makes it easy to fork and extend SaleSpider with additional features like:
+
+- Direct image uploads and advanced image processing
+- Payment provider integrations (Paystack, Moniepoint, Stripe, etc.)
+- Custom reporting and analytics dashboards
+- Integration with accounting software or ERPs
+- Multi-location/multi-store management
+- Custom workflow automations
+
+Create your own extended version tailored to your specific business requirements!
+
 ## 🛠️ Tech Stack
 
 ### Frontend
+
 - **Next.js 14**: React framework with App Router
 - **React 18**: Modern React with hooks and concurrent features
 - **TypeScript**: Full type safety throughout the application
@@ -60,12 +77,14 @@ make backup    # Create manual backup
 - **TanStack Query**: Intelligent data fetching and caching
 
 ### Backend & Database
+
 - **PostgreSQL 16**: Production-ready database with optimization
 - **Prisma ORM**: Type-safe database access with migrations
 - **NextAuth.js**: Secure authentication and session management
 - **Genkit AI**: Firebase's generative AI toolkit for smart insights
 
 ### Deployment & Infrastructure
+
 - **Docker**: Containerized deployment
 - **Caddy**: Automatic HTTPS and reverse proxy
 - **pgBackRest**: Enterprise-grade backup system
@@ -77,32 +96,38 @@ make backup    # Create manual backup
 For local development:
 
 1.  **Clone the repository**:
+
     ```bash
     git clone <repository-url>
     cd SaleSpider
     ```
 
 2.  **Install dependencies**:
+
     ```bash
     npm install
     ```
 
 3.  **Set up environment variables**:
+
     ```bash
     cp env.example .env
     # Edit .env with your development settings
     ```
 
 4.  **Set up database**:
+
     ```bash
     npx prisma migrate dev
     npx prisma db seed
     ```
 
 5.  **Run development server**:
+
     ```bash
     npm run dev
     ```
+
     Application available at `http://localhost:3000`
 
 6.  **Run AI development server** (optional):
@@ -124,13 +149,14 @@ This project uses TypeScript path aliases for clean, maintainable imports:
 
 ```typescript
 // Instead of relative imports like this:
-import { Button } from "../../../components/ui/button";
+import { Button } from '../../../components/ui/button'
 
 // Use clean path aliases like this:
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button'
 ```
 
 Available aliases:
+
 - `@/*` - Root src directory
 - `@/components/*` - UI components
 - `@/lib/*` - Utility libraries
@@ -158,6 +184,7 @@ Available aliases:
 ### ⚡ Quick Reference
 
 **Common Operations:**
+
 ```bash
 make deploy        # Full deployment
 make start         # Start services

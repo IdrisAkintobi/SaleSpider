@@ -15,6 +15,9 @@ Object.defineProperty(window, 'ResizeObserver', {
 Object.defineProperty(window, 'PointerEvent', {
   writable: true,
   value: class PointerEvent extends Event {
+    pointerId: number
+    pointerType: string
+
     constructor(type: string, props: PointerEventInit) {
       super(type, props)
       this.pointerId = props.pointerId || 0
@@ -106,4 +109,7 @@ vi.mock('next/navigation', () => ({
 }))
 
 // Mock environment variables
-process.env.NODE_ENV = 'test'
+Object.defineProperty(process.env, 'NODE_ENV', {
+  value: 'test',
+  writable: true,
+})

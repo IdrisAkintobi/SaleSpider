@@ -1,38 +1,38 @@
-import { PaymentMode, Role } from "@prisma/client";
-import { NextRequest } from "next/server";
-import { calculateSaleTotals } from "@/lib/vat";
-import { startOfDay, endOfDay } from "date-fns";
-import { createChildLogger } from "@/lib/logger";
-import { jsonOk, jsonError, handleException } from "@/lib/api-response";
+import { PaymentMode, Role } from '@prisma/client'
+import { NextRequest } from 'next/server'
+import { calculateSaleTotals } from '@/lib/vat'
+import { startOfDay, endOfDay } from 'date-fns'
+import { createChildLogger } from '@/lib/logger'
+import { jsonOk, jsonError, handleException } from '@/lib/api-response'
 
-import { prisma } from "@/lib/prisma";
-const logger = createChildLogger('sales-api');
+import { prisma } from '@/lib/prisma'
+const logger = createChildLogger('sales-api')
 
 // Helper function to map payment mode string to enum
 function mapPaymentMode(paymentModeString: string): PaymentMode {
   const mapping: Record<string, PaymentMode> = {
-    "Cash": PaymentMode.CASH,
-    "Card": PaymentMode.CARD,
-    "Bank Transfer": PaymentMode.BANK_TRANSFER,
-    "Crypto": PaymentMode.CRYPTO,
-    "Other": PaymentMode.OTHER,
-  };
-  
-  return mapping[paymentModeString] || PaymentMode.CASH;
+    Cash: PaymentMode.CASH,
+    Card: PaymentMode.CARD,
+    'Bank Transfer': PaymentMode.BANK_TRANSFER,
+    Crypto: PaymentMode.CRYPTO,
+    Other: PaymentMode.OTHER,
+  }
+
+  return mapping[paymentModeString] || PaymentMode.CASH
 }
 
 // Helper to build order by clause
 function buildOrderBy(sort: string, order: 'asc' | 'desc') {
-  if (sort === "cashierName") {
-    return { cashier: { name: order } };
+  if (sort === 'cashierName') {
+    return { cashier: { name: order } }
   }
-  if (sort === "totalAmount") {
-    return { totalAmount: order };
+  if (sort === 'totalAmount') {
+    return { totalAmount: order }
   }
-  if (sort === "paymentMode") {
-    return { paymentMode: order };
+  if (sort === 'paymentMode') {
+    return { paymentMode: order }
   }
-  return { createdAt: order };
+  return { createdAt: order }
 }
 
 // Helper to build base where clause with filters
@@ -44,135 +44,152 @@ function buildBaseWhereClause(
   from: string | null,
   to: string | null
 ) {
-  const where: any = { deletedAt: null };
-  
+  const where: any = { deletedAt: null }
+
   // Cashiers can only see their own sales
   if (userRole === Role.CASHIER) {
-    where.cashierId = userId;
+    where.cashierId = userId
   }
-  
+
   // Manager filter by cashier
-  if (cashierId && cashierId !== "all") {
-    where.cashierId = cashierId;
+  if (cashierId && cashierId !== 'all') {
+    where.cashierId = cashierId
   }
-  
+
   // Payment method filter
-  if (paymentMethod && paymentMethod !== "all") {
-    where.paymentMode = paymentMethod as PaymentMode;
+  if (paymentMethod && paymentMethod !== 'all') {
+    where.paymentMode = paymentMethod as PaymentMode
   }
-  
+
   // Date range filter with proper time boundaries
   if (from && to) {
-    where.createdAt = { 
-      gte: startOfDay(new Date(from)), 
-      lte: endOfDay(new Date(to)) 
-    };
+    where.createdAt = {
+      gte: startOfDay(new Date(from)),
+      lte: endOfDay(new Date(to)),
+    }
   } else if (from) {
-    where.createdAt = { gte: startOfDay(new Date(from)) };
+    where.createdAt = { gte: startOfDay(new Date(from)) }
   } else if (to) {
-    where.createdAt = { lte: endOfDay(new Date(to)) };
+    where.createdAt = { lte: endOfDay(new Date(to)) }
   }
-  
-  return where;
+
+  return where
 }
 
 // Helper to get payment mode matches from search term
 function getPaymentModeMatches(searchLower: string): PaymentMode[] {
   const labelToEnum: Array<{ label: string; value: PaymentMode }> = [
-    { label: "cash", value: PaymentMode.CASH },
-    { label: "card", value: PaymentMode.CARD },
-    { label: "bank transfer", value: PaymentMode.BANK_TRANSFER },
-    { label: "crypto", value: PaymentMode.CRYPTO },
-    { label: "other", value: PaymentMode.OTHER },
-  ];
-  
+    { label: 'cash', value: PaymentMode.CASH },
+    { label: 'card', value: PaymentMode.CARD },
+    { label: 'bank transfer', value: PaymentMode.BANK_TRANSFER },
+    { label: 'crypto', value: PaymentMode.CRYPTO },
+    { label: 'other', value: PaymentMode.OTHER },
+  ]
+
   return labelToEnum
     .filter(entry => entry.label.includes(searchLower))
-    .map(entry => entry.value);
+    .map(entry => entry.value)
 }
 
 // Helper to add search filter to where clause
 function addSearchFilter(where: any, search: string) {
-  const searchLower = search.toLowerCase();
-  const paymentModeMatches = getPaymentModeMatches(searchLower);
-  
+  const searchLower = search.toLowerCase()
+  const paymentModeMatches = getPaymentModeMatches(searchLower)
+
   where.OR = [
     { id: { contains: search, mode: 'insensitive' } },
     { cashier: { name: { contains: search, mode: 'insensitive' } } },
     { cashier: { username: { contains: search, mode: 'insensitive' } } },
-    { items: { some: { product: { name: { contains: search, mode: 'insensitive' } } } } },
-  ];
-  
+    {
+      items: {
+        some: { product: { name: { contains: search, mode: 'insensitive' } } },
+      },
+    },
+  ]
+
   if (paymentModeMatches.length > 0) {
-    where.OR.push({ paymentMode: { in: paymentModeMatches } });
+    where.OR.push({ paymentMode: { in: paymentModeMatches } })
   }
-  
-  return where;
+
+  return where
 }
 
 // Function to get sales
 export async function GET(req: NextRequest) {
   // Read the X-User-Id header set by the middleware
-  const userId = req.headers.get("X-User-Id");
+  const userId = req.headers.get('X-User-Id')
 
   if (!userId) {
-    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
+    return jsonError('Unauthorized', 401, { code: 'UNAUTHORIZED' })
   }
 
   // Fetch the user to check their role
   const user = await prisma.user.findUnique({
     where: { id: userId },
-  });
+  })
 
   if (!user) {
-    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
+    return jsonError('Unauthorized', 401, { code: 'UNAUTHORIZED' })
   }
 
   // Parse query params
-  const { searchParams } = new URL(req.url);
-  const page = parseInt(searchParams.get("page") || "1", 10);
-  const pageSize = parseInt(searchParams.get("pageSize") || "20", 10);
-  const sort = searchParams.get("sort") || "createdAt";
-  const order = (searchParams.get("order") || "desc").toLowerCase() === "asc" ? "asc" : "desc";
-  const cashierId = searchParams.get("cashierId");
-  const paymentMethod = searchParams.get("paymentMethod");
-  const from = searchParams.get("from");
-  const to = searchParams.get("to");
-  const search = (searchParams.get("search") || "").trim();
+  const { searchParams } = new URL(req.url)
+  const page = parseInt(searchParams.get('page') || '1', 10)
+  const pageSize = parseInt(searchParams.get('pageSize') || '20', 10)
+  const sort = searchParams.get('sort') || 'createdAt'
+  const order =
+    (searchParams.get('order') || 'desc').toLowerCase() === 'asc'
+      ? 'asc'
+      : 'desc'
+  const cashierId = searchParams.get('cashierId')
+  const paymentMethod = searchParams.get('paymentMethod')
+  const from = searchParams.get('from')
+  const to = searchParams.get('to')
+  const search = (searchParams.get('search') || '').trim()
 
   // Build order by clause
-  const orderBy = buildOrderBy(sort, order);
+  const orderBy = buildOrderBy(sort, order)
 
   try {
     // Build where clause with filters
-    let where = buildBaseWhereClause(user.role, userId, cashierId, paymentMethod, from, to);
-    
+    let where = buildBaseWhereClause(
+      user.role,
+      userId,
+      cashierId,
+      paymentMethod,
+      from,
+      to
+    )
+
     // Apply search filter if provided
     if (search) {
-      where = addSearchFilter(where, search);
+      where = addSearchFilter(where, search)
     }
 
     // Get total count for pagination
-    const total = await prisma.sale.count({ where });
+    const total = await prisma.sale.count({ where })
 
     // Get total sales value for all filtered sales
     const totalSalesValueAgg = await prisma.sale.aggregate({
       _sum: { totalAmount: true },
       where,
-    });
-    const totalSalesValue = Number(totalSalesValueAgg._sum.totalAmount || 0);
+    })
+    const totalSalesValue = Number(totalSalesValueAgg._sum.totalAmount || 0)
 
     // Aggregate total sales by payment method
     const paymentMethodTotalsRaw = await prisma.sale.groupBy({
       by: ['paymentMode'],
       _sum: { totalAmount: true },
       where,
-    });
+    })
     // Convert to object: { Cash: 1000, Card: 500, ... }
-    const paymentMethodTotals = paymentMethodTotalsRaw.reduce((acc, row) => {
-      acc[row.paymentMode] = Number(row._sum.totalAmount || 0);
-      return acc;
-    }, {} as Record<PaymentMode, number>);
+    const paymentMethodTotals = paymentMethodTotalsRaw.reduce(
+      (acc, row) => {
+        acc[row.paymentMode] = Number(row._sum.totalAmount || 0)
+        return acc
+      },
+      {} as Record<PaymentMode, number>
+    )
 
     // Fetch paginated, sorted sales
     const sales = await prisma.sale.findMany({
@@ -199,7 +216,7 @@ export async function GET(req: NextRequest) {
       orderBy,
       skip: (page - 1) * pageSize,
       take: pageSize,
-    });
+    })
 
     // Transform the data to match frontend expectations
     const transformedSales = sales.map((sale: any) => ({
@@ -218,79 +235,102 @@ export async function GET(req: NextRequest) {
         quantity: item.quantity,
         price: item.price,
       })),
-    }));
+    }))
 
-    return jsonOk({ data: transformedSales, total, paymentMethodTotals, totalSalesValue });
+    return jsonOk({
+      data: transformedSales,
+      total,
+      paymentMethodTotals,
+      totalSalesValue,
+    })
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to fetch sales');
-    return handleException(error, "Failed to fetch sales", 500);
+    logger.error(
+      { error: error instanceof Error ? error.message : 'Unknown error' },
+      'Failed to fetch sales'
+    )
+    return handleException(error, 'Failed to fetch sales', 500)
   }
 }
 
 // Function to record a sale
 export async function POST(req: NextRequest) {
   // Read the X-User-Id header set by the middleware
-  const userId = req.headers.get("X-User-Id");
+  const userId = req.headers.get('X-User-Id')
 
   if (!userId) {
-    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
+    return jsonError('Unauthorized', 401, { code: 'UNAUTHORIZED' })
   }
 
   // Fetch the user to check their role
   const user = await prisma.user.findUnique({
     where: { id: userId },
-  });
+  })
 
   if (!user) {
-    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
+    return jsonError('Unauthorized', 401, { code: 'UNAUTHORIZED' })
   }
 
-  // Only cashiers and managers can record sales
-  if (![Role.CASHIER, Role.MANAGER].includes(user.role)) {
-    return jsonError("Only cashiers and managers can record sales", 403, { code: "FORBIDDEN" });
+  // Only cashiers, managers, and super admins can record sales
+  if (![Role.CASHIER, Role.MANAGER, Role.SUPER_ADMIN].includes(user.role)) {
+    return jsonError(
+      'Only cashiers, managers, and super admins can record sales',
+      403,
+      { code: 'FORBIDDEN' }
+    )
   }
 
   try {
-    const { items, totalAmount, paymentMode } = await req.json();
+    const { items, totalAmount, paymentMode } = await req.json()
 
     // Validate input
-    if (!items || !Array.isArray(items) || items.length === 0 || !totalAmount || !paymentMode) {
-      return jsonError("Invalid sale data", 400, { code: "BAD_REQUEST" });
+    if (
+      !items ||
+      !Array.isArray(items) ||
+      items.length === 0 ||
+      !totalAmount ||
+      !paymentMode
+    ) {
+      return jsonError('Invalid sale data', 400, { code: 'BAD_REQUEST' })
     }
 
     // Use the authenticated user's ID as the cashier ID
-    const cashierId = userId;
+    const cashierId = userId
 
     // Validate items and check stock
     for (const item of items) {
       const product = await prisma.product.findUnique({
         where: { id: item.productId },
-      });
+      })
 
       if (!product) {
-        return jsonError(`Product ${item.productId} not found`, 404, { code: "NOT_FOUND" });
+        return jsonError(`Product ${item.productId} not found`, 404, {
+          code: 'NOT_FOUND',
+        })
       }
 
       if (product.quantity < item.quantity) {
         return jsonError(
           `Insufficient stock for ${product.name}. Available: ${product.quantity}, Requested: ${item.quantity}`,
           400,
-          { code: "BAD_REQUEST" }
-        );
+          { code: 'BAD_REQUEST' }
+        )
       }
     }
 
     // Calculate subtotal from items
-    const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    
+    const subtotal = items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    )
+
     // Calculate VAT totals
-    const saleTotals = calculateSaleTotals(subtotal);
+    const saleTotals = calculateSaleTotals(subtotal)
 
     // Map payment mode to enum
-    const mappedPaymentMode = mapPaymentMode(paymentMode);
+    const mappedPaymentMode = mapPaymentMode(paymentMode)
 
     // Create the sale and update stock in a transaction
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async tx => {
       // Create the sale
       const sale = await tx.sale.create({
         data: {
@@ -301,7 +341,7 @@ export async function POST(req: NextRequest) {
           totalAmount: saleTotals.totalAmount,
           paymentMode: mappedPaymentMode,
         },
-      });
+      })
 
       // Create sale items and update product stock
       for (const item of items) {
@@ -312,7 +352,7 @@ export async function POST(req: NextRequest) {
             quantity: item.quantity,
             price: item.price,
           },
-        });
+        })
 
         // Update product stock
         await tx.product.update({
@@ -322,27 +362,32 @@ export async function POST(req: NextRequest) {
               decrement: item.quantity,
             },
           },
-        });
+        })
       }
 
-      return sale;
-    });
+      return sale
+    })
 
-    logger.info({
-      saleId: result.id,
-      cashierId,
-      totalAmount: saleTotals.totalAmount,
-      itemCount: items.length,
-      paymentMode: mappedPaymentMode
-    }, 'Sale recorded successfully');
+    logger.info(
+      {
+        saleId: result.id,
+        cashierId,
+        totalAmount: saleTotals.totalAmount,
+        itemCount: items.length,
+        paymentMode: mappedPaymentMode,
+      },
+      'Sale recorded successfully'
+    )
 
-    return jsonOk({ 
+    return jsonOk({
       id: result.id,
-      message: "Sale recorded successfully" 
-    });
-
+      message: 'Sale recorded successfully',
+    })
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to record sale');
-    return handleException(error, "Failed to record sale", 500);
+    logger.error(
+      { error: error instanceof Error ? error.message : 'Unknown error' },
+      'Failed to record sale'
+    )
+    return handleException(error, 'Failed to record sale', 500)
   }
-} 
+}

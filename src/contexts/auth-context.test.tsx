@@ -29,7 +29,10 @@ const TestComponent = () => {
       <div data-testid="is-cashier">{auth.userIsCashier.toString()}</div>
       <div data-testid="is-manager">{auth.userIsManager.toString()}</div>
       <div data-testid="is-loading">{auth.isLoading.toString()}</div>
-      <button data-testid="login-btn" onClick={() => auth.login('test', 'password')}>
+      <button
+        data-testid="login-btn"
+        onClick={() => auth.login('test', 'password')}
+      >
         Login
       </button>
       <button data-testid="logout-btn" onClick={() => auth.logout()}>
@@ -71,6 +74,30 @@ describe('AuthProvider', () => {
     )
   }
 
+  const setupMockAuth = (
+    authState: Partial<ReturnType<typeof useAuthHook.useAuth>>
+  ) => {
+    const mockLogin = vi.fn()
+    const mockLogout = vi.fn()
+    const mockRefetchSession = vi.fn()
+
+    mockUseAuth.mockReturnValue({
+      user: null,
+      userIsCashier: false,
+      userIsManager: false,
+      isLoading: false,
+      login: mockLogin,
+      logout: mockLogout,
+      refetchSession: mockRefetchSession,
+      isLoginLoading: false,
+      isLogoutLoading: false,
+      isAuthenticated: false,
+      ...authState,
+    })
+
+    return { mockLogin, mockLogout, mockRefetchSession }
+  }
+
   it('throws error when useAuth is used outside of AuthProvider', () => {
     // Suppress console.error for this test
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
@@ -83,16 +110,10 @@ describe('AuthProvider', () => {
   })
 
   it('provides auth context with user data', async () => {
-    const mockLogin = vi.fn()
-    const mockLogout = vi.fn()
-
-    mockUseAuth.mockReturnValue({
+    setupMockAuth({
       user: mockUser,
       userIsCashier: true,
       userIsManager: false,
-      isLoading: false,
-      login: mockLogin,
-      logout: mockLogout,
     })
 
     renderWithProviders(<TestComponent />)
@@ -105,16 +126,10 @@ describe('AuthProvider', () => {
   })
 
   it('provides auth context with manager data', async () => {
-    const mockLogin = vi.fn()
-    const mockLogout = vi.fn()
-
-    mockUseAuth.mockReturnValue({
+    setupMockAuth({
       user: mockManager,
       userIsCashier: false,
       userIsManager: true,
-      isLoading: false,
-      login: mockLogin,
-      logout: mockLogout,
     })
 
     renderWithProviders(<TestComponent />)
@@ -126,17 +141,7 @@ describe('AuthProvider', () => {
   })
 
   it('provides auth context with no user (logged out)', async () => {
-    const mockLogin = vi.fn()
-    const mockLogout = vi.fn()
-
-    mockUseAuth.mockReturnValue({
-      user: null,
-      userIsCashier: false,
-      userIsManager: false,
-      isLoading: false,
-      login: mockLogin,
-      logout: mockLogout,
-    })
+    setupMockAuth({}) // Use defaults (user: null, etc.)
 
     renderWithProviders(<TestComponent />)
 
@@ -147,17 +152,7 @@ describe('AuthProvider', () => {
   })
 
   it('shows loading state', async () => {
-    const mockLogin = vi.fn()
-    const mockLogout = vi.fn()
-
-    mockUseAuth.mockReturnValue({
-      user: null,
-      userIsCashier: false,
-      userIsManager: false,
-      isLoading: true,
-      login: mockLogin,
-      logout: mockLogout,
-    })
+    setupMockAuth({ isLoading: true })
 
     renderWithProviders(<TestComponent />)
 
@@ -165,17 +160,7 @@ describe('AuthProvider', () => {
   })
 
   it('calls login function when login button is clicked', async () => {
-    const mockLogin = vi.fn()
-    const mockLogout = vi.fn()
-
-    mockUseAuth.mockReturnValue({
-      user: null,
-      userIsCashier: false,
-      userIsManager: false,
-      isLoading: false,
-      login: mockLogin,
-      logout: mockLogout,
-    })
+    const { mockLogin } = setupMockAuth({})
 
     renderWithProviders(<TestComponent />)
 
@@ -186,16 +171,9 @@ describe('AuthProvider', () => {
   })
 
   it('calls logout function when logout button is clicked', async () => {
-    const mockLogin = vi.fn()
-    const mockLogout = vi.fn()
-
-    mockUseAuth.mockReturnValue({
+    const { mockLogout } = setupMockAuth({
       user: mockUser,
       userIsCashier: true,
-      userIsManager: false,
-      isLoading: false,
-      login: mockLogin,
-      logout: mockLogout,
     })
 
     renderWithProviders(<TestComponent />)

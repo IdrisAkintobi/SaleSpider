@@ -1,6 +1,18 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { cn, isCashier, isManager, getMonthlySales } from './utils'
 import { User } from './types'
+
+// Helper function to create test users
+const createTestUser = (role: User['role']): User => ({
+  id: '1',
+  email: 'test@example.com',
+  name: 'Test User',
+  role,
+  isActive: true,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  deletedAt: null,
+})
 
 describe('utils', () => {
   describe('cn', () => {
@@ -9,7 +21,8 @@ describe('utils', () => {
     })
 
     it('handles conditional classes', () => {
-      expect(cn('px-2', false && 'py-1', 'py-2')).toBe('px-2 py-2')
+      const shouldInclude = false
+      expect(cn('px-2', shouldInclude && 'py-1', 'py-2')).toBe('px-2 py-2')
     })
 
     it('merges conflicting Tailwind classes', () => {
@@ -19,30 +32,12 @@ describe('utils', () => {
 
   describe('isCashier', () => {
     it('returns true for CASHIER role', () => {
-      const user: User = {
-        id: '1',
-        email: 'test@example.com',
-        name: 'Test User',
-        role: 'CASHIER',
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-      }
+      const user = createTestUser('CASHIER')
       expect(isCashier(user)).toBe(true)
     })
 
     it('returns false for MANAGER role', () => {
-      const user: User = {
-        id: '1',
-        email: 'test@example.com',
-        name: 'Test User',
-        role: 'MANAGER',
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-      }
+      const user = createTestUser('MANAGER')
       expect(isCashier(user)).toBe(false)
     })
 
@@ -53,44 +48,17 @@ describe('utils', () => {
 
   describe('isManager', () => {
     it('returns true for MANAGER role', () => {
-      const user: User = {
-        id: '1',
-        email: 'test@example.com',
-        name: 'Test User',
-        role: 'MANAGER',
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-      }
+      const user = createTestUser('MANAGER')
       expect(isManager(user)).toBe(true)
     })
 
     it('returns true for SUPER_ADMIN role', () => {
-      const user: User = {
-        id: '1',
-        email: 'test@example.com',
-        name: 'Test User',
-        role: 'SUPER_ADMIN',
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-      }
+      const user = createTestUser('SUPER_ADMIN')
       expect(isManager(user)).toBe(true)
     })
 
     it('returns false for CASHIER role', () => {
-      const user: User = {
-        id: '1',
-        email: 'test@example.com',
-        name: 'Test User',
-        role: 'CASHIER',
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-      }
+      const user = createTestUser('CASHIER')
       expect(isManager(user)).toBe(false)
     })
 
@@ -129,7 +97,7 @@ describe('utils', () => {
       })
 
       const from = new Date(2024, 0, 1) // January 2024
-      const to = new Date(2024, 2, 1)   // March 2024
+      const to = new Date(2024, 2, 1) // March 2024
 
       const result = await getMonthlySales(mockPrisma, from, to)
 

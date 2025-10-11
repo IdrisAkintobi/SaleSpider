@@ -39,7 +39,8 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
     "analyze": "ANALYZE=true npm run build",
     "seed": "tsx --env-file .env prisma/seeds/index.ts",
-    "seed:prod": "npx tsx prisma/seeds/seed-production.ts"
+    "seed:prod": "npx tsx prisma/seeds/seed-production.ts",
+    "prepare": "husky"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.8.0",
@@ -103,7 +104,9 @@
     "eslint": "9.27.0",
     "eslint-config-next": "15.3.2",
     "genkit-cli": "^1.8.0",
+    "husky": "^9.1.7",
     "jsdom": "^23.0.1",
+    "lint-staged": "^16.2.4",
     "postcss": "^8",
     "prettier": "^3.1.1",
     "prisma": "^6.13.0",
@@ -114,5 +117,14 @@
   },
   "engines": {
     "node": ">=24"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
   }
 }
