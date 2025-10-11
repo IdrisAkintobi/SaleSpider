@@ -53,25 +53,22 @@ describe('convertToCSV', () => {
     ]
 
     const result = convertToCSV(data, columns)
-    const expected = '"Name","Age","City"\n"John","30","New York"\n"Jane","25","Los Angeles"'
+    const expected =
+      '"Name","Age","City"\n"John","30","New York"\n"Jane","25","Los Angeles"'
 
     expect(result).toBe(expected)
   })
 
   it('handles empty data array', () => {
     const data: any[] = []
-    const columns: CSVColumn[] = [
-      { key: 'name', label: 'Name' },
-    ]
+    const columns: CSVColumn[] = [{ key: 'name', label: 'Name' }]
 
     const result = convertToCSV(data, columns)
     expect(result).toBe('')
   })
 
   it('escapes quotes in data', () => {
-    const data = [
-      { name: 'John "Johnny" Doe', message: 'He said "Hello"' },
-    ]
+    const data = [{ name: 'John "Johnny" Doe', message: 'He said "Hello"' }]
 
     const columns: CSVColumn[] = [
       { key: 'name', label: 'Name' },
@@ -79,7 +76,8 @@ describe('convertToCSV', () => {
     ]
 
     const result = convertToCSV(data, columns)
-    const expected = '"Name","Message"\n"John ""Johnny"" Doe","He said ""Hello"""'
+    const expected =
+      '"Name","Message"\n"John ""Johnny"" Doe","He said ""Hello"""'
 
     expect(result).toBe(expected)
   })
@@ -113,17 +111,18 @@ describe('convertToCSV', () => {
       {
         key: 'amount',
         label: 'Amount',
-        formatter: (value) => `$${value.toFixed(2)}`
+        formatter: value => `$${value.toFixed(2)}`,
       },
       {
         key: 'date',
         label: 'Date',
-        formatter: (value) => value.toISOString().split('T')[0]
+        formatter: value => value.toISOString().split('T')[0],
       },
     ]
 
     const result = convertToCSV(data, columns)
-    const expected = '"Name","Amount","Date"\n"John","$1234.56","2024-01-15"\n"Jane","$987.65","2024-02-20"'
+    const expected =
+      '"Name","Amount","Date"\n"John","$1234.56","2024-01-15"\n"Jane","$987.65","2024-02-20"'
 
     expect(result).toBe(expected)
   })
@@ -138,7 +137,7 @@ describe('convertToCSV', () => {
       {
         key: 'firstName',
         label: 'Full Name',
-        formatter: (value, row) => `${row.firstName} ${row.lastName}`
+        formatter: (_, row) => `${row.firstName} ${row.lastName}`,
       },
       { key: 'age', label: 'Age' },
     ]
@@ -153,7 +152,7 @@ describe('convertToCSV', () => {
     const data = [
       {
         user: { name: 'John', profile: { city: 'NYC' } },
-        scores: [95, 87, 92]
+        scores: [95, 87, 92],
       },
     ]
 
@@ -161,17 +160,20 @@ describe('convertToCSV', () => {
       {
         key: 'user',
         label: 'User Name',
-        formatter: (value) => value.name
+        formatter: value => value.name,
       },
       {
         key: 'user',
         label: 'City',
-        formatter: (value) => value.profile.city
+        formatter: value => value.profile.city,
       },
       {
         key: 'scores',
         label: 'Average Score',
-        formatter: (value) => (value.reduce((a: number, b: number) => a + b, 0) / value.length).toFixed(1)
+        formatter: value =>
+          (
+            value.reduce((a: number, b: number) => a + b, 0) / value.length
+          ).toFixed(1),
       },
     ]
 
@@ -186,7 +188,7 @@ describe('convertToCSV', () => {
       {
         name: 'John\nDoe',
         description: 'Line 1\nLine 2\rCarriage return\r\nBoth',
-        unicode: 'Café & résumé'
+        unicode: 'Café & résumé',
       },
     ]
 
@@ -225,10 +227,9 @@ describe('downloadCSV', () => {
     downloadCSV(csvContent, filename)
 
     // Verify Blob creation
-    expect(global.Blob).toHaveBeenCalledWith(
-      [csvContent],
-      { type: 'text/csv;charset=utf-8;' }
-    )
+    expect(global.Blob).toHaveBeenCalledWith([csvContent], {
+      type: 'text/csv;charset=utf-8;',
+    })
 
     // Verify link creation and setup
     expect(mockCreateElement).toHaveBeenCalledWith('a')
@@ -292,7 +293,9 @@ describe('downloadCSV', () => {
     filenames.forEach(filename => {
       downloadCSV(csvContent, filename)
 
-      const mockLink = mockCreateElement.mock.results[mockCreateElement.mock.calls.length - 1].value
+      const mockLink =
+        mockCreateElement.mock.results[mockCreateElement.mock.calls.length - 1]
+          .value
       expect(mockLink.setAttribute).toHaveBeenCalledWith('download', filename)
     })
   })

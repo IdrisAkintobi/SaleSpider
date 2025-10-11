@@ -34,46 +34,40 @@ const createTestQueryClient = () => {
 
 const wrapper = ({ children }: { children: React.ReactNode }) => {
   const queryClient = createTestQueryClient()
-  return React.createElement(QueryClientProvider, { client: queryClient }, children)
+  return React.createElement(
+    QueryClientProvider,
+    { client: queryClient },
+    children
+  )
 }
 
 const mockSales: Sale[] = [
   {
     id: '1',
-    totalAmount: 100.50,
+    totalAmount: 100.5,
     paymentMode: 'CASH' as PaymentMode,
     cashierId: 'cashier1',
-    cashier: {
-      id: 'cashier1',
-      name: 'John Doe',
-      email: 'john@example.com',
-      role: 'CASHIER',
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      deletedAt: null,
-    },
+    cashierName: 'John Doe',
+    subtotal: 90.5,
+    vatAmount: 10.0,
+    vatPercentage: 11.0,
+    timestamp: Date.now(),
     items: [
       {
-        id: '1',
         productId: 'product1',
         productName: 'Test Product',
         price: 50.25,
         quantity: 2,
-        saleId: '1',
-      }
+      },
     ],
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
   },
 ]
 
 const mockSalesResponse = {
   data: mockSales,
   total: 1,
-  paymentMethodTotals: { CASH: 100.50 },
-  totalSalesValue: 100.50,
+  paymentMethodTotals: { CASH: 100.5 },
+  totalSalesValue: 100.5,
 }
 
 describe('useSales', () => {
@@ -160,7 +154,7 @@ describe('useSales', () => {
     })
 
     expect(result.current.error).toBeInstanceOf(Error)
-    expect(result.current.error?.message).toBe(errorMessage)
+    expect((result.current.error as Error)?.message).toBe(errorMessage)
   })
 
   it('handles network error', async () => {
@@ -199,7 +193,7 @@ describe('useCreateSale', () => {
           price: 75.25,
           quantity: 1,
           saleId: '2',
-        }
+        },
       ],
       createdAt: new Date().toISOString(),
     }
@@ -221,7 +215,7 @@ describe('useCreateSale', () => {
           price: 75.25,
           quantity: 1,
           saleId: '2',
-        }
+        },
       ],
       totalAmount: 75.25,
       paymentMode: 'CARD' as PaymentMode,
@@ -265,7 +259,7 @@ describe('useCreateSale', () => {
     })
 
     expect(result.current.error).toBeInstanceOf(Error)
-    expect(result.current.error?.message).toBe(errorMessage)
+    expect((result.current.error as Error)?.message).toBe(errorMessage)
   })
 
   it('handles network error during create', async () => {
@@ -292,7 +286,7 @@ describe('useCreateSale', () => {
   it('validates required sale data fields', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({}),
+      json: async () => ({ id: 'sale1', message: 'Sale created successfully' }),
     })
 
     const { result } = renderHook(() => useCreateSale(), { wrapper })
@@ -301,15 +295,13 @@ describe('useCreateSale', () => {
       cashierId: 'cashier1',
       items: [
         {
-          id: '1',
           productId: 'product1',
           productName: 'Test Product',
           price: 50.25,
           quantity: 2,
-          saleId: '1',
-        }
+        },
       ],
-      totalAmount: 100.50,
+      totalAmount: 100.5,
       paymentMode: 'CASH' as PaymentMode,
     }
 
