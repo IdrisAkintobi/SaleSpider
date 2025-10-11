@@ -134,8 +134,8 @@ export async function GET(req: NextRequest) {
 
   // Parse query params
   const { searchParams } = new URL(req.url)
-  const page = parseInt(searchParams.get('page') || '1', 10)
-  const pageSize = parseInt(searchParams.get('pageSize') || '20', 10)
+  const page = Number.parseInt(searchParams.get('page') || '1', 10)
+  const pageSize = Number.parseInt(searchParams.get('pageSize') || '20', 10)
   const sort = searchParams.get('sort') || 'createdAt'
   const order =
     (searchParams.get('order') || 'desc').toLowerCase() === 'asc'

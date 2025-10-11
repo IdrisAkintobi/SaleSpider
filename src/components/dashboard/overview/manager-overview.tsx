@@ -112,7 +112,7 @@ function calculateDailySalesData(
     })
 
   // Calculate sales for each day
-  sales.forEach((sale: Sale) => {
+  for (const sale of sales) {
     const saleDate = new Date(sale.timestamp)
     const dayIndex = Math.floor(
       (today.getTime() - saleDate.getTime()) / (24 * 60 * 60 * 1000)
@@ -125,12 +125,12 @@ function calculateDailySalesData(
         dailyData[dayDataIndex].sales += sale.totalAmount
       }
     }
-  })
+  }
 
   // Remove the date property and return clean data
   return dailyData.map(d => ({
     name: d.name,
-    sales: parseFloat(d.sales.toFixed(2)),
+    sales: Number.parseFloat(d.sales.toFixed(2)),
   }))
 }
 
@@ -182,8 +182,8 @@ function calculateWeeklySalesData(sales: Sale[], t: (key: string) => string) {
 
     return {
       name: day.name,
-      thisWeek: parseFloat(thisWeekSales.toFixed(2)),
-      lastWeek: parseFloat(lastWeekSales.toFixed(2)),
+      thisWeek: Number.parseFloat(thisWeekSales.toFixed(2)),
+      lastWeek: Number.parseFloat(lastWeekSales.toFixed(2)),
     }
   })
 }

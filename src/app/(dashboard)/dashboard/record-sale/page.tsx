@@ -389,7 +389,7 @@ export default function RecordSalePage() {
                           onChange={e =>
                             handleUpdateCartQuantity(
                               item.productId,
-                              parseInt(e.target.value, 10) || 0
+                              Number.parseInt(e.target.value, 10) || 0
                             )
                           }
                           min="0"
