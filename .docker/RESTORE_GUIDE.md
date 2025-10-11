@@ -121,9 +121,9 @@ cp env.example .env
 ```bash
 # Use SAME credentials as original server
 PGBACKREST_REPO1_TYPE=s3
-AWS_S3_BUCKET=idris-dev-backup-bucket
+AWS_S3_BUCKET=your-backup-bucket-name
 AWS_REGION=eu-north-1
-AWS_ACCESS_KEY_ID=AKIA6DKZAYYCWUKHXLFW
+AWS_ACCESS_KEY_ID=your-access-key-id
 AWS_SECRET_ACCESS_KEY="your-secret-key"
 AWS_S3_ENDPOINT=s3.eu-north-1.amazonaws.com
 ```

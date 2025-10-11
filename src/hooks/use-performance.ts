@@ -89,17 +89,18 @@ export function useSlowRenderDetector(threshold = 16) {
   useEffect(() => {
     const start = performance.now();
     renderCount.current++;
+    const currentSlowRenders = slowRenders.current;
+    const currentRenderCount = renderCount.current;
 
     return () => {
       const renderTime = performance.now() - start;
       if (renderTime > threshold) {
-        slowRenders.current++;
-        const currentSlowRenders = slowRenders.current;
-        const currentRenderCount = renderCount.current;
+        const newSlowCount = currentSlowRenders + 1;
+        slowRenders.current = newSlowCount;
         if (process.env.NODE_ENV === 'development') {
           console.warn(
             `🐌 Slow render detected: ${renderTime.toFixed(2)}ms ` +
-            `(${currentSlowRenders}/${currentRenderCount} renders were slow)`
+            `(${newSlowCount}/${currentRenderCount} renders were slow)`
           );
         }
       }
@@ -107,15 +108,15 @@ export function useSlowRenderDetector(threshold = 16) {
   });
 
   useEffect(() => {
+    const slowRendersRef = slowRenders.current;
+    const renderCountRef = renderCount.current;
     return () => {
-      const currentSlowRenders = slowRenders.current;
-      const currentRenderCount = renderCount.current;
-      const percentage = currentRenderCount > 0 
-        ? (currentSlowRenders / currentRenderCount) * 100 
+      const percentage = renderCountRef > 0
+        ? (slowRendersRef / renderCountRef) * 100
         : 0;
-      
+
       if (percentage > 0) {
-        console.log(`Slow render stats: ${percentage.toFixed(1)}% slow renders (${currentSlowRenders}/${currentRenderCount})`);
+        console.log(`Slow render stats: ${percentage.toFixed(1)}% slow renders (${slowRendersRef}/${renderCountRef})`);
       }
     };
   }, []);

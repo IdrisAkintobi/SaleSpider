@@ -3,7 +3,7 @@
  */
 
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { queryKeys } from '@/lib/query-keys';
 
 // Hook to prefetch data on hover
@@ -94,7 +94,7 @@ export function useIntelligentPrefetch() {
 export function useIdlePrefetch() {
   const queryClient = useQueryClient();
 
-  const prefetchCommonData = () => {
+  const prefetchCommonData = useCallback(() => {
     queryClient.prefetchQuery({
       queryKey: queryKeys.products.lists(),
       queryFn: () => fetch('/api/products').then(res => res.json()),
@@ -104,20 +104,20 @@ export function useIdlePrefetch() {
       queryKey: queryKeys.sales.stats(),
       queryFn: () => fetch('/api/sales/stats').then(res => res.json()),
     });
-  };
-
-  const prefetchDuringIdle = () => {
-    if ('requestIdleCallback' in globalThis) {
-      return requestIdleCallback(prefetchCommonData);
-    }
-    return null;
-  };
+  }, [queryClient]);
 
   useEffect(() => {
+    const prefetchDuringIdle = () => {
+      if ('requestIdleCallback' in globalThis) {
+        return requestIdleCallback(prefetchCommonData);
+      }
+      return null;
+    };
+
     // Start prefetching after a short delay
     const timeout = setTimeout(() => {
       const idleCallback = prefetchDuringIdle();
-      
+
       return () => {
         if (idleCallback && 'cancelIdleCallback' in globalThis) {
           cancelIdleCallback(idleCallback);
@@ -128,7 +128,7 @@ export function useIdlePrefetch() {
     return () => {
       clearTimeout(timeout);
     };
-  }, [queryClient]);
+  }, [prefetchCommonData]);
 }
 
 // Hook to prefetch based on intersection observer

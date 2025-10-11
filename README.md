@@ -170,6 +170,38 @@ make help          # All commands
 
 **For detailed command references, see [Makefile Commands](MAKEFILE_GUIDE.md)**
 
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Attribution
+
+If you use SaleSpider in your project, please:
+
+- **Keep the license notice**: The MIT license requires that you include the original copyright notice and license text in any substantial portions of the software you distribute.
+- **Give credit**: Consider mentioning SaleSpider in your project's README or documentation.
+- **Star the repository**: If you find this project useful, please give it a star on GitHub to show your appreciation.
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on how to:
+
+- Report bugs
+- Suggest features
+- Submit pull requests
+- Follow our code of conduct
+
+## 💖 Support
+
+If SaleSpider has helped your business, please consider:
+
+- ⭐ Starring this repository
+- 🐛 Reporting bugs and suggesting improvements
+- 🔧 Contributing code or documentation
+- 💬 Sharing your success story
+
 ---
+
+**Built with ❤️ for the open source community**
 
 Feel free to explore and modify the code to fit your specific needs!
