@@ -17,8 +17,8 @@ import { useAuth } from '@/contexts/auth-context'
 import { useToast } from '@/hooks/use-toast'
 import { useSales } from '@/hooks/use-sales'
 import { useStaff, useUpdateUserStatus } from '@/hooks/use-staff'
-import { Role } from '@prisma/client'
-import type { User, UserStatus, Sale } from '@/lib/types'
+import { Role, UserStatus } from '@prisma/client'
+import type { User, Sale } from '@/lib/types'
 import React from 'react'
 import { Search, ArrowUp, ArrowDown, Pencil } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -123,7 +123,7 @@ export default function StaffPage() {
         onSuccess: updatedUser => {
           toast({
             title: 'Status Updated',
-            description: `${updatedUser.name}'s status changed to ${updatedUser.isActive ? 'ACTIVE' : 'INACTIVE'}.`,
+            description: `${updatedUser.name}'s status changed to ${updatedUser.status}.`,
           })
         },
         onError: error => {
@@ -327,7 +327,7 @@ export default function StaffPage() {
                   return (
                     <>
                       <Switch
-                        checked={staff.isActive}
+                        checked={staff.status === 'ACTIVE'}
                         onCheckedChange={checked =>
                           handleStatusChange(staff, checked)
                         }
@@ -338,7 +338,7 @@ export default function StaffPage() {
                         }
                       />
                       <span className="ml-2">
-                        {t(staff.isActive ? 'active' : 'inactive')}
+                        {t(staff.status === 'ACTIVE' ? 'active' : 'inactive')}
                       </span>
                     </>
                   )

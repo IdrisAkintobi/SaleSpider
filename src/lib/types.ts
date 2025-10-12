@@ -1,6 +1,4 @@
-import { ProductCategory, Role } from '@prisma/client'
-
-export type UserStatus = 'ACTIVE' | 'INACTIVE'
+import { ProductCategory, Role, UserStatus } from '@prisma/client'
 
 export interface User {
   id: string
@@ -8,7 +6,7 @@ export interface User {
   username?: string
   email: string
   role: Role
-  isActive: boolean
+  status: UserStatus
   createdAt: Date
   updatedAt: Date
   deletedAt: Date | null

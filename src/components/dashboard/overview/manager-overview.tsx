@@ -79,7 +79,7 @@ function calculateStats(sales: Sale[], users: User[], products: Product[]) {
   )
   const totalOrders = sales.length
   const activeStaff = users.filter(
-    (u: User) => u.isActive && u.role === 'CASHIER'
+    (u: User) => u.status === 'ACTIVE' && u.role === 'CASHIER'
   ).length
   const lowStockItems = products.filter(
     (p: Product) => p.quantity <= p.lowStockMargin
