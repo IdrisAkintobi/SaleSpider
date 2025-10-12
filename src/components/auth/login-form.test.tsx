@@ -28,8 +28,10 @@ describe('LoginForm', () => {
     render(<LoginForm />)
 
     expect(screen.getByText('Welcome Back!')).toBeInTheDocument()
-    expect(screen.getByText('Log in to access your SaleSpider dashboard.')).toBeInTheDocument()
-    expect(screen.getByLabelText('Email or Username')).toBeInTheDocument()
+    expect(
+      screen.getByText('Log in to access your SaleSpider dashboard.')
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText('Email')).toBeInTheDocument()
     expect(screen.getByLabelText('Password')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /log in/i })).toBeInTheDocument()
   })
@@ -37,10 +39,10 @@ describe('LoginForm', () => {
   it('has correct input placeholders', () => {
     render(<LoginForm />)
 
-    const usernameInput = screen.getByLabelText('Email or Username')
+    const emailInput = screen.getByLabelText('Email')
     const passwordInput = screen.getByLabelText('Password')
 
-    expect(usernameInput).toHaveAttribute('placeholder', 'e.g., manager01 or user@example.com')
+    expect(emailInput).toHaveAttribute('placeholder', 'user@example.com')
     expect(passwordInput).toHaveAttribute('placeholder', '••••••••')
   })
 
@@ -48,13 +50,13 @@ describe('LoginForm', () => {
     render(<LoginForm />)
     const user = userEvent.setup()
 
-    const usernameInput = screen.getByLabelText('Email or Username')
+    const emailInput = screen.getByLabelText('Email')
     const passwordInput = screen.getByLabelText('Password')
 
-    await user.type(usernameInput, 'testuser@example.com')
+    await user.type(emailInput, 'testuser@example.com')
     await user.type(passwordInput, 'password123')
 
-    expect(usernameInput).toHaveValue('testuser@example.com')
+    expect(emailInput).toHaveValue('testuser@example.com')
     expect(passwordInput).toHaveValue('password123')
   })
 
@@ -62,14 +64,14 @@ describe('LoginForm', () => {
     render(<LoginForm />)
     const user = userEvent.setup()
 
-    const usernameInput = screen.getByLabelText('Email or Username')
+    const emailInput = screen.getByLabelText('Email')
     const passwordInput = screen.getByLabelText('Password')
     const submitButton = screen.getByRole('button', { name: /log in/i })
 
-    await user.type(usernameInput, 'testuser@example.com')
+    await user.type(emailInput, 'testuser@example.com')
     await user.type(passwordInput, 'password123')
 
-    expect(usernameInput).toHaveValue('testuser@example.com')
+    expect(emailInput).toHaveValue('testuser@example.com')
     expect(passwordInput).toHaveValue('password123')
     expect(submitButton).not.toBeDisabled()
 
@@ -117,12 +119,12 @@ describe('LoginForm', () => {
     const forms = document.getElementsByTagName('form')
     expect(forms).toHaveLength(1)
 
-    const usernameInput = screen.getByLabelText('Email or Username')
+    const emailInput = screen.getByLabelText('Email')
     const passwordInput = screen.getByLabelText('Password')
 
-    expect(usernameInput).toHaveAttribute('type', 'text')
+    expect(emailInput).toHaveAttribute('type', 'email')
     expect(passwordInput).toHaveAttribute('type', 'password')
-    expect(usernameInput).toHaveAttribute('id', 'username')
+    expect(emailInput).toHaveAttribute('id', 'email')
     expect(passwordInput).toHaveAttribute('id', 'password')
   })
 
@@ -130,49 +132,74 @@ describe('LoginForm', () => {
     render(<LoginForm />)
     const user = userEvent.setup()
 
-    const usernameInput = screen.getByLabelText('Email or Username')
+    const emailInput = screen.getByLabelText('Email')
     const passwordInput = screen.getByLabelText('Password')
 
-    await user.type(usernameInput, 'testuser')
+    await user.type(emailInput, 'testuser@example.com')
     await user.tab() // Should move to password field
     await user.type(passwordInput, 'password123')
 
-    expect(usernameInput).toHaveValue('testuser')
+    expect(emailInput).toHaveValue('testuser@example.com')
     expect(passwordInput).toHaveValue('password123')
   })
 
-  it('accepts different username formats', async () => {
+  it('accepts valid email formats', async () => {
     render(<LoginForm />)
     const user = userEvent.setup()
 
-    const usernameInput = screen.getByLabelText('Email or Username')
+    const emailInput = screen.getByLabelText('Email')
     const passwordInput = screen.getByLabelText('Password')
 
-    // Test with username format
-    await user.type(usernameInput, 'manager01')
+    // Test with valid email format
+    await user.type(emailInput, 'user@example.com')
     await user.type(passwordInput, 'password123')
 
-    expect(usernameInput).toHaveValue('manager01')
+    expect(emailInput).toHaveValue('user@example.com')
     expect(passwordInput).toHaveValue('password123')
 
-    await user.clear(usernameInput)
+    await user.clear(emailInput)
     await user.clear(passwordInput)
-    await user.type(usernameInput, 'user@example.com')
+    await user.type(emailInput, 'manager@company.org')
     await user.type(passwordInput, 'password123')
 
-    expect(usernameInput).toHaveValue('user@example.com')
+    expect(emailInput).toHaveValue('manager@company.org')
     expect(passwordInput).toHaveValue('password123')
   })
 
   it('maintains proper accessibility attributes', () => {
     render(<LoginForm />)
 
-    const usernameInput = screen.getByLabelText('Email or Username')
+    const emailInput = screen.getByLabelText('Email')
     const passwordInput = screen.getByLabelText('Password')
     const submitButton = screen.getByRole('button', { name: /log in/i })
 
-    expect(usernameInput).toHaveAttribute('id', 'username')
+    expect(emailInput).toHaveAttribute('id', 'email')
     expect(passwordInput).toHaveAttribute('id', 'password')
     expect(submitButton).toHaveAttribute('type', 'submit')
+  })
+
+  it('toggles password visibility', async () => {
+    render(<LoginForm />)
+    const user = userEvent.setup()
+
+    const passwordInput = screen.getByLabelText('Password')
+    const toggleButton = screen.getByRole('button', { name: 'Show password' })
+
+    // Initially password should be hidden
+    expect(passwordInput).toHaveAttribute('type', 'password')
+
+    // Click toggle to show password
+    await user.click(toggleButton)
+    expect(passwordInput).toHaveAttribute('type', 'text')
+    expect(
+      screen.getByRole('button', { name: 'Hide password' })
+    ).toBeInTheDocument()
+
+    // Click toggle to hide password again
+    await user.click(screen.getByRole('button', { name: 'Hide password' }))
+    expect(passwordInput).toHaveAttribute('type', 'password')
+    expect(
+      screen.getByRole('button', { name: 'Show password' })
+    ).toBeInTheDocument()
   })
 })

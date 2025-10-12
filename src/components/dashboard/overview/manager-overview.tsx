@@ -522,8 +522,8 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
             title={t('weekly_sales_comparison')}
             description={t('this_week_vs_last_week')}
             xAxisDataKey="name"
-            barDataKey="thisWeek"
-            extraBarDataKey="lastWeek"
+            barDataKey="lastWeek"
+            extraBarDataKey="thisWeek"
             barLabels={{ thisWeek: t('this_week'), lastWeek: t('last_week') }}
             comparisonType={comparisonType}
             onComparisonTypeChange={v =>
