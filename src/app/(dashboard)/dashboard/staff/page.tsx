@@ -17,11 +17,9 @@ import { useAuth } from '@/contexts/auth-context'
 import { useToast } from '@/hooks/use-toast'
 import { useSales } from '@/hooks/use-sales'
 import { useStaff, useUpdateUserStatus } from '@/hooks/use-staff'
-import { Role, UserStatus } from '@prisma/client'
-import type { User, Sale } from '@/lib/types'
-import React from 'react'
+import type { User, Sale, Role, UserStatus } from '@/lib/types'
 import { Search, ArrowUp, ArrowDown, Pencil } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { AddStaffDialog } from './add-staff-dialog'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -41,7 +39,18 @@ interface StaffPerformance extends User {
   numberOfSales: number
 }
 
-// Add this outside the component
+// Permission check helpers
+function canEditStaff(
+  currentUserRole: Role | undefined,
+  targetStaffRole: Role
+): boolean {
+  if (currentUserRole === 'SUPER_ADMIN') return true
+  if (currentUserRole === 'MANAGER' && targetStaffRole === 'CASHIER')
+    return true
+  return false
+}
+
+// API function
 async function editUser(update: Partial<User> & { id: string }) {
   const res = await fetch('/api/users', {
     method: 'PATCH',
@@ -51,6 +60,140 @@ async function editUser(update: Partial<User> & { id: string }) {
   if (!res.ok)
     throw new Error((await res.json()).message || 'Failed to update user')
   return res.json()
+}
+
+// Form data extraction helper
+function extractFormUpdate(
+  formData: FormData,
+  staffId: string,
+  currentUserRole: Role | undefined,
+  targetStaffRole: Role
+): Partial<User> & { id: string } {
+  const update: Partial<User> & { id: string } = { id: staffId }
+
+  if (!canEditStaff(currentUserRole, targetStaffRole)) {
+    return update
+  }
+
+  const name = formData.get('name')
+  if (typeof name === 'string') update.name = name
+
+  const username = formData.get('username')
+  if (typeof username === 'string') update.username = username
+
+  const email = formData.get('email')
+  if (typeof email === 'string') update.email = email
+
+  const role = formData.get('role')
+  if (typeof role === 'string') update.role = role as Role
+
+  return update
+}
+
+// Cell renderer helper
+function renderStaffCell(
+  staff: StaffPerformance,
+  columnKey: string,
+  canEdit: boolean,
+  userIsManager: boolean,
+  t: (key: string) => string,
+  handleStatusChange: (staff: StaffPerformance, checked: boolean) => void,
+  setEditStaff: (staff: StaffPerformance) => void
+): React.ReactNode {
+  switch (columnKey) {
+    case 'name':
+      return <span className="font-medium">{staff.name}</span>
+    case 'username':
+      return staff.username
+    case 'role':
+      return (
+        <Badge variant={userIsManager ? 'default' : 'secondary'}>
+          {t(staff.role.toLowerCase())}
+        </Badge>
+      )
+    case 'totalSalesValue':
+      return `$${staff.totalSalesValue.toFixed(2)}`
+    case 'numberOfSales':
+      return staff.numberOfSales
+    case 'status':
+      return (
+        <>
+          <Switch
+            checked={staff.status === 'ACTIVE'}
+            onCheckedChange={checked => handleStatusChange(staff, checked)}
+            disabled={!canEdit}
+          />
+          <span className="ml-2">
+            {t(staff.status === 'ACTIVE' ? 'active' : 'inactive')}
+          </span>
+        </>
+      )
+    case 'actions':
+      return (
+        <div className="text-right space-x-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setEditStaff(staff)}
+            disabled={!canEdit}
+          >
+            <Pencil className="mr-2 h-3 w-3" /> {t('edit')}
+          </Button>
+        </div>
+      )
+    default:
+      return null
+  }
+}
+
+// Filter staff helper
+function filterStaffBySearch(
+  staff: StaffPerformance,
+  searchTerm: string
+): boolean {
+  const lowerSearch = searchTerm.toLowerCase()
+  return (
+    staff.name.toLowerCase().includes(lowerSearch) ||
+    staff.username?.toLowerCase().includes(lowerSearch) ||
+    staff.role.toLowerCase().includes(lowerSearch)
+  )
+}
+
+// Sort icon helper
+function SortIcon({
+  isActive,
+  order,
+}: {
+  isActive: boolean
+  order: 'asc' | 'desc'
+}) {
+  if (!isActive) return null
+  return order === 'asc' ? (
+    <ArrowUp className="inline w-3 h-3" aria-hidden="true" />
+  ) : (
+    <ArrowDown className="inline w-3 h-3" aria-hidden="true" />
+  )
+}
+
+// Sortable column header helper
+function createSortableHeader(
+  label: string,
+  columnKey: string,
+  currentSort: string,
+  order: 'asc' | 'desc',
+  handleSort: (key: string) => void,
+  ariaLabel?: string
+) {
+  return (
+    <button
+      type="button"
+      className="cursor-pointer hover:underline focus:outline-none focus:underline"
+      onClick={() => handleSort(columnKey)}
+      aria-label={ariaLabel || `Sort by ${columnKey}`}
+    >
+      {label} <SortIcon isActive={currentSort === columnKey} order={order} />
+    </button>
+  )
 }
 
 export default function StaffPage() {
@@ -140,12 +283,7 @@ export default function StaffPage() {
   const filteredStaff = useMemo(
     () =>
       staffList
-        .filter(
-          staff =>
-            staff.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            staff.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            staff.role.toLowerCase().includes(searchTerm.toLowerCase())
-        )
+        .filter(staff => filterStaffBySearch(staff, searchTerm))
         .sort((a, b) => a.name.localeCompare(b.name)),
     [staffList, searchTerm]
   )
@@ -223,57 +361,37 @@ export default function StaffPage() {
             columns={[
               {
                 key: 'name',
-                label: (
-                  <span
-                    className="cursor-pointer"
-                    onClick={() => handleSort('name')}
-                  >
-                    {t('name')}{' '}
-                    {sort === 'name' &&
-                      (order === 'asc' ? (
-                        <ArrowUp className="inline w-3 h-3" />
-                      ) : (
-                        <ArrowDown className="inline w-3 h-3" />
-                      ))}
-                  </span>
+                label: createSortableHeader(
+                  t('name'),
+                  'name',
+                  sort,
+                  order,
+                  handleSort
                 ),
                 sortable: true,
                 onSort: () => handleSort('name'),
               },
               {
                 key: 'username',
-                label: (
-                  <span
-                    className="cursor-pointer"
-                    onClick={() => handleSort('username')}
-                  >
-                    {t('username')}{' '}
-                    {sort === 'username' &&
-                      (order === 'asc' ? (
-                        <ArrowUp className="inline w-3 h-3" />
-                      ) : (
-                        <ArrowDown className="inline w-3 h-3" />
-                      ))}
-                  </span>
+                label: createSortableHeader(
+                  t('username'),
+                  'username',
+                  sort,
+                  order,
+                  handleSort
                 ),
                 sortable: true,
                 onSort: () => handleSort('username'),
               },
               {
                 key: 'role',
-                label: (
-                  <span
-                    className="cursor-pointer"
-                    onClick={() => handleSort('role')}
-                  >
-                    {t('role')}{' '}
-                    {sort === 'role' &&
-                      (order === 'asc' ? (
-                        <ArrowUp className="inline w-3 h-3" />
-                      ) : (
-                        <ArrowDown className="inline w-3 h-3" />
-                      ))}
-                  </span>
+                label: createSortableHeader(
+                  t('role'),
+                  'role',
+                  sort,
+                  order,
+                  handleSort,
+                  t('sort_by_role')
                 ),
                 sortable: true,
                 onSort: () => handleSort('role'),
@@ -282,19 +400,13 @@ export default function StaffPage() {
               { key: 'numberOfSales', label: t('number_of_orders') },
               {
                 key: 'status',
-                label: (
-                  <span
-                    className="cursor-pointer"
-                    onClick={() => handleSort('status')}
-                  >
-                    {t('status')}{' '}
-                    {sort === 'status' &&
-                      (order === 'asc' ? (
-                        <ArrowUp className="inline w-3 h-3" />
-                      ) : (
-                        <ArrowDown className="inline w-3 h-3" />
-                      ))}
-                  </span>
+                label: createSortableHeader(
+                  t('status'),
+                  'status',
+                  sort,
+                  order,
+                  handleSort,
+                  t('sort_by_status')
                 ),
                 sortable: true,
                 onSort: () => handleSort('status'),
@@ -308,74 +420,16 @@ export default function StaffPage() {
             data={filteredStaff}
             rowKey={row => row.id}
             renderCell={(staff, col) => {
-              switch (col.key) {
-                case 'name':
-                  return <span className="font-medium">{staff.name}</span>
-                case 'username':
-                  return staff.username
-                case 'role':
-                  return (
-                    <Badge variant={userIsManager ? 'default' : 'secondary'}>
-                      {t(staff.role.toLowerCase())}
-                    </Badge>
-                  )
-                case 'totalSalesValue':
-                  return `$${staff.totalSalesValue.toFixed(2)}`
-                case 'numberOfSales':
-                  return staff.numberOfSales
-                case 'status':
-                  return (
-                    <>
-                      <Switch
-                        checked={staff.status === 'ACTIVE'}
-                        onCheckedChange={checked =>
-                          handleStatusChange(staff, checked)
-                        }
-                        disabled={
-                          currentUser?.role !== 'SUPER_ADMIN' &&
-                          (currentUser?.role !== 'MANAGER' ||
-                            staff.role !== 'CASHIER')
-                        }
-                      />
-                      <span className="ml-2">
-                        {t(staff.status === 'ACTIVE' ? 'active' : 'inactive')}
-                      </span>
-                    </>
-                  )
-                case 'actions':
-                  return (
-                    <div className="text-right space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setEditStaff(staff)}
-                        disabled={
-                          currentUser?.role !== 'SUPER_ADMIN' &&
-                          (currentUser?.role !== 'MANAGER' ||
-                            staff.role !== 'CASHIER')
-                        }
-                      >
-                        <Pencil className="mr-2 h-3 w-3" /> {t('edit')}
-                      </Button>
-                    </div>
-                  )
-                default: {
-                  const value = (staff as unknown as Record<string, unknown>)[
-                    col.key as string
-                  ]
-                  if (
-                    typeof value === 'string' ||
-                    typeof value === 'number' ||
-                    typeof value === 'boolean'
-                  ) {
-                    return String(value)
-                  }
-                  if (React.isValidElement(value)) {
-                    return value
-                  }
-                  return null
-                }
-              }
+              const canEdit = canEditStaff(currentUser?.role, staff.role)
+              return renderStaffCell(
+                staff,
+                col.key,
+                canEdit,
+                userIsManager,
+                t,
+                handleStatusChange,
+                setEditStaff
+              )
             }}
             emptyMessage={t('no_staff_found')}
             paginationProps={{
@@ -401,38 +455,26 @@ export default function StaffPage() {
               <DialogDescription>{t('update_staff_details')}</DialogDescription>
             </DialogHeader>
             <form
-              onSubmit={async e => {
+              onSubmit={e => {
                 e.preventDefault()
-                const form = e.target as HTMLFormElement
-                const formData = new FormData(form)
-                const update: Partial<User> & { id: string } = {
-                  id: editStaff.id,
-                }
-                if (
-                  currentUser?.role === 'SUPER_ADMIN' ||
-                  (currentUser?.role === 'MANAGER' &&
-                    editStaff.role === 'CASHIER')
-                ) {
-                  const name = formData.get('name')
-                  if (typeof name === 'string') update.name = name
-                  const username = formData.get('username')
-                  if (typeof username === 'string') update.username = username
-                  const email = formData.get('email')
-                  if (typeof email === 'string') update.email = email
-                  const role = formData.get('role')
-                  if (typeof role === 'string') update.role = role as Role
-                }
+                const formData = new FormData(e.target as HTMLFormElement)
+                const update = extractFormUpdate(
+                  formData,
+                  editStaff.id,
+                  currentUser?.role,
+                  editStaff.role
+                )
+
                 editMutation.mutate(update, {
                   onSuccess: () => {
                     toast({ title: 'Staff updated' })
                     setEditStaff(null)
                   },
                   onError: (error: unknown) => {
-                    const message =
-                      error instanceof Error ? error.message : String(error)
                     toast({
                       title: 'Error',
-                      description: message,
+                      description:
+                        error instanceof Error ? error.message : String(error),
                       variant: 'destructive',
                     })
                   },
@@ -445,22 +487,14 @@ export default function StaffPage() {
                 defaultValue={editStaff.name}
                 placeholder="Name"
                 required
-                disabled={
-                  currentUser?.role !== 'SUPER_ADMIN' &&
-                  (currentUser?.role !== 'MANAGER' ||
-                    editStaff.role !== 'CASHIER')
-                }
+                disabled={!canEditStaff(currentUser?.role, editStaff.role)}
               />
               <Input
                 name="username"
                 defaultValue={editStaff.username}
                 placeholder="Username"
                 required
-                disabled={
-                  currentUser?.role !== 'SUPER_ADMIN' &&
-                  (currentUser?.role !== 'MANAGER' ||
-                    editStaff.role !== 'CASHIER')
-                }
+                disabled={!canEditStaff(currentUser?.role, editStaff.role)}
               />
               <Input
                 name="email"
@@ -468,11 +502,7 @@ export default function StaffPage() {
                 defaultValue={editStaff.email}
                 placeholder="Email"
                 required
-                disabled={
-                  currentUser?.role !== 'SUPER_ADMIN' &&
-                  (currentUser?.role !== 'MANAGER' ||
-                    editStaff.role !== 'CASHIER')
-                }
+                disabled={!canEditStaff(currentUser?.role, editStaff.role)}
               />
               <Select
                 name="role"
@@ -484,11 +514,7 @@ export default function StaffPage() {
                       : editStaff
                   )
                 }}
-                disabled={
-                  currentUser?.role !== 'SUPER_ADMIN' &&
-                  (currentUser?.role !== 'MANAGER' ||
-                    editStaff.role !== 'CASHIER')
-                }
+                disabled={!canEditStaff(currentUser?.role, editStaff.role)}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select role" />

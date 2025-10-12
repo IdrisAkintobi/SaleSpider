@@ -3,7 +3,7 @@ import { afterEach, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
 
 // Mock missing DOM APIs for Radix UI components
-Object.defineProperty(window, 'ResizeObserver', {
+Object.defineProperty(globalThis, 'ResizeObserver', {
   writable: true,
   value: vi.fn().mockImplementation(() => ({
     observe: vi.fn(),
@@ -12,7 +12,7 @@ Object.defineProperty(window, 'ResizeObserver', {
   })),
 })
 
-Object.defineProperty(window, 'PointerEvent', {
+Object.defineProperty(globalThis, 'PointerEvent', {
   writable: true,
   value: class PointerEvent extends Event {
     pointerId: number
@@ -47,7 +47,7 @@ Object.defineProperty(HTMLElement.prototype, 'setPointerCapture', {
 })
 
 // Mock IntersectionObserver
-Object.defineProperty(window, 'IntersectionObserver', {
+Object.defineProperty(globalThis, 'IntersectionObserver', {
   writable: true,
   value: vi.fn().mockImplementation(() => ({
     observe: vi.fn(),

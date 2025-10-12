@@ -237,6 +237,8 @@ const translations: Record<string, Record<string, string>> = {
     status: 'Status',
     completed: 'Completed',
     no_recent_sales: 'No recent sales',
+    sort_by_role: 'Sort by role',
+    sort_by_status: 'Sort by status',
     // Sales Page
     filter_by_cashier: 'Filter by cashier',
     filter_by_payment_method: 'Filter by payment method',
@@ -538,6 +540,8 @@ const translations: Record<string, Record<string, string>> = {
     status: 'Statut',
     completed: 'Terminé',
     no_recent_sales: 'Aucune vente récente',
+    sort_by_role: 'Trier par rôle',
+    sort_by_status: 'Trier par statut',
     // Sales Page
     filter_by_cashier: 'Filtrer par caissier',
     filter_by_payment_method: 'Filtrer par mode de paiement',
@@ -842,6 +846,8 @@ const translations: Record<string, Record<string, string>> = {
     status: 'Estado',
     completed: 'Completado',
     no_recent_sales: 'No hay ventas recientes',
+    sort_by_role: 'Ordenar por rol',
+    sort_by_status: 'Ordenar por estado',
     // Sales Page
     filter_by_cashier: 'Filtrar por cajero',
     filter_by_payment_method: 'Filtrar por método de pago',
@@ -1145,6 +1151,8 @@ const translations: Record<string, Record<string, string>> = {
     status: 'Status',
     completed: 'Abgeschlossen',
     no_recent_sales: 'Keine letzten Verkäufe',
+    sort_by_role: 'Nach Rolle sortieren',
+    sort_by_status: 'Nach Status sortieren',
     // Sales Page
     filter_by_cashier: 'Nach Kassierer filtern',
     filter_by_payment_method: 'Nach Zahlungsart filtern',

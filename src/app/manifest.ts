@@ -1,0 +1,30 @@
+import { MetadataRoute } from 'next'
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: 'SaleSpider - Smart Inventory & Sales',
+    short_name: 'SaleSpider',
+    description: 'Smart inventory and sales management system',
+    start_url: '/',
+    display: 'standalone',
+    background_color: '#ffffff',
+    theme_color: '#3B82F6',
+    orientation: 'portrait-primary',
+    icons: [
+      {
+        src: '/icon.svg',
+        sizes: 'any',
+        type: 'image/svg+xml',
+        purpose: 'maskable',
+      },
+      {
+        src: '/apple-icon.svg',
+        sizes: '180x180',
+        type: 'image/svg+xml',
+      },
+    ],
+    categories: ['business', 'productivity', 'finance'],
+    lang: 'en',
+    dir: 'ltr',
+  }
+}

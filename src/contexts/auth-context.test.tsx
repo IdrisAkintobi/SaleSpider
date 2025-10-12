@@ -47,7 +47,7 @@ const mockUser: User = {
   email: 'test@example.com',
   name: 'Test User',
   role: 'CASHIER',
-  isActive: true,
+  status: 'ACTIVE',
   createdAt: new Date(),
   updatedAt: new Date(),
   deletedAt: null,

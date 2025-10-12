@@ -7,7 +7,7 @@ import { Sale, PaymentMode } from '@/lib/types'
 
 // Mock fetch globally
 const mockFetch = vi.fn()
-global.fetch = mockFetch
+globalThis.fetch = mockFetch
 
 // Mock query invalidation
 vi.mock('@/lib/query-invalidation', () => ({

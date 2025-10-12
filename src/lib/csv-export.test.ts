@@ -14,8 +14,8 @@ beforeEach(() => {
   vi.clearAllMocks()
 
   // Mock document.createElement
-  global.document = {
-    ...global.document,
+  globalThis.document = {
+    ...globalThis.document,
     createElement: mockCreateElement,
     body: {
       appendChild: mockAppendChild,
@@ -23,13 +23,13 @@ beforeEach(() => {
   } as any
 
   // Mock URL methods
-  global.URL = {
+  globalThis.URL = {
     createObjectURL: mockCreateObjectURL,
     revokeObjectURL: mockRevokeObjectURL,
   } as any
 
   // Mock Blob
-  global.Blob = vi.fn().mockImplementation((content, options) => ({
+  globalThis.Blob = vi.fn().mockImplementation((content, options) => ({
     content,
     options,
   })) as any
@@ -227,7 +227,7 @@ describe('downloadCSV', () => {
     downloadCSV(csvContent, filename)
 
     // Verify Blob creation
-    expect(global.Blob).toHaveBeenCalledWith([csvContent], {
+    expect(globalThis.Blob).toHaveBeenCalledWith([csvContent], {
       type: 'text/csv;charset=utf-8;',
     })
 
