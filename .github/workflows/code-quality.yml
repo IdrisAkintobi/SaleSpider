@@ -4,10 +4,15 @@ on:
   pull_request:
     branches: [main, develop]
 
+permissions:
+  contents: read
+
 jobs:
+  # 🧪 Job 1: Run tests & analysis
   code-quality:
     runs-on: ubuntu-latest
-
+    outputs:
+      result-file: test-results.md
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -37,33 +42,73 @@ jobs:
         run: npm run test:coverage
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@54bcd8715eee62d40e33596ef5e8f0f48dbbccab # v4.1.0
+        uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
 
-      - name: Comment PR with test results
+      - name: Save test results summary
+        run: |
+          echo "## 🧪 Test Results" > test-results.md
+          echo "" >> test-results.md
+          echo "Tests completed successfully! ✅" >> test-results.md
+        shell: bash
+
+      - name: Upload artifact (for comment job)
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results.md
+
+  # 💬 Job 2: Comment on PR (safe for forks)
+  comment-results:
+    needs: code-quality
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request_target'
+    permissions:
+      issues: write
+      pull-requests: write
+      contents: read
+
+    steps:
+      - name: Download test results
+        uses: actions/download-artifact@v4
+        with:
+          name: test-results
+
+      - name: Read results
+        id: results
+        run: |
+          body=$(cat test-results.md)
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          echo "$body" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Comment PR
         uses: actions/github-script@v7
-        if: github.event_name == 'pull_request'
         with:
           script: |
-            const fs = require('fs');
-
-            // Read test results and add as PR comment
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '## 🧪 Test Results\n\nTests completed successfully! ✅'
+              body: process.env.BODY
             });
+        env:
+          BODY: ${{ steps.results.outputs.body }}
 
+  # 🛠️ Job 3: Dependency review
   dependency-review:
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request_target'
+    permissions:
+      contents: read
 
     steps:
-      - name: Checkout code
+      - name: Checkout PR branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Dependency Review
         uses: actions/dependency-review-action@v4
