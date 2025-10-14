@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { LoginForm } from './login-form'
@@ -189,14 +189,18 @@ describe('LoginForm', () => {
     expect(passwordInput).toHaveAttribute('type', 'password')
 
     // Click toggle to show password
-    await user.click(toggleButton)
+    await act(async () => {
+      await user.click(toggleButton)
+    })
     expect(passwordInput).toHaveAttribute('type', 'text')
     expect(
       screen.getByRole('button', { name: 'Hide password' })
     ).toBeInTheDocument()
 
     // Click toggle to hide password again
-    await user.click(screen.getByRole('button', { name: 'Hide password' }))
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: 'Hide password' }))
+    })
     expect(passwordInput).toHaveAttribute('type', 'password')
     expect(
       screen.getByRole('button', { name: 'Show password' })
