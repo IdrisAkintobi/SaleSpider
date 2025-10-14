@@ -5,8 +5,9 @@
 
 # Variables
 DEPLOY_SCRIPT := ./deploy.sh
-DOCKER_COMPOSE := docker compose -f .docker/docker-compose.yml
 ENV_FILE := .env
+DOCKER_COMPOSE := docker compose --env-file $(ENV_FILE) -f .docker/docker-compose.yml
+DOCKER_COMPOSE_HOSTED := docker compose --env-file $(ENV_FILE) -f .docker/docker-compose.hosted-db.yml
 BACKUP_CONTAINER := salespider-backup
 POSTGRES_CONTAINER := salespider-postgres
 
@@ -36,7 +37,7 @@ setup: perms ## Initial setup (permissions + environment check)
 	@echo "$(GREEN)Running initial setup...$(NC)"
 	@if [ ! -f "$(ENV_FILE)" ]; then \
 		echo "$(YELLOW)Creating .env from example...$(NC)"; \
-		cp env.example $(ENV_FILE); \
+		cp .env $(ENV_FILE); \
 		echo "$(YELLOW)⚠ Please edit .env with your configuration$(NC)"; \
 		exit 1; \
 	fi
@@ -60,6 +61,32 @@ restart: ## Restart all services with health checks
 	@echo "$(GREEN)Restarting services...$(NC)"
 	@$(DEPLOY_SCRIPT) restart
 
+##@ Hosted Database Deployment
+
+deploy-hosted-db-app: setup ## Deploy app with hosted database (app + proxy only)
+	@echo "$(GREEN)Starting hosted database deployment...$(NC)"
+	@echo "$(CYAN)Using hosted database compose file$(NC)"
+	@$(DOCKER_COMPOSE_HOSTED) up -d
+	@echo "$(GREEN)✓ Hosted database deployment complete$(NC)"
+
+start-hosted-db-app: ## Start app services for hosted database deployment
+	@echo "$(GREEN)Starting app services...$(NC)"
+	@$(DOCKER_COMPOSE_HOSTED) up -d
+
+stop-hosted-db-app: ## Stop app services for hosted database deployment
+	@echo "$(YELLOW)Stopping app services...$(NC)"
+	@$(DOCKER_COMPOSE_HOSTED) down
+
+restart-hosted-db-app: ## Restart app services for hosted database deployment
+	@echo "$(GREEN)Restarting app services...$(NC)"
+	@$(DOCKER_COMPOSE_HOSTED) restart
+
+logs-hosted-db-app: ## Show logs for hosted database app deployment
+	@$(DOCKER_COMPOSE_HOSTED) logs -f
+
+status-hosted-db-app: ## Show status for hosted database app deployment
+	@$(DOCKER_COMPOSE_HOSTED) ps
+
 ##@ Monitoring
 
 status: ## Show service status and resource usage
@@ -78,18 +105,31 @@ health: ## Check health of all services
 
 ##@ Database Operations
 
-backup: ## Trigger manual database backup
-	@echo "$(GREEN)Starting manual backup...$(NC)"
-	@$(DEPLOY_SCRIPT) backup
+backup: ## Trigger manual database backup (self-hosted only)
+	@if [ "$(DEPLOYMENT_TYPE)" = "hosted-db" ]; then \
+		echo "$(YELLOW)Database backups are managed by your hosting provider$(NC)"; \
+		echo "$(CYAN)Check your provider's dashboard for backup options$(NC)"; \
+	else \
+		echo "$(GREEN)Starting manual backup...$(NC)"; \
+		$(DEPLOY_SCRIPT) backup; \
+	fi
 
-backup-info: ## Show backup information and available restore points
-	@echo "$(CYAN)Backup Repository Information:$(NC)"
-	@docker exec $(BACKUP_CONTAINER) pgbackrest --stanza=salespider info
+backup-info: ## Show backup information and available restore points (self-hosted only)
+	@if [ "$(DEPLOYMENT_TYPE)" = "hosted-db" ]; then \
+		echo "$(YELLOW)Database backups are managed by your hosting provider$(NC)"; \
+	else \
+		echo "$(CYAN)Backup Repository Information:$(NC)"; \
+		docker exec $(BACKUP_CONTAINER) pgbackrest --stanza=salespider info; \
+	fi
 
-backup-check: ## Verify backup integrity
-	@echo "$(CYAN)Verifying backup integrity...$(NC)"
-	@docker exec $(BACKUP_CONTAINER) pgbackrest --stanza=salespider check
-	@echo "$(GREEN)✓ Backup verification complete$(NC)"
+backup-check: ## Verify backup integrity (self-hosted only)
+	@if [ "$(DEPLOYMENT_TYPE)" = "hosted-db" ]; then \
+		echo "$(YELLOW)Database backups are managed by your hosting provider$(NC)"; \
+	else \
+		echo "$(CYAN)Verifying backup integrity...$(NC)"; \
+		docker exec $(BACKUP_CONTAINER) pgbackrest --stanza=salespider check; \
+		echo "$(GREEN)✓ Backup verification complete$(NC)"; \
+	fi
 
 ##@ Database Restore
 

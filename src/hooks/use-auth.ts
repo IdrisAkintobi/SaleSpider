@@ -1,62 +1,62 @@
-import { useToast } from "@/hooks/use-toast";
-import type { User } from "@/lib/types";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import { useEffect, useCallback } from "react";
+import { useToast } from '@/hooks/use-toast'
+import type { User } from '@/lib/types'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useRouter } from 'next/navigation'
+import { useEffect, useCallback } from 'react'
 
 // Fetch current user session
 async function fetchUserSession(): Promise<User | null> {
-  const res = await fetch("/api/auth/session");
+  const res = await fetch('/api/auth/session')
   if (res.ok) {
-    const { user } = await res.json();
-    return user;
+    const { user } = await res.json()
+    return user
   }
   if (res.status === 401) {
     // Gracefully handle unauthorized (logged out)
-    return null;
+    return null
   }
   // For other errors, throw
-  const error = await res.json().catch(() => ({}));
-  throw new Error(error.message || "Failed to fetch session");
+  const error = await res.json().catch(() => ({}))
+  throw new Error(error.message || 'Failed to fetch session')
 }
 
 // Login function
 async function loginUser(credentials: {
-  username: string;
-  password: string;
+  username: string
+  password: string
 }): Promise<User> {
-  const response = await fetch("/api/auth/login", {
-    method: "POST",
+  const response = await fetch('/api/auth/login', {
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify(credentials),
-  });
+  })
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message ?? "Invalid credentials");
+    const errorData = await response.json()
+    throw new Error(errorData.message ?? 'Invalid credentials')
   }
 
-  const res = await response.json();
-  return res.user;
+  const res = await response.json()
+  return res.user
 }
 
 // Logout function
 async function logoutUser(): Promise<void> {
-  const response = await fetch("/api/auth/logout", {
-    method: "POST",
-  });
+  const response = await fetch('/api/auth/logout', {
+    method: 'POST',
+  })
 
   if (!response.ok) {
-    throw new Error("Failed to logout");
+    throw new Error('Failed to logout')
   }
 }
 
 export function useAuth() {
-  const router = useRouter();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const router = useRouter()
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
 
   // Query for current user session
   const {
@@ -64,85 +64,87 @@ export function useAuth() {
     isLoading,
     refetch: refetchSession,
   } = useQuery({
-    queryKey: ["auth", "session"],
+    queryKey: ['auth', 'session'],
     queryFn: fetchUserSession,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     retry: false, // Don't retry auth failures
     refetchOnWindowFocus: false, // Don't refetch on window focus for auth
-  });
+  })
 
   // Login mutation
   const loginMutation = useMutation({
     mutationFn: loginUser,
-    onSuccess: (user) => {
+    onSuccess: user => {
       // Update the session query with the new user
-      queryClient.setQueryData(["auth", "session"], user);
+      queryClient.setQueryData(['auth', 'session'], user)
       toast({
-        title: "Login Successful",
+        title: 'Login Successful',
         description: `Welcome back, ${user.name}!`,
-      });
-      router.push("/dashboard/overview");
+      })
+      router.push('/dashboard/overview')
     },
-    onError: (error) => {
+    onError: error => {
       toast({
-        title: "Login Failed",
-        description: error.message || "Invalid credentials",
-        variant: "destructive",
-      });
+        title: 'Login Failed',
+        description: error.message || 'Invalid credentials',
+        variant: 'destructive',
+      })
     },
-  });
+  })
 
   // Logout mutation
   const logoutMutation = useMutation({
     mutationFn: logoutUser,
     onSuccess: () => {
       // Clear the session query
-      queryClient.setQueryData(["auth", "session"], null);
+      queryClient.setQueryData(['auth', 'session'], null)
       // Invalidate all queries to clear cached data
-      queryClient.invalidateQueries();
+      queryClient.invalidateQueries()
       toast({
-        title: "Logged Out",
-        description: "You have been successfully logged out.",
-      });
-      router.push("/login");
+        title: 'Logged Out',
+        description: 'You have been successfully logged out.',
+      })
+      router.push('/login')
     },
-    onError: (error) => {
+    onError: error => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to logout. Please try again.",
-        variant: "destructive",
-      });
+        title: 'Error',
+        description: error.message || 'Failed to logout. Please try again.',
+        variant: 'destructive',
+      })
     },
-  });
+  })
 
   // Login function
-  const login = useCallback((username: string, password: string) => {
-    loginMutation.mutate({ username, password });
-  }, [loginMutation]);
+  const login = useCallback(
+    (username: string, password: string) => {
+      loginMutation.mutate({ username, password })
+    },
+    [loginMutation]
+  )
 
   // Logout function
   const logout = useCallback(() => {
-    logoutMutation.mutate();
-  }, [logoutMutation]);
+    logoutMutation.mutate()
+  }, [logoutMutation])
 
   // Computed values
-  const userIsManager =
-    user?.role === "MANAGER" || user?.role === "SUPER_ADMIN";
-  const userIsCashier = user?.role === "CASHIER";
+  const userIsManager = user?.role === 'MANAGER' || user?.role === 'SUPER_ADMIN'
+  const userIsCashier = user?.role === 'CASHIER'
 
   // Kick out inactive users
   useEffect(() => {
-    if (user?.status && user.status !== "ACTIVE") {
+    if (user?.status && user.status !== 'ACTIVE') {
       toast({
-        title: "Account Inactive",
+        title: 'Account Inactive',
         description:
-          "Your account is inactive. Please contact an administrator.",
-        variant: "destructive",
-      });
-      logout();
+          'Your account is inactive. Please contact an administrator.',
+        variant: 'destructive',
+      })
+      logout()
     }
-  }, [user, toast, logout]);
+  }, [user, toast, logout])
 
   return {
     user,
@@ -155,5 +157,5 @@ export function useAuth() {
     isLoginLoading: loginMutation.isPending,
     isLogoutLoading: logoutMutation.isPending,
     isAuthenticated: !!user,
-  };
+  }
 }

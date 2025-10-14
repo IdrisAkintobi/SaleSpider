@@ -85,12 +85,13 @@ export function PerformanceChart({
           </Select>
         )}
       </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="h-[300px] w-full">
-          <BarChart
-            data={data}
-            margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
-          >
+      <CardContent className="p-0">
+        <div className="px-6 py-6">
+          <ChartContainer config={chartConfig} className="h-[300px] w-full">
+            <BarChart
+              data={data}
+              margin={{ top: 5, right: 5, left: 45, bottom: 5 }}
+            >
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis
               dataKey={xAxisDataKey}
@@ -104,7 +105,17 @@ export function PerformanceChart({
               axisLine={false}
               stroke="hsl(var(--muted-foreground))"
               fontSize={12}
-              tickFormatter={(value) => `${dollarCurrencies.includes(currency) ? '$' : currencySymbol}${value}`}
+              width={40}
+              tickFormatter={(value) => {
+                // Format large numbers with K/M suffix
+                if (value >= 1000000) {
+                  return `${dollarCurrencies.includes(currency) ? '$' : currencySymbol}${(value / 1000000).toFixed(1)}M`;
+                } else if (value >= 1000) {
+                  return `${dollarCurrencies.includes(currency) ? '$' : currencySymbol}${(value / 1000).toFixed(1)}K`;
+                } else {
+                  return `${dollarCurrencies.includes(currency) ? '$' : currencySymbol}${value}`;
+                }
+              }}
             />
             <ChartTooltip
               cursor={false}
@@ -127,6 +138,7 @@ export function PerformanceChart({
             )}
           </BarChart>
         </ChartContainer>
+        </div>
       </CardContent>
     </Card>
   );

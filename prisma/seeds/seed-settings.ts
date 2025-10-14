@@ -17,12 +17,12 @@ const defaultSettings = {
   language: process.env.LANGUAGE || DEFAULT_SETTINGS.language,
   theme: process.env.THEME || DEFAULT_SETTINGS.theme,
   maintenanceMode: process.env.MAINTENANCE_MODE === "true" || DEFAULT_SETTINGS.maintenanceMode,
-  enabledPaymentMethods: (process.env.ENABLED_PAYMENT_METHODS
+  enabledPaymentMethods: process.env.ENABLED_PAYMENT_METHODS
     ? process.env.ENABLED_PAYMENT_METHODS
         .split(",")
         .map((s) => s.trim().toUpperCase())
         .filter((v): v is PaymentMode => (PAYMENT_MODE_VALUES as readonly string[]).includes(v))
-    : [...DEFAULT_SETTINGS.enabledPaymentMethods]) as PaymentMode[],
+    : [...DEFAULT_SETTINGS.enabledPaymentMethods],
 };
 
 export async function seedSettings() {

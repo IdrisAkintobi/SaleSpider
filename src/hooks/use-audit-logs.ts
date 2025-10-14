@@ -70,8 +70,8 @@ export function useAuditLogs(params: AuditLogParams = {}) {
     queryKey: queryKeys.auditLogs.list(params),
     queryFn: () => fetchAuditLogs(params),
     ...dataTypeCache.auditLogs, // Use centralized cache config for audit logs
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    refetchOnMount: false, // Use cached data if available
   });
 }
 

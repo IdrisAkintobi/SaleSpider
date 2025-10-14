@@ -98,7 +98,7 @@ export const cacheConfig = {
  * Data type to cache configuration mapping
  */
 export const dataTypeCache = {
-  auditLogs: cacheConfig.realTime, // Compliance data - always fresh
+  auditLogs: cacheConfig.fast, // Compliance data - cache for 30 seconds
   sales: cacheConfig.fast, // Sales data changes frequently
   products: cacheConfig.medium, // Product data changes moderately
   users: cacheConfig.slow, // User data changes slowly

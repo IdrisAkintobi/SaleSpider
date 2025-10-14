@@ -1,7 +1,7 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog'
 import {
   Form,
   FormControl,
@@ -19,75 +19,79 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
+} from '@/components/ui/form'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useToast } from "@/hooks/use-toast";
-import { useDeshelvingMutation } from "@/hooks/use-deshelving-mutations";
-import { DeshelvingReason } from "@prisma/client";
-import { Package, AlertTriangle } from "lucide-react";
-import { z } from "zod";
+} from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useToast } from '@/hooks/use-toast'
+import { useDeshelvingMutation } from '@/hooks/use-deshelving-mutations'
+import { DeshelvingReason } from '@prisma/client'
+import { Package, AlertTriangle } from 'lucide-react'
+import { z } from 'zod'
 
 const deshelvingReasons = [
-  { value: "DAMAGED", label: "Damaged", icon: "🔧" },
-  { value: "RETURNED", label: "Returned", icon: "↩️" },
-  { value: "EXPIRED", label: "Expired", icon: "📅" },
-  { value: "RESERVED", label: "Reserved", icon: "🔒" },
-  { value: "STOLEN", label: "Stolen", icon: "🚨" },
-  { value: "LOST", label: "Lost", icon: "❓" },
-  { value: "QUALITY_CONTROL", label: "Quality Control", icon: "🔍" },
-  { value: "RECALL", label: "Recall", icon: "⚠️" },
-  { value: "TRANSFER", label: "Transfer", icon: "📦" },
-  { value: "OTHER", label: "Other", icon: "📝" },
-] as const;
+  { value: 'DAMAGED', label: 'Damaged', icon: '🔧' },
+  { value: 'RETURNED', label: 'Returned', icon: '↩️' },
+  { value: 'EXPIRED', label: 'Expired', icon: '📅' },
+  { value: 'RESERVED', label: 'Reserved', icon: '🔒' },
+  { value: 'STOLEN', label: 'Stolen', icon: '🚨' },
+  { value: 'LOST', label: 'Lost', icon: '❓' },
+  { value: 'QUALITY_CONTROL', label: 'Quality Control', icon: '🔍' },
+  { value: 'RECALL', label: 'Recall', icon: '⚠️' },
+  { value: 'TRANSFER', label: 'Transfer', icon: '📦' },
+  { value: 'OTHER', label: 'Other', icon: '📝' },
+] as const
 
 const deshelvingSchema = z.object({
-  quantity: z.number().min(1, "Quantity must be at least 1"),
+  quantity: z.number().min(1, 'Quantity must be at least 1'),
   reason: z.nativeEnum(DeshelvingReason, {
-    required_error: "Please select a reason",
+    required_error: 'Please select a reason',
   }),
   description: z.string().optional(),
-});
+})
 
-type DeshelvingFormData = z.infer<typeof deshelvingSchema>;
+type DeshelvingFormData = z.infer<typeof deshelvingSchema>
 
 interface Product {
-  readonly id: string;
-  readonly name: string;
-  readonly quantity: number;
-  readonly price: number;
+  readonly id: string
+  readonly name: string
+  readonly quantity: number
+  readonly price: number
 }
 
 interface DeshelvingDialogProps {
-  readonly product: Product;
-  readonly trigger?: React.ReactNode;
-  readonly onSuccess?: () => void;
+  readonly product: Product
+  readonly trigger?: React.ReactNode
+  readonly onSuccess?: () => void
 }
 
-export function DeshelvingDialog({ product, trigger, onSuccess }: DeshelvingDialogProps) {
-  const [open, setOpen] = useState(false);
-  const { toast } = useToast();
+export function DeshelvingDialog({
+  product,
+  trigger,
+  onSuccess,
+}: DeshelvingDialogProps) {
+  const [open, setOpen] = useState(false)
+  const { toast } = useToast()
 
   const form = useForm<DeshelvingFormData>({
     resolver: zodResolver(deshelvingSchema),
     defaultValues: {
       quantity: 1,
       reason: undefined,
-      description: "",
+      description: '',
     },
-  });
+  })
 
   // Use TanStack Query mutation for deshelving
-  const deshelvingMutation = useDeshelvingMutation();
+  const deshelvingMutation = useDeshelvingMutation()
 
   const onSubmit = async (data: DeshelvingFormData) => {
     deshelvingMutation.mutate(
@@ -95,27 +99,30 @@ export function DeshelvingDialog({ product, trigger, onSuccess }: DeshelvingDial
       {
         onSuccess: () => {
           toast({
-            title: "Product Deshelved",
+            title: 'Product Deshelved',
             description: `Successfully deshelved ${data.quantity} units of ${product.name}`,
-          });
-          setOpen(false);
-          form.reset();
-          onSuccess?.();
+          })
+          setOpen(false)
+          form.reset()
+          onSuccess?.()
         },
-        onError: (error) => {
+        onError: error => {
           toast({
-            title: "Error",
-            description: error instanceof Error ? error.message : "Failed to deshelve product",
-            variant: "destructive",
-          });
+            title: 'Error',
+            description:
+              error instanceof Error
+                ? error.message
+                : 'Failed to deshelve product',
+            variant: 'destructive',
+          })
         },
       }
-    );
-  };
+    )
+  }
 
-  const selectedReason = form.watch("reason");
-  const selectedQuantity = form.watch("quantity");
-  const estimatedValue = selectedQuantity * product.price;
+  const selectedReason = form.watch('reason')
+  const selectedQuantity = form.watch('quantity')
+  const estimatedValue = selectedQuantity * product.price
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -134,8 +141,8 @@ export function DeshelvingDialog({ product, trigger, onSuccess }: DeshelvingDial
             Deshelve Product
           </DialogTitle>
           <DialogDescription>
-            Remove units of <strong>{product.name}</strong> from available inventory.
-            Current stock: <strong>{product.quantity} units</strong>
+            Remove units of <strong>{product.name}</strong> from available
+            inventory. Current stock: <strong>{product.quantity} units</strong>
           </DialogDescription>
         </DialogHeader>
 
@@ -152,13 +159,15 @@ export function DeshelvingDialog({ product, trigger, onSuccess }: DeshelvingDial
                       type="number"
                       min="1"
                       max={product.quantity}
-                      value={field.value ?? ""}
+                      value={field.value ?? ''}
                       onBlur={field.onBlur}
                       name={field.name}
                       ref={field.ref}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        field.onChange(value === "" ? "" : parseInt(value, 10) || 1);
+                      onChange={e => {
+                        const value = e.target.value
+                        field.onChange(
+                          value === '' ? '' : Number.parseInt(value, 10) || 1
+                        )
                       }}
                     />
                   </FormControl>
@@ -181,14 +190,17 @@ export function DeshelvingDialog({ product, trigger, onSuccess }: DeshelvingDial
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Reason for Deshelving</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a reason" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {deshelvingReasons.map((reason) => (
+                      {deshelvingReasons.map(reason => (
                         <SelectItem key={reason.value} value={reason.value}>
                           <div className="flex items-center gap-2">
                             <span>{reason.icon}</span>
@@ -209,8 +221,10 @@ export function DeshelvingDialog({ product, trigger, onSuccess }: DeshelvingDial
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    Description{" "}
-                    <span className="text-muted-foreground ml-1">(Optional)</span>
+                    Description{' '}
+                    <span className="text-muted-foreground ml-1">
+                      (Optional)
+                    </span>
                   </FormLabel>
                   <FormControl>
                     <Textarea
@@ -236,8 +250,9 @@ export function DeshelvingDialog({ product, trigger, onSuccess }: DeshelvingDial
                       Deshelving Confirmation
                     </p>
                     <p className="text-orange-700 dark:text-orange-300 mt-1">
-                      This action will remove {selectedQuantity || 0} units from available inventory.
-                      This action is logged for audit purposes.
+                      This action will remove {selectedQuantity || 0} units from
+                      available inventory. This action is logged for audit
+                      purposes.
                     </p>
                   </div>
                 </div>
@@ -253,13 +268,19 @@ export function DeshelvingDialog({ product, trigger, onSuccess }: DeshelvingDial
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={deshelvingMutation.isPending} className="bg-orange-600 hover:bg-orange-700">
-                {deshelvingMutation.isPending ? "Deshelving..." : "Confirm Deshelve"}
+              <Button
+                type="submit"
+                disabled={deshelvingMutation.isPending}
+                className="bg-orange-600 hover:bg-orange-700"
+              >
+                {deshelvingMutation.isPending
+                  ? 'Deshelving...'
+                  : 'Confirm Deshelve'}
               </Button>
             </DialogFooter>
           </form>
         </Form>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

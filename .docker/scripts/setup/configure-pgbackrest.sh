@@ -16,8 +16,20 @@ cp /base-config/pgbackrest.conf /pgbackrest-config/pgbackrest.conf
 # Generate dynamic repository configuration
 echo "Generating dynamic repository configuration..."
 
-REPO_TYPE="${PGBACKREST_REPO1_TYPE:-posix}"
+REPO_TYPE="${PGBACKREST_REPO1_TYPE:-none}"
 echo "Repository type: $REPO_TYPE"
+
+if [ "$REPO_TYPE" = "none" ]; then
+    echo "Backup disabled - skipping pgBackRest configuration"
+    # Create minimal config that disables archiving
+    cat > /pgbackrest-config/conf.d/repo.conf << EOF
+# Backup disabled (dynamically generated)
+# Generated at: $(date)
+
+# No repository configuration - backups disabled
+EOF
+    exit 0
+fi
 
 cat > /pgbackrest-config/conf.d/repo.conf << EOF
 # Repository Configuration (dynamically generated)

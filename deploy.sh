@@ -167,7 +167,13 @@ load_environment() {
     # Set defaults and detect values
     export PLATFORM="${PLATFORM:-$(detect_platform)}"
     export ARCHITECTURE="${ARCHITECTURE:-$(detect_architecture)}"
-    export HOST_IP="${HOST_IP:-$(get_host_ip)}"
+
+    # Resolve HOST_IP if set to "auto" or empty
+    if [ -z "$HOST_IP" ] || [ "$HOST_IP" = "auto" ]; then
+        export HOST_IP="$(get_host_ip)"
+        log "Auto-detected HOST_IP: $HOST_IP"
+    fi
+
     export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-salespider}"
     export DATA_PATH="${DATA_PATH:-$SCRIPT_DIR/data}"
     export BACKUP_PATH="${BACKUP_PATH:-$SCRIPT_DIR/data/backups}"
@@ -332,7 +338,19 @@ start_services() {
     
     # Start services
     log "Starting Docker services..."
-    $COMPOSE_CMD -f "$DOCKER_DIR/docker-compose.yml" --env-file "$SCRIPT_DIR/.env" up -d
+
+    # Check if backup is enabled and set profiles accordingly
+    local backup_type="${PGBACKREST_REPO1_TYPE:-none}"
+    local profiles=""
+
+    if [ "$backup_type" != "none" ]; then
+        profiles="--profile backup"
+        log "Backup enabled (type: $backup_type) - including backup service"
+    else
+        log "Backup disabled - excluding backup service"
+    fi
+
+    $COMPOSE_CMD -f "$DOCKER_DIR/docker-compose.yml" --env-file "$SCRIPT_DIR/.env" $profiles up -d
     
     # Wait for services to be healthy
     log "Waiting for services to become healthy..."

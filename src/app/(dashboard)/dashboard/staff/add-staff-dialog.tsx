@@ -1,5 +1,11 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { UserPlus } from "lucide-react";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import type { Role } from "@prisma/client";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,11 +28,6 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { useAddStaff } from "@/hooks/use-staff";
-import type { Role } from "@prisma/client";
-import { UserPlus } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { useTranslation } from "@/lib/i18n";
 
 const addStaffSchema = z.object({

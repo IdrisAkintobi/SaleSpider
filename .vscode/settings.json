@@ -78,13 +78,19 @@
         "redir",
         "resolv",
         "salespider",
+        "sslmode",
         "strm",
         "stylelintcache",
+        "Supabase",
         "turbopack",
         "understocked",
         "urandom",
         "urllib",
         "urlparse",
         "zstd"
-    ]
+    ],
+    "sonarlint.connectedMode.project": {
+        "connectionId": "idrisakintobi",
+        "projectKey": "IdrisAkintobi_SaleSpider"
+    }
 }

@@ -1,60 +1,205 @@
-"use client";
+'use client'
 
-import { PageHeader } from "@/components/shared/page-header";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { PageHeader } from '@/components/shared/page-header'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { useAuth } from "@/contexts/auth-context";
-import { useToast } from "@/hooks/use-toast";
-import { useSales } from "@/hooks/use-sales";
-import { useStaff, useUpdateUserStatus } from "@/hooks/use-staff";
-import { Role } from "@prisma/client";
-import type { User, UserStatus, Sale } from "@/lib/types";
-import React from "react";
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Switch } from '@/components/ui/switch'
+import { useAuth } from '@/contexts/auth-context'
+import { useToast } from '@/hooks/use-toast'
+import { useSales } from '@/hooks/use-sales'
+import { useStaff, useUpdateUserStatus } from '@/hooks/use-staff'
+import type { User, Sale, Role, UserStatus } from '@/lib/types'
+import { Search, ArrowUp, ArrowDown, Pencil } from 'lucide-react'
+import React, { useMemo, useState } from 'react'
+import { AddStaffDialog } from './add-staff-dialog'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Search,
-  ArrowUp,
-  ArrowDown,
-  Pencil,
-} from "lucide-react";
-import { useMemo, useState } from "react";
-import { AddStaffDialog } from "./add-staff-dialog";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useTableControls } from "@/hooks/use-table-controls";
-import { GenericTable } from "@/components/ui/generic-table";
-import { StaffTableSkeleton } from "@/components/dashboard/staff/staff-table-skeleton";
-import { useTranslation } from "@/lib/i18n";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { useTableControls } from '@/hooks/use-table-controls'
+import { GenericTable } from '@/components/ui/generic-table'
+import { StaffTableSkeleton } from '@/components/dashboard/staff/staff-table-skeleton'
+import { useTranslation } from '@/lib/i18n'
 
 interface StaffPerformance extends User {
-  totalSalesValue: number;
-  numberOfSales: number;
+  totalSalesValue: number
+  numberOfSales: number
 }
 
-// Add this outside the component
+// Permission check helpers
+function canEditStaff(
+  currentUserRole: Role | undefined,
+  targetStaffRole: Role
+): boolean {
+  if (currentUserRole === 'SUPER_ADMIN') return true
+  if (currentUserRole === 'MANAGER' && targetStaffRole === 'CASHIER')
+    return true
+  return false
+}
+
+// API function
 async function editUser(update: Partial<User> & { id: string }) {
-  const res = await fetch("/api/users", {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+  const res = await fetch('/api/users', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(update),
-  });
-  if (!res.ok) throw new Error((await res.json()).message || "Failed to update user");
-  return res.json();
+  })
+  if (!res.ok)
+    throw new Error((await res.json()).message || 'Failed to update user')
+  return res.json()
+}
+
+// Form data extraction helper
+function extractFormUpdate(
+  formData: FormData,
+  staffId: string,
+  currentUserRole: Role | undefined,
+  targetStaffRole: Role
+): Partial<User> & { id: string } {
+  const update: Partial<User> & { id: string } = { id: staffId }
+
+  if (!canEditStaff(currentUserRole, targetStaffRole)) {
+    return update
+  }
+
+  const name = formData.get('name')
+  if (typeof name === 'string') update.name = name
+
+  const username = formData.get('username')
+  if (typeof username === 'string') update.username = username
+
+  const email = formData.get('email')
+  if (typeof email === 'string') update.email = email
+
+  const role = formData.get('role')
+  if (typeof role === 'string') update.role = role as Role
+
+  return update
+}
+
+// Cell renderer helper
+function renderStaffCell(
+  staff: StaffPerformance,
+  columnKey: string,
+  canEdit: boolean,
+  userIsManager: boolean,
+  t: (key: string) => string,
+  handleStatusChange: (staff: StaffPerformance, checked: boolean) => void,
+  setEditStaff: (staff: StaffPerformance) => void
+): React.ReactNode {
+  switch (columnKey) {
+    case 'name':
+      return <span className="font-medium">{staff.name}</span>
+    case 'username':
+      return staff.username
+    case 'role':
+      return (
+        <Badge variant={userIsManager ? 'default' : 'secondary'}>
+          {t(staff.role.toLowerCase())}
+        </Badge>
+      )
+    case 'totalSalesValue':
+      return `$${staff.totalSalesValue.toFixed(2)}`
+    case 'numberOfSales':
+      return staff.numberOfSales
+    case 'status':
+      return (
+        <>
+          <Switch
+            checked={staff.status === 'ACTIVE'}
+            onCheckedChange={checked => handleStatusChange(staff, checked)}
+            disabled={!canEdit}
+          />
+          <span className="ml-2">
+            {t(staff.status === 'ACTIVE' ? 'active' : 'inactive')}
+          </span>
+        </>
+      )
+    case 'actions':
+      return (
+        <div className="text-right space-x-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setEditStaff(staff)}
+            disabled={!canEdit}
+          >
+            <Pencil className="mr-2 h-3 w-3" /> {t('edit')}
+          </Button>
+        </div>
+      )
+    default:
+      return null
+  }
+}
+
+// Filter staff helper
+function filterStaffBySearch(
+  staff: StaffPerformance,
+  searchTerm: string
+): boolean {
+  const lowerSearch = searchTerm.toLowerCase()
+  return (
+    staff.name.toLowerCase().includes(lowerSearch) ||
+    staff.username?.toLowerCase().includes(lowerSearch) ||
+    staff.role.toLowerCase().includes(lowerSearch)
+  )
+}
+
+// Sort icon helper
+function SortIcon({
+  isActive,
+  order,
+}: {
+  isActive: boolean
+  order: 'asc' | 'desc'
+}) {
+  if (!isActive) return null
+  return order === 'asc' ? (
+    <ArrowUp className="inline w-3 h-3" aria-hidden="true" />
+  ) : (
+    <ArrowDown className="inline w-3 h-3" aria-hidden="true" />
+  )
+}
+
+// Sortable column header helper
+function createSortableHeader(
+  label: string,
+  columnKey: string,
+  currentSort: string,
+  order: 'asc' | 'desc',
+  handleSort: (key: string) => void,
+  ariaLabel?: string
+) {
+  return (
+    <button
+      type="button"
+      className="cursor-pointer hover:underline focus:outline-none focus:underline"
+      onClick={() => handleSort(columnKey)}
+      aria-label={ariaLabel || `Sort by ${columnKey}`}
+    >
+      {label} <SortIcon isActive={currentSort === columnKey} order={order} />
+    </button>
+  )
 }
 
 export default function StaffPage() {
-  const { user: currentUser, userIsManager } = useAuth();
-  const { toast } = useToast();
-  const t = useTranslation();
+  const { user: currentUser, userIsManager } = useAuth()
+  const { toast } = useToast()
+  const t = useTranslation()
 
   // Use shared table controls
   const {
@@ -65,133 +210,132 @@ export default function StaffPage() {
     handleSort,
     handlePageChange,
     handlePageSizeChange,
-  } = useTableControls({ initialSort: "name", initialOrder: "asc" });
+  } = useTableControls({ initialSort: 'name', initialOrder: 'asc' })
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editStaff, setEditStaff] = useState<StaffPerformance | null>(null);
+  const [searchTerm, setSearchTerm] = useState('')
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [editStaff, setEditStaff] = useState<StaffPerformance | null>(null)
 
   // Use custom hooks for data fetching
-  const { data, isLoading: isLoadingUsers } = useStaff({
-    page,
-    pageSize,
-    sort,
-    order,
-    searchTerm,
-  }, userIsManager);
-  const users = useMemo(() => data?.data ?? [], [data]);
-  const total = data?.total || 0;
-  const updateStatusMutation = useUpdateUserStatus();
+  const { data, isLoading: isLoadingUsers } = useStaff(
+    {
+      page,
+      pageSize,
+      sort,
+      order,
+      searchTerm,
+    },
+    userIsManager
+  )
+  const users = useMemo(() => data?.data ?? [], [data])
+  const total = data?.total || 0
+  const updateStatusMutation = useUpdateUserStatus()
 
   // Add after useStaff and before staffList
-  const { data: salesData } = useSales();
-  const sales = useMemo(() => salesData?.data ?? [], [salesData]);
+  const { data: salesData } = useSales()
+  const sales = useMemo(() => salesData?.data ?? [], [salesData])
 
   // Combine users and sales data to create performance data
   const staffList: StaffPerformance[] = useMemo(() => {
     return users.map((user: User) => {
-      const userSales = sales.filter((sale: Sale) => sale.cashierId === user.id);
+      const userSales = sales.filter((sale: Sale) => sale.cashierId === user.id)
       const totalSalesValue = userSales.reduce(
         (sum: number, sale: Sale) => sum + sale.totalAmount,
         0
-      );
+      )
       return {
         ...user,
         totalSalesValue,
         numberOfSales: userSales.length,
-      };
-    });
-  }, [users, sales]);
+      }
+    })
+  }, [users, sales])
 
-  const isLoading = isLoadingUsers;
+  const isLoading = isLoadingUsers
 
   const handleStatusChange = (
     staffMember: StaffPerformance,
     newStatus: boolean
   ) => {
-    const status: UserStatus = newStatus ? "ACTIVE" : "INACTIVE";
-    
+    const status: UserStatus = newStatus ? 'ACTIVE' : 'INACTIVE'
+
     // Use the mutation with toast handling
     updateStatusMutation.mutate(
       { userId: staffMember.id, status },
       {
-        onSuccess: (updatedUser) => {
+        onSuccess: updatedUser => {
           toast({
-            title: "Status Updated",
+            title: 'Status Updated',
             description: `${updatedUser.name}'s status changed to ${updatedUser.status}.`,
-          });
+          })
         },
-        onError: (error) => {
+        onError: error => {
           toast({
-            title: "Error",
-            description: error.message || "Failed to update status",
-            variant: "destructive",
-          });
+            title: 'Error',
+            description: error.message || 'Failed to update status',
+            variant: 'destructive',
+          })
         },
       }
-    );
-  };
+    )
+  }
 
   const filteredStaff = useMemo(
     () =>
       staffList
-        .filter(
-          (staff) =>
-            staff.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            staff.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            staff.role.toLowerCase().includes(searchTerm.toLowerCase())
-        )
+        .filter(staff => filterStaffBySearch(staff, searchTerm))
         .sort((a, b) => a.name.localeCompare(b.name)),
     [staffList, searchTerm]
-  );
+  )
 
   // Replace the editMutation definition inside the component with:
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient()
   const editMutation = useMutation({
     mutationFn: editUser,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["staff"] });
+      queryClient.invalidateQueries({ queryKey: ['staff'] })
     },
-  });
+  })
 
   // Check if user has permission to view staff
-  if (!currentUser || (currentUser.role !== "SUPER_ADMIN" && currentUser.role !== "MANAGER")) {
+  if (
+    !currentUser ||
+    (currentUser.role !== 'SUPER_ADMIN' && currentUser.role !== 'MANAGER')
+  ) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center">
-        <h2 className="text-2xl font-semibold mb-2">{t("access_denied")}</h2>
-        <p className="text-muted-foreground">
-          {t("super_admin_only")}
-        </p>
+        <h2 className="text-2xl font-semibold mb-2">{t('access_denied')}</h2>
+        <p className="text-muted-foreground">{t('super_admin_only')}</p>
       </div>
-    );
+    )
   }
 
   if (isLoading) {
     return (
       <>
         <PageHeader
-          title={t("staff_management")}
-          description={t("staff_management_description")}
+          title={t('staff_management')}
+          description={t('staff_management_description')}
         />
         <div className="mb-4">
           <Input
             placeholder="Search staff by name, username, or role..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={e => setSearchTerm(e.target.value)}
             className="max-w-sm"
             icon={<Search className="h-4 w-4 text-muted-foreground" />}
           />
-      </div>
+        </div>
         <StaffTableSkeleton userIsManager={userIsManager} />
       </>
-    );
+    )
   }
 
   return (
     <>
       <PageHeader
-        title={t("staff_management")}
-        description={t("staff_management_description")}
+        title={t('staff_management')}
+        description={t('staff_management_description')}
         actions={
           userIsManager && (
             <AddStaffDialog
@@ -204,9 +348,9 @@ export default function StaffPage() {
       />
       <div className="mb-4">
         <Input
-          placeholder={t("search_staff")}
+          placeholder={t('search_staff')}
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={e => setSearchTerm(e.target.value)}
           className="max-w-sm"
           icon={<Search className="h-4 w-4 text-muted-foreground" />}
         />
@@ -216,87 +360,78 @@ export default function StaffPage() {
           <GenericTable
             columns={[
               {
-                key: "name",
-                label: (
-                  <span className="cursor-pointer" onClick={() => handleSort("name")}>{t("name")} {sort === "name" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</span>
+                key: 'name',
+                label: createSortableHeader(
+                  t('name'),
+                  'name',
+                  sort,
+                  order,
+                  handleSort
                 ),
                 sortable: true,
-                onSort: () => handleSort("name"),
+                onSort: () => handleSort('name'),
               },
               {
-                key: "username",
-                label: (
-                  <span className="cursor-pointer" onClick={() => handleSort("username")}>{t("username")} {sort === "username" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</span>
+                key: 'username',
+                label: createSortableHeader(
+                  t('username'),
+                  'username',
+                  sort,
+                  order,
+                  handleSort
                 ),
                 sortable: true,
-                onSort: () => handleSort("username"),
+                onSort: () => handleSort('username'),
               },
               {
-                key: "role",
-                label: (
-                  <span className="cursor-pointer" onClick={() => handleSort("role")}>{t("role")} {sort === "role" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</span>
+                key: 'role',
+                label: createSortableHeader(
+                  t('role'),
+                  'role',
+                  sort,
+                  order,
+                  handleSort,
+                  t('sort_by_role')
                 ),
                 sortable: true,
-                onSort: () => handleSort("role"),
+                onSort: () => handleSort('role'),
               },
-              { key: "totalSalesValue", label: t("total_sales") },
-              { key: "numberOfSales", label: t("number_of_orders") },
+              { key: 'totalSalesValue', label: t('total_sales') },
+              { key: 'numberOfSales', label: t('number_of_orders') },
               {
-                key: "status",
-                label: (
-                  <span className="cursor-pointer" onClick={() => handleSort("status")}>{t("status")} {sort === "status" && (order === "asc" ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />)}</span>
+                key: 'status',
+                label: createSortableHeader(
+                  t('status'),
+                  'status',
+                  sort,
+                  order,
+                  handleSort,
+                  t('sort_by_status')
                 ),
                 sortable: true,
-                onSort: () => handleSort("status"),
+                onSort: () => handleSort('status'),
               },
-              { key: "actions", label: <span className="text-right">{t("actions")}</span>, align: "right" },
+              {
+                key: 'actions',
+                label: <span className="text-right">{t('actions')}</span>,
+                align: 'right',
+              },
             ]}
             data={filteredStaff}
             rowKey={row => row.id}
             renderCell={(staff, col) => {
-              switch (col.key) {
-                case "name":
-                  return <span className="font-medium">{staff.name}</span>;
-                case "username":
-                  return staff.username;
-                case "role":
-                  return <Badge variant={userIsManager ? "default" : "secondary"}>{t(staff.role.toLowerCase())}</Badge>;
-                case "totalSalesValue":
-                  return `$${staff.totalSalesValue.toFixed(2)}`;
-                case "numberOfSales":
-                  return staff.numberOfSales;
-                case "status":
-                  return <><Switch
-                    checked={staff.status === "ACTIVE"}
-                    onCheckedChange={checked => handleStatusChange(staff, checked)}
-                    disabled={currentUser?.role !== "SUPER_ADMIN" && (currentUser?.role !== "MANAGER" || staff.role !== "CASHIER")}
-                  /><span className="ml-2">{t(staff.status.toLowerCase())}</span></>;
-                case "actions":
-                  return (
-                    <div className="text-right space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                        onClick={() => setEditStaff(staff)}
-                        disabled={currentUser?.role !== "SUPER_ADMIN" && (currentUser?.role !== "MANAGER" || staff.role !== "CASHIER")}
-                          >
-                        <Pencil className="mr-2 h-3 w-3" /> {t("edit")}
-                          </Button>
-                            </div>
-                  );
-                default: {
-                  const value = (staff as unknown as Record<string, unknown>)[col.key as string];
-                  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-                    return String(value);
-                  }
-                  if (React.isValidElement(value)) {
-                    return value;
-                  }
-                  return null;
-                }
-              }
+              const canEdit = canEditStaff(currentUser?.role, staff.role)
+              return renderStaffCell(
+                staff,
+                col.key,
+                canEdit,
+                userIsManager,
+                t,
+                handleStatusChange,
+                setEditStaff
+              )
             }}
-            emptyMessage={t("no_staff_found")}
+            emptyMessage={t('no_staff_found')}
             paginationProps={{
               page,
               pageSize,
@@ -308,66 +443,103 @@ export default function StaffPage() {
         </CardContent>
       </Card>
       {editStaff && (
-        <Dialog open={!!editStaff} onOpenChange={open => setEditStaff(open ? editStaff : null)}>
+        <Dialog
+          open={!!editStaff}
+          onOpenChange={open => setEditStaff(open ? editStaff : null)}
+        >
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{t("edit_staff") + ': ' + editStaff?.name}</DialogTitle>
-              <DialogDescription>{t("update_staff_details")}</DialogDescription>
+              <DialogTitle>
+                {t('edit_staff') + ': ' + editStaff?.name}
+              </DialogTitle>
+              <DialogDescription>{t('update_staff_details')}</DialogDescription>
             </DialogHeader>
             <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                const form = e.target as HTMLFormElement;
-                const formData = new FormData(form);
-                const update: Partial<User> & { id: string } = { id: editStaff.id };
-                if (currentUser?.role === "SUPER_ADMIN" || (currentUser?.role === "MANAGER" && editStaff.role === "CASHIER")) {
-                  const name = formData.get("name");
-                  if (typeof name === "string") update.name = name;
-                  const username = formData.get("username");
-                  if (typeof username === "string") update.username = username;
-                  const email = formData.get("email");
-                  if (typeof email === "string") update.email = email;
-                  const role = formData.get("role");
-                  if (typeof role === "string") update.role = role as Role;
-                }
+              onSubmit={e => {
+                e.preventDefault()
+                const formData = new FormData(e.target as HTMLFormElement)
+                const update = extractFormUpdate(
+                  formData,
+                  editStaff.id,
+                  currentUser?.role,
+                  editStaff.role
+                )
+
                 editMutation.mutate(update, {
                   onSuccess: () => {
-                    toast({ title: "Staff updated" });
-                    setEditStaff(null);
+                    toast({ title: 'Staff updated' })
+                    setEditStaff(null)
                   },
                   onError: (error: unknown) => {
-                    const message = error instanceof Error ? error.message : String(error);
-                    toast({ title: "Error", description: message, variant: "destructive" });
+                    toast({
+                      title: 'Error',
+                      description:
+                        error instanceof Error ? error.message : String(error),
+                      variant: 'destructive',
+                    })
                   },
-                });
+                })
               }}
               className="space-y-4"
             >
-              <Input name="name" defaultValue={editStaff.name} placeholder="Name" required disabled={currentUser?.role !== "SUPER_ADMIN" && (currentUser?.role !== "MANAGER" || editStaff.role !== "CASHIER")}/>
-              <Input name="username" defaultValue={editStaff.username} placeholder="Username" required disabled={currentUser?.role !== "SUPER_ADMIN" && (currentUser?.role !== "MANAGER" || editStaff.role !== "CASHIER")}/>
-              <Input name="email" type="email" defaultValue={editStaff.email} placeholder="Email" required disabled={currentUser?.role !== "SUPER_ADMIN" && (currentUser?.role !== "MANAGER" || editStaff.role !== "CASHIER")}/>
+              <Input
+                name="name"
+                defaultValue={editStaff.name}
+                placeholder="Name"
+                required
+                disabled={!canEditStaff(currentUser?.role, editStaff.role)}
+              />
+              <Input
+                name="username"
+                defaultValue={editStaff.username}
+                placeholder="Username"
+                required
+                disabled={!canEditStaff(currentUser?.role, editStaff.role)}
+              />
+              <Input
+                name="email"
+                type="email"
+                defaultValue={editStaff.email}
+                placeholder="Email"
+                required
+                disabled={!canEditStaff(currentUser?.role, editStaff.role)}
+              />
               <Select
                 name="role"
                 value={editStaff.role}
                 onValueChange={value => {
-                  setEditStaff(editStaff => editStaff ? { ...editStaff, role: value as Role } : editStaff);
+                  setEditStaff(editStaff =>
+                    editStaff
+                      ? { ...editStaff, role: value as Role }
+                      : editStaff
+                  )
                 }}
-                disabled={currentUser?.role !== "SUPER_ADMIN" && (currentUser?.role !== "MANAGER" || editStaff.role !== "CASHIER")}
+                disabled={!canEditStaff(currentUser?.role, editStaff.role)}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="CASHIER">Cashier</SelectItem>
-                  {currentUser?.role === "SUPER_ADMIN" && (
+                  {currentUser?.role === 'SUPER_ADMIN' && (
                     <SelectItem value="MANAGER">Manager</SelectItem>
                   )}
                 </SelectContent>
               </Select>
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setEditStaff(null)}>{t("cancel")}</Button>
-                <Button type="submit" variant="default" disabled={editMutation.isPending}>
-                  {editMutation.isPending ? t("saving") : t("save")}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditStaff(null)}
+                >
+                  {t('cancel')}
+                </Button>
+                <Button
+                  type="submit"
+                  variant="default"
+                  disabled={editMutation.isPending}
+                >
+                  {editMutation.isPending ? t('saving') : t('save')}
                 </Button>
               </div>
             </form>
@@ -375,5 +547,5 @@ export default function StaffPage() {
         </Dialog>
       )}
     </>
-  );
+  )
 }

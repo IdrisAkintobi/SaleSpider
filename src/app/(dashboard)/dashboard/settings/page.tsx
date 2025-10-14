@@ -253,7 +253,7 @@ export default function SettingsPage() {
     <>
       <PageHeader
         title={t("settings")}
-        description="Configure application appearance, currency, and system preferences."
+        description={t("settings_page_description")}
       />
 
       <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -360,28 +360,38 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <ColorPicker
-                    value={watchedValues.primaryColor}
-                    onChange={(color) => form.setValue("primaryColor", color)}
-                    label={t("primary_color")}
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="primaryColor">{t("primary_color")}</Label>
+                    <ColorPicker
+                      id="primaryColor"
+                      value={watchedValues.primaryColor}
+                      onChange={(color) => form.setValue("primaryColor", color)}
+                    />
+                  </div>
 
-                  <ColorPicker
-                    value={watchedValues.secondaryColor}
-                    onChange={(color) => form.setValue("secondaryColor", color)}
-                    label={t("secondary_color")}
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="secondaryColor">{t("secondary_color")}</Label>
+                    <ColorPicker
+                      id="secondaryColor"
+                      value={watchedValues.secondaryColor}
+                      onChange={(color) => form.setValue("secondaryColor", color)}
+                    />
+                  </div>
 
-                  <ColorPicker
-                    value={watchedValues.accentColor}
-                    onChange={(color) => form.setValue("accentColor", color)}
-                    label={t("accent_color")}
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="accentColor">{t("accent_color")}</Label>
+                    <ColorPicker
+                      id="accentColor"
+                      value={watchedValues.accentColor}
+                      onChange={(color) => form.setValue("accentColor", color)}
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="theme">{t("theme")}</Label>
                   <Select
+                    name="theme"
                     value={watchedValues.theme}
                     onValueChange={(value) => {
                       form.setValue("theme", value as "light" | "dark" | "auto");
@@ -390,7 +400,7 @@ export default function SettingsPage() {
                       setTheme(themeValue);
                     }}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id="theme">
                       <SelectValue placeholder="Select theme" />
                     </SelectTrigger>
                     <SelectContent>
@@ -436,10 +446,11 @@ export default function SettingsPage() {
                 <div className="space-y-2">
                   <Label htmlFor="currency">{t("currency")}</Label>
                   <Select
+                    name="currency"
                     value={watchedValues.currency}
                     onValueChange={handleCurrencyChange}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id="currency">
                       <SelectValue placeholder="Select currency" />
                     </SelectTrigger>
                     <SelectContent>
@@ -484,6 +495,7 @@ export default function SettingsPage() {
                         <div key={m.enum} className="flex items-center space-x-2">
                           <Checkbox
                             id={`pm-${m.enum}`}
+                            name={`enabledPaymentMethods-${m.enum}`}
                             checked={checked}
                             onCheckedChange={(val) => {
                               const current = new Set(watchedValues.enabledPaymentMethods || []);
@@ -530,10 +542,11 @@ export default function SettingsPage() {
                 <div className="space-y-2">
                   <Label htmlFor="language">{t("language")}</Label>
                   <Select
+                    name="language"
                     value={watchedValues.language}
                     onValueChange={(value) => form.setValue("language", value)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id="language">
                       <SelectValue placeholder="Select language" />
                     </SelectTrigger>
                     <SelectContent>
@@ -554,10 +567,11 @@ export default function SettingsPage() {
                 <div className="space-y-2">
                   <Label htmlFor="timezone">{t("timezone")}</Label>
                   <Select
+                    name="timezone"
                     value={watchedValues.timezone}
                     onValueChange={(value) => form.setValue("timezone", value)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id="timezone">
                       <SelectValue placeholder="Select timezone" />
                     </SelectTrigger>
                     <SelectContent>
@@ -579,10 +593,11 @@ export default function SettingsPage() {
                   <div className="space-y-2">
                     <Label htmlFor="dateFormat">{t("date_format")}</Label>
                     <Select
+                      name="dateFormat"
                       value={watchedValues.dateFormat}
                       onValueChange={(value) => form.setValue("dateFormat", value)}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id="dateFormat">
                         <SelectValue placeholder="Select date format" />
                       </SelectTrigger>
                       <SelectContent>
@@ -603,10 +618,11 @@ export default function SettingsPage() {
                   <div className="space-y-2">
                     <Label htmlFor="timeFormat">{t("time_format")}</Label>
                     <Select
+                      name="timeFormat"
                       value={watchedValues.timeFormat}
                       onValueChange={(value) => form.setValue("timeFormat", value)}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id="timeFormat">
                         <SelectValue placeholder="Select time format" />
                       </SelectTrigger>
                       <SelectContent>
@@ -655,12 +671,13 @@ export default function SettingsPage() {
                   <div className="flex items-center space-x-2">
                     <Switch
                       id="maintenanceMode"
+                      name="maintenanceMode"
                       checked={watchedValues.maintenanceMode}
                       onCheckedChange={(checked) => form.setValue("maintenanceMode", checked)}
                     />
-                    <Label htmlFor="maintenanceMode" className="text-sm text-muted-foreground">
+                    <span className="text-sm text-muted-foreground">
                       {t("maintenance_mode_description")}
-                    </Label>
+                    </span>
                   </div>
                   {form.formState.errors.maintenanceMode && (
                     <p className="text-sm text-destructive">
@@ -674,12 +691,13 @@ export default function SettingsPage() {
                   <div className="flex items-center space-x-2">
                     <Switch
                       id="showDeletedProducts"
+                      name="showDeletedProducts"
                       checked={watchedValues.showDeletedProducts}
                       onCheckedChange={(checked) => form.setValue("showDeletedProducts", checked)}
                     />
-                    <Label htmlFor="showDeletedProducts" className="text-sm text-muted-foreground">
+                    <span className="text-sm text-muted-foreground">
                       Display soft-deleted products in inventory (Super Admin only)
-                    </Label>
+                    </span>
                   </div>
                   {form.formState.errors.showDeletedProducts && (
                     <p className="text-sm text-destructive">

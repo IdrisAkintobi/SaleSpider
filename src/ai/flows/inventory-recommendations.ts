@@ -23,6 +23,7 @@ const InventoryRecommendationsInputSchema = z.object({
       "Current inventory levels for each product. Must be in a clear, parseable format, such as JSON or CSV."
     ),
   storeName: z.string().describe("The name of the store."),
+  language: z.string().describe("The language to generate recommendations in (e.g., 'en', 'fr', 'es', 'de').").default("en"),
 });
 export type InventoryRecommendationsInput = z.infer<
   typeof InventoryRecommendationsInputSchema
@@ -66,9 +67,23 @@ const prompt = ai.definePrompt({
   Sales Data: {{{salesData}}}
   Current Inventory Levels: {{{currentInventory}}}
 
+  IMPORTANT: Generate all recommendations in the following language: {{language}}
+  - If language is "en": Use English
+  - If language is "fr": Use French (Français)
+  - If language is "es": Use Spanish (Español)
+  - If language is "de": Use German (Deutsch)
+  - Use natural, professional language appropriate for business communications in the specified language.
+
   The sales data includes deshelving insights that show inventory losses due to various reasons like damage, expiration, theft, quality control issues, recalls, etc. Use this information to provide comprehensive inventory management recommendations.
 
-  IMPORTANT: Even if sales data is limited or sparse, provide valuable insights based on the inventory data and general retail best practices. Do not start responses with phrases like "Given the lack of sales data" or "Without sales data". Instead, focus on what can be analyzed and provide actionable recommendations.
+  CRITICAL: First analyze the dataQuality object in the sales data to understand what data is available:
+  - If isEmpty is true: Focus on setup recommendations for a new store
+  - If isLimitedData is true: Provide growth-focused recommendations with data collection advice
+  - If hasSalesData is false: Focus on inventory-only analysis and sales activation strategies
+  - If hasProductData is false: Provide setup and stocking recommendations
+  - Always acknowledge the current data state and tailor recommendations accordingly
+
+  IMPORTANT: Always provide valuable, actionable insights regardless of data completeness. Adapt your recommendations to the available data quality and store situation. For limited data scenarios, include advice on data collection and baseline establishment.
 
   Provide summary-level insights and actionable recommendations that help store managers make informed decisions. Focus on overall trends, patterns, and strategic guidance rather than individual product details.
 

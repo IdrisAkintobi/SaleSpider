@@ -1,0 +1,103 @@
+services:
+  # SaleSpider Application (using hosted database)
+  app:
+    extends:
+      file: compose/app.yml
+      service: app
+    networks:
+      - salespider-net
+    environment:
+      # Override database connection to use hosted database
+      - DATABASE_URL=${DATABASE_URL}
+
+  # Reverse Proxy with SSL
+  proxy:
+    extends:
+      file: compose/proxy.yml
+      service: proxy
+    depends_on:
+      - app
+    networks:
+      - salespider-net
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+
+  # Setup and Initialization (for hosted database)
+  setup:
+    image: alpine:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-salespider}-setup
+    networks:
+      - salespider-net
+    environment:
+      # Hosted database configuration
+      - DATABASE_URL=${DATABASE_URL}
+      - SUPER_ADMIN_EMAIL=${SUPER_ADMIN_EMAIL:-admin@salespider.local}
+      - SUPER_ADMIN_PASSWORD=${SUPER_ADMIN_PASSWORD}
+      - APP_URL=${APP_URL:-https://${DOMAIN:-salespider.local}}
+      - DOMAIN=${DOMAIN:-salespider.local}
+      - HOST_IP=${HOST_IP:-127.0.0.1}
+      - CERT_DAYS=${CERT_DAYS:-3650}
+      - SKIP_SEED=${SKIP_SEED:-false}
+      - FORCE_RESET=${FORCE_RESET:-false}
+      - SETUP_BACKUP=false
+      - KEEP_RUNNING=${KEEP_RUNNING:-false}
+    volumes:
+      - ../scripts/setup:/scripts:ro
+      - ${DATA_PATH:-./data}/ssl:/ssl
+      - app-logs:/logs
+    command: |
+      sh -c '
+        set -e
+        echo "Starting SaleSpider setup (hosted database)..."
+
+        # Install required packages
+        apk add --no-cache curl openssl
+
+        # Run SSL setup
+        if [ -f /scripts/setup-ssl.sh ]; then
+          echo "Setting up SSL certificates..."
+          sh /scripts/setup-ssl.sh
+        fi
+
+        # Run application setup (skip database setup for hosted)
+        if [ -f /scripts/setup-application.sh ]; then
+          echo "Setting up application..."
+          sh /scripts/setup-application.sh
+        fi
+
+        echo "Setup completed successfully"
+        touch /logs/setup-completed
+
+        if [ "$KEEP_RUNNING" = "true" ]; then
+          tail -f /dev/null
+        fi
+      '
+    restart: "no"
+
+networks:
+  salespider-net:
+    driver: bridge
+
+volumes:
+  # Application volumes (only what's needed)
+  app-uploads:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_PATH:-./data}/uploads
+
+  app-logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_PATH:-./data}/logs
+
+  # Proxy volumes
+  proxy-data:
+    driver: local
+
+  proxy-config:
+    driver: local

@@ -8,8 +8,7 @@ LOG_FILE="/var/log/pgbackrest/backup-cleanup.log"
 RETENTION_FULL="${BACKUP_RETENTION_FULL:-8}"
 RETENTION_DIFF="${BACKUP_RETENTION_DIFF:-14}"
 WEBHOOK_URL="${BACKUP_WEBHOOK_URL:-}"
-SLACK_WEBHOOK="${BACKUP_SLACK_WEBHOOK:-}"
-STANZA="salespider"
+STANZA="${PGBACKREST_STANZA:-salespider}"
 
 # Logging function
 log() {
@@ -62,11 +61,5 @@ if [ -n "$WEBHOOK_URL" ]; then
         >/dev/null 2>&1 || true
 fi
 
-if [ -n "$SLACK_WEBHOOK" ]; then
-    curl -s -X POST "$SLACK_WEBHOOK" \
-        -H "Content-Type: application/json" \
-        -d "{\"text\":\"🧹 SaleSpider Backup Cleanup Completed\",\"attachments\":[{\"color\":\"good\",\"fields\":[{\"title\":\"Retention\",\"value\":\"$RETENTION_FULL full, $RETENTION_DIFF diff\",\"short\":true}]}]}" \
-        >/dev/null 2>&1 || true
-fi
 
 log "pgBackRest cleanup process completed successfully"

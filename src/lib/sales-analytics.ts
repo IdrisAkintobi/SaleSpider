@@ -317,11 +317,27 @@ export class SalesAnalyticsService {
   }
 
   /**
-   * Format data for AI insights consumption
+   * Format data for AI insights consumption with data quality assessment
    */
   static formatForAI(analytics: SalesAnalytics, productPerformance: ProductPerformance[], inventory: any[]) {
+    // Assess data quality and completeness
+    const dataQuality = {
+      hasSalesData: analytics.totalSales > 0,
+      hasProductData: inventory.length > 0,
+      hasPerformanceData: productPerformance.length > 0,
+      hasRecentSales: analytics.salesTrends.length > 0,
+      hasDeshelvingData: analytics.deshelvingInsights && analytics.deshelvingInsights.totalQuantityDeshelved > 0,
+      dataPoints: {
+        salesCount: analytics.totalSales,
+        productCount: inventory.length,
+        performanceRecords: productPerformance.length,
+        trendDays: analytics.salesTrends.length,
+      }
+    };
+
     return {
       salesData: JSON.stringify({
+        dataQuality,
         summary: {
           totalSales: analytics.totalSales,
           totalRevenue: analytics.totalRevenue,
@@ -331,16 +347,26 @@ export class SalesAnalyticsService {
         trends: analytics.salesTrends,
         productPerformance: productPerformance.slice(0, 20), // Top 20 products
         deshelvingInsights: analytics.deshelvingInsights,
+        isEmpty: analytics.totalSales === 0 && inventory.length === 0,
+        isLimitedData: analytics.totalSales < 5 && inventory.length < 10,
       }, null, 2),
-      currentInventory: JSON.stringify(inventory.map(item => ({
-        id: item.id,
-        name: item.name,
-        currentStock: item.quantity,
-        lowStockThreshold: item.lowStockMargin,
-        price: item.price,
-        category: item.category,
-        isLowStock: item.quantity <= item.lowStockMargin,
-      })), null, 2),
+      currentInventory: JSON.stringify({
+        products: inventory.map(item => ({
+          id: item.id,
+          name: item.name,
+          currentStock: item.quantity,
+          lowStockThreshold: item.lowStockMargin,
+          price: item.price,
+          category: item.category,
+          isLowStock: item.quantity <= item.lowStockMargin,
+        })),
+        summary: {
+          totalProducts: inventory.length,
+          lowStockProducts: inventory.filter(item => item.quantity <= item.lowStockMargin).length,
+          outOfStockProducts: inventory.filter(item => item.quantity === 0).length,
+          categories: [...new Set(inventory.map(item => item.category))],
+        }
+      }, null, 2),
     };
   }
 }
