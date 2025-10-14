@@ -273,14 +273,14 @@ export async function seedSales(client: PrismaClient, count: number = 12000) {
   })
 
   console.log('\n💳 Payment Method Distribution:')
-  paymentStats.forEach(stat => {
+  for (const stat of paymentStats) {
     const percentage = ((stat._count.paymentMode / createdCount) * 100).toFixed(
       1
     )
     console.log(
       `  ${stat.paymentMode}: ${stat._count.paymentMode} sales (${percentage}%) - ₦${stat._sum.totalAmount?.toFixed(2) || '0.00'}`
     )
-  })
+  }
 
   // Sales by month
   const monthlySales = await client.$queryRaw<
@@ -297,11 +297,11 @@ export async function seedSales(client: PrismaClient, count: number = 12000) {
   `
 
   console.log('\n📈 Monthly Sales:')
-  monthlySales.forEach(month => {
+  for (const month of monthlySales) {
     console.log(
       `  ${month.month.toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}: ${month.sales_count} sales - ₦${month.total_revenue.toFixed(2)}`
     )
-  })
+  }
 
   // Average sale amount
   const avgSale = totalRevenue / createdCount

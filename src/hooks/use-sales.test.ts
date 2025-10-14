@@ -49,8 +49,8 @@ const mockSales: Sale[] = [
     cashierId: 'cashier1',
     cashierName: 'John Doe',
     subtotal: 90.5,
-    vatAmount: 10.0,
-    vatPercentage: 11.0,
+    vatAmount: 10,
+    vatPercentage: 11,
     timestamp: Date.now(),
     items: [
       {

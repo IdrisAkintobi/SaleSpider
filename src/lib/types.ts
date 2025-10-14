@@ -1,7 +1,7 @@
 import { ProductCategory, Role, UserStatus } from '@prisma/client'
 
 // Re-export Prisma enums for convenience
-export { ProductCategory, Role, UserStatus }
+export { ProductCategory, Role, UserStatus } from '@prisma/client'
 
 export interface User {
   id: string

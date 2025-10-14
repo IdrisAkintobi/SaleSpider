@@ -88,5 +88,9 @@
         "urllib",
         "urlparse",
         "zstd"
-    ]
+    ],
+    "sonarlint.connectedMode.project": {
+        "connectionId": "idrisakintobi",
+        "projectKey": "IdrisAkintobi_SaleSpider"
+    }
 }

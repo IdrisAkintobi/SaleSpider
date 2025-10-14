@@ -812,7 +812,7 @@ export async function seedProducts(client: PrismaClient, count: number = 1600) {
   })
 
   console.log('\n📊 Product distribution by category:')
-  categories.forEach(cat => {
-    console.log(`  ${cat.category}: ${cat._count.category} products`)
-  })
+  for (const category of categories) {
+    console.log(`  ${category.category}: ${category._count.category} products`)
+  }
 }

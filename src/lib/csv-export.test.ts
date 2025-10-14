@@ -290,13 +290,13 @@ describe('downloadCSV', () => {
       'no-extension',
     ]
 
-    filenames.forEach(filename => {
+    for (const filename of filenames) {
       downloadCSV(csvContent, filename)
 
       const mockLink =
         mockCreateElement.mock.results[mockCreateElement.mock.calls.length - 1]
           .value
       expect(mockLink.setAttribute).toHaveBeenCalledWith('download', filename)
-    })
+    }
   })
 })

@@ -1,15 +1,15 @@
-import { PrismaClient } from "@prisma/client";
-import * as argon2 from "argon2";
+import { PrismaClient } from '@prisma/client'
+import * as argon2 from 'argon2'
 
 /**
  * Production seed - Only seeds essential data using raw SQL
  * - Super Admin user
  * - Default application settings
- * 
+ *
  * Required Environment Variables:
  * - SUPER_ADMIN_EMAIL: Email for super admin account
  * - SUPER_ADMIN_PASSWORD: Password for super admin account
- * 
+ *
  * Optional Environment Variables (with defaults):
  * - APP_NAME: Application name (default: "SaleSpider")
  * - APP_LOGO: Application logo URL (default: "")
@@ -29,39 +29,41 @@ import * as argon2 from "argon2";
  * - ENABLED_PAYMENT_METHODS: Comma-separated payment methods (default: "CASH,CARD,BANK_TRANSFER,CRYPTO,OTHER")
  */
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient()
 
 /**
  * Check if error is a duplicate key constraint violation
  */
 function isDuplicateKeyError(error: any): boolean {
-  return error.code === 'P2010' && error.meta?.code === '23505';
+  return error.code === 'P2010' && error.meta?.code === '23505'
 }
 
 /**
  * Seed super admin user
  */
 async function seedSuperAdmin() {
-  const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
-  const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD;
+  const superAdminEmail = process.env.SUPER_ADMIN_EMAIL
+  const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD
 
   if (!superAdminEmail || !superAdminPassword) {
-    throw new Error("SUPER_ADMIN_EMAIL and SUPER_ADMIN_PASSWORD environment variables are required");
+    throw new Error(
+      'SUPER_ADMIN_EMAIL and SUPER_ADMIN_PASSWORD environment variables are required'
+    )
   }
 
   // Check if super admin exists
   const existingAdmin = await prisma.$queryRaw<Array<{ id: string }>>`
     SELECT id FROM "User" WHERE email = ${superAdminEmail} LIMIT 1
-  `;
+  `
 
   if (existingAdmin.length > 0) {
-    console.log(`✅ Super admin already exists: ${superAdminEmail}`);
-    return;
+    console.log(`✅ Super admin already exists: ${superAdminEmail}`)
+    return
   }
 
   try {
     // Hash password
-    const hashedPassword = await argon2.hash(superAdminPassword);
+    const hashedPassword = await argon2.hash(superAdminPassword)
 
     // Create super admin using raw SQL
     await prisma.$executeRaw`
@@ -76,13 +78,15 @@ async function seedSuperAdmin() {
         NOW(),
         NOW()
       )
-    `;
-    console.log(`✅ Super admin created: ${superAdminEmail}`);
+    `
+    console.log(`✅ Super admin created: ${superAdminEmail}`)
   } catch (error: any) {
     if (isDuplicateKeyError(error)) {
-      console.log(`✅ Super admin already exists (duplicate key): ${superAdminEmail}`);
+      console.log(
+        `✅ Super admin already exists (duplicate key): ${superAdminEmail}`
+      )
     } else {
-      console.warn(`⚠️ Warning: Could not create super admin: ${error.message}`);
+      console.warn(`⚠️ Warning: Could not create super admin: ${error.message}`)
     }
   }
 }
@@ -92,25 +96,27 @@ async function seedSuperAdmin() {
  */
 function getSettingsConfig() {
   return {
-    appName: process.env.APP_NAME || "SaleSpider",
-    appLogo: process.env.APP_LOGO || "",
-    primaryColor: process.env.PRIMARY_COLOR || "#0f172a",
-    secondaryColor: process.env.SECONDARY_COLOR || "#3b82f6",
-    accentColor: process.env.ACCENT_COLOR || "#f59e0b",
-    currency: process.env.CURRENCY || "NGN",
-    currencySymbol: process.env.CURRENCY_SYMBOL || "₦",
-    vatPercentage: parseFloat(process.env.VAT_PERCENTAGE || "7.5"),
-    timezone: process.env.TIMEZONE || "Africa/Lagos",
-    dateFormat: process.env.DATE_FORMAT || "dd/MM/yyyy",
-    timeFormat: process.env.TIME_FORMAT || "HH:mm",
-    language: process.env.LANGUAGE || "en",
-    theme: process.env.THEME || "light",
-    maintenanceMode: process.env.MAINTENANCE_MODE === "true",
-    showDeletedProducts: process.env.SHOW_DELETED_PRODUCTS === "true",
+    appName: process.env.APP_NAME || 'SaleSpider',
+    appLogo: process.env.APP_LOGO || '',
+    primaryColor: process.env.PRIMARY_COLOR || '#0f172a',
+    secondaryColor: process.env.SECONDARY_COLOR || '#3b82f6',
+    accentColor: process.env.ACCENT_COLOR || '#f59e0b',
+    currency: process.env.CURRENCY || 'NGN',
+    currencySymbol: process.env.CURRENCY_SYMBOL || '₦',
+    vatPercentage: Number.parseFloat(process.env.VAT_PERCENTAGE || '7.5'),
+    timezone: process.env.TIMEZONE || 'Africa/Lagos',
+    dateFormat: process.env.DATE_FORMAT || 'dd/MM/yyyy',
+    timeFormat: process.env.TIME_FORMAT || 'HH:mm',
+    language: process.env.LANGUAGE || 'en',
+    theme: process.env.THEME || 'light',
+    maintenanceMode: process.env.MAINTENANCE_MODE === 'true',
+    showDeletedProducts: process.env.SHOW_DELETED_PRODUCTS === 'true',
     enabledPaymentMethods: process.env.ENABLED_PAYMENT_METHODS
-      ? process.env.ENABLED_PAYMENT_METHODS.split(",").map(s => s.trim().toUpperCase())
-      : ["CASH", "CARD", "BANK_TRANSFER", "CRYPTO", "OTHER"]
-  };
+      ? process.env.ENABLED_PAYMENT_METHODS.split(',').map(s =>
+          s.trim().toUpperCase()
+        )
+      : ['CASH', 'CARD', 'BANK_TRANSFER', 'CRYPTO', 'OTHER'],
+  }
 }
 
 /**
@@ -120,15 +126,15 @@ async function seedDefaultSettings() {
   // Check if settings exist
   const existingSettings = await prisma.$queryRaw<Array<{ id: string }>>`
     SELECT id FROM "AppSettings" LIMIT 1
-  `;
+  `
 
   if (existingSettings.length > 0) {
-    console.log("✅ Settings already exist");
-    return;
+    console.log('✅ Settings already exist')
+    return
   }
 
   try {
-    const config = getSettingsConfig();
+    const config = getSettingsConfig()
 
     await prisma.$executeRaw`
       INSERT INTO "AppSettings" (
@@ -173,13 +179,15 @@ async function seedDefaultSettings() {
         NOW(),
         NOW()
       )
-    `;
-    console.log(`✅ Default settings created (App: ${config.appName}, Currency: ${config.currency})`);
+    `
+    console.log(
+      `✅ Default settings created (App: ${config.appName}, Currency: ${config.currency})`
+    )
   } catch (error: any) {
     if (isDuplicateKeyError(error)) {
-      console.log("✅ Settings already exist (duplicate key)");
+      console.log('✅ Settings already exist (duplicate key)')
     } else {
-      console.warn(`⚠️ Warning: Could not create settings: ${error.message}`);
+      console.warn(`⚠️ Warning: Could not create settings: ${error.message}`)
     }
   }
 }
@@ -188,23 +196,22 @@ async function seedDefaultSettings() {
  * Main production seeding function
  */
 async function seedProduction() {
-  console.log("🌱 Starting production seeding...");
+  console.log('🌱 Starting production seeding...')
 
   try {
-    await seedSuperAdmin();
-    await seedDefaultSettings();
-    console.log("🎉 Production seeding completed successfully!");
+    await seedSuperAdmin()
+    await seedDefaultSettings()
+    console.log('🎉 Production seeding completed successfully!')
   } catch (error) {
-    console.error("❌ Production seeding failed:", error);
-    throw error;
+    console.error('❌ Production seeding failed:', error)
+    throw error
   } finally {
-    await prisma.$disconnect();
+    await prisma.$disconnect()
   }
 }
 
 // Run the seed
-seedProduction()
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+seedProduction().catch(error => {
+  console.error(error)
+  process.exit(1)
+})
