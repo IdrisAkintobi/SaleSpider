@@ -199,14 +199,6 @@ export default function RecordSalePage() {
   }, [cartSubtotal, vatPercentage])
 
   const handleRecordSale = async () => {
-    if (userIsManager) {
-      toast({
-        title: 'Unauthorized',
-        description: 'You are not authorized to record sales.',
-        variant: 'destructive',
-      })
-      return
-    }
     if (cart.length === 0) {
       toast({
         title: 'Empty Cart',
@@ -266,24 +258,6 @@ export default function RecordSalePage() {
     if (cart.length === 0) return
     setCart([])
   }, [cart])
-
-  if (userIsManager) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full text-center">
-        <ShoppingCart className="w-16 h-16 text-muted-foreground mb-4" />
-        <h2 className="text-2xl font-semibold mb-2">Access Denied</h2>
-        <p className="text-muted-foreground">
-          Only Cashiers can access this page.
-        </p>
-        <Button
-          onClick={() => router.push('/dashboard/overview')}
-          className="mt-4"
-        >
-          Go to Overview
-        </Button>
-      </div>
-    )
-  }
 
   return (
     <>
@@ -421,9 +395,21 @@ export default function RecordSalePage() {
           </CardContent>
           {cart.length > 0 && (
             <CardFooter className="flex flex-col items-stretch gap-4 pt-4 border-t">
-              <div className="flex justify-between items-center font-semibold text-lg">
-                <span>Total:</span>
-                <span>{formatCurrency(cartTotals.totalAmount)}</span>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Subtotal:</span>
+                  <span>{formatCurrency(cartTotals.subtotal)}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">
+                    VAT ({cartTotals.vatPercentage}%):
+                  </span>
+                  <span>{formatCurrency(cartTotals.vatAmount)}</span>
+                </div>
+                <div className="flex justify-between items-center font-semibold text-lg pt-2 border-t">
+                  <span>Total:</span>
+                  <span>{formatCurrency(cartTotals.totalAmount)}</span>
+                </div>
               </div>
 
               <div>

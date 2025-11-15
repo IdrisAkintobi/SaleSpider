@@ -399,35 +399,35 @@ start_services() {
 show_deployment_info() {
     success "$APP_NAME deployment completed!"
     echo ""
-    echo "🎉 ${GREEN}Deployment Summary${NC}"
+    echo -e "🎉 ${GREEN}Deployment Summary${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
-    echo "📱 ${CYAN}Access URLs:${NC}"
+    echo -e "📱 ${CYAN}Access URLs:${NC}"
     echo "   • Local:   https://${DOMAIN:-localhost}"
     echo "   • Network: https://$HOST_IP"
     echo "   • Fallback: http://localhost:3000"
     echo ""
-    echo "🔐 ${CYAN}Admin Account:${NC}"
+    echo -e "🔐 ${CYAN}Admin Account:${NC}"
     echo "   • Email:    ${SUPER_ADMIN_EMAIL:-admin@localhost}"
     echo "   • Password: [Set in environment]"
     echo ""
-    echo "🗄️  ${CYAN}Database:${NC}"
+    echo -e "🗄️  ${CYAN}Database:${NC}"
     echo "   • Host: postgres (internal)"
     echo "   • Database: ${POSTGRES_DB:-salespider}"
     echo "   • User: ${POSTGRES_USER:-postgres}"
     echo ""
-    echo "💾 ${CYAN}Data Storage:${NC}"
+    echo -e "💾 ${CYAN}Data Storage:${NC}"
     echo "   • Application: $DATA_PATH"
     echo "   • Backups: $BACKUP_PATH"
     echo ""
-    echo "🔧 ${CYAN}Management Commands:${NC}"
+    echo -e "🔧 ${CYAN}Management Commands:${NC}"
     echo "   • Status:  $0 status"
     echo "   • Logs:    $0 logs [service]"
     echo "   • Stop:    $0 stop"
     echo "   • Restart: $0 restart"
     echo "   • Backup:  $0 backup"
     echo ""
-    echo "📋 ${CYAN}Next Steps:${NC}"
+    echo -e "📋 ${CYAN}Next Steps:${NC}"
     echo "   1. Accept SSL certificate in browser"
     echo "   2. Log in with admin credentials"
     echo "   3. Configure application settings"
@@ -435,7 +435,7 @@ show_deployment_info() {
     echo ""
     
     # Show service status
-    echo "📊 ${CYAN}Service Status:${NC}"
+    echo -e "📊 ${CYAN}Service Status:${NC}"
     $COMPOSE_CMD -f "$DOCKER_DIR/docker-compose.yml" --env-file "$SCRIPT_DIR/.env" ps
 }
 
@@ -450,13 +450,13 @@ stop_services() {
 
 # Show status
 show_status() {
-    echo "📊 ${CYAN}$APP_NAME Status${NC}"
+    echo -e "📊 ${CYAN}$APP_NAME Status${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     
     $COMPOSE_CMD -f "$DOCKER_DIR/docker-compose.yml" --env-file "$SCRIPT_DIR/.env" ps
     
     echo ""
-    echo "💾 ${CYAN}Storage Usage:${NC}"
+    echo -e "💾 ${CYAN}Storage Usage:${NC}"
     if [ -d "$DATA_PATH" ]; then
         du -sh "$DATA_PATH" 2>/dev/null || echo "Data directory not accessible"
     fi
@@ -466,7 +466,7 @@ show_status() {
     fi
     
     echo ""
-    echo "🌐 ${CYAN}Network Access:${NC}"
+    echo -e "🌐 ${CYAN}Network Access:${NC}"
     echo "   • Local:   https://${DOMAIN:-localhost}"
     echo "   • Network: https://$HOST_IP"
 }
@@ -502,7 +502,7 @@ perform_backup() {
 
 # Reset deployment (destructive)
 reset_deployment() {
-    echo "⚠️  ${RED}DESTRUCTIVE OPERATION${NC}"
+    echo -e "⚠️  ${RED}DESTRUCTIVE OPERATION${NC}"
     echo ""
     echo "This will permanently delete:"
     echo "   • All database data"
@@ -550,37 +550,37 @@ update_deployment() {
 
 # Show help
 show_help() {
-    echo "${PURPLE}SaleSpider Deployment Script v$SCRIPT_VERSION${NC}"
+    echo -e "${PURPLE}SaleSpider Deployment Script v$SCRIPT_VERSION${NC}"
     echo ""
     echo "Platform-agnostic deployment script for SaleSpider"
     echo ""
-    echo "${CYAN}Usage:${NC}"
+    echo -e "${CYAN}Usage:${NC}"
     echo "  $0 [command] [options]"
     echo ""
-    echo "${CYAN}Commands:${NC}"
-    echo "  ${GREEN}deploy${NC}    - Deploy SaleSpider (default)"
-    echo "  ${GREEN}start${NC}     - Start services"
-    echo "  ${GREEN}stop${NC}      - Stop services"
-    echo "  ${GREEN}restart${NC}   - Restart services"
-    echo "  ${GREEN}status${NC}    - Show service status"
-    echo "  ${GREEN}logs${NC}      - Show logs [service]"
-    echo "  ${GREEN}backup${NC}    - Perform manual backup"
-    echo "  ${GREEN}update${NC}    - Update deployment"
-    echo "  ${GREEN}reset${NC}     - Reset deployment (destructive)"
-    echo "  ${GREEN}help${NC}      - Show this help"
+    echo -e "${CYAN}Commands:${NC}"
+    echo -e "  ${GREEN}deploy${NC}    - Deploy SaleSpider (default)"
+    echo -e "  ${GREEN}start${NC}     - Start services"
+    echo -e "  ${GREEN}stop${NC}      - Stop services"
+    echo -e "  ${GREEN}restart${NC}   - Restart services"
+    echo -e "  ${GREEN}status${NC}    - Show service status"
+    echo -e "  ${GREEN}logs${NC}      - Show logs [service]"
+    echo -e "  ${GREEN}backup${NC}    - Perform manual backup"
+    echo -e "  ${GREEN}update${NC}    - Update deployment"
+    echo -e "  ${GREEN}reset${NC}     - Reset deployment (destructive)"
+    echo -e "  ${GREEN}help${NC}      - Show this help"
     echo ""
-    echo "${CYAN}Examples:${NC}"
+    echo -e "${CYAN}Examples:${NC}"
     echo "  $0 deploy         # Full deployment"
     echo "  $0 logs app       # Show application logs"
     echo "  $0 logs postgres  # Show database logs"
     echo "  $0 status         # Show service status"
     echo ""
-    echo "${CYAN}Environment Variables:${NC}"
-    echo "  ${YELLOW}DOMAIN${NC}           - Domain name (default: localhost)"
-    echo "  ${YELLOW}DATA_PATH${NC}        - Data storage path"
-    echo "  ${YELLOW}BACKUP_PATH${NC}      - Backup storage path"
+    echo -e "${CYAN}Environment Variables:${NC}"
+    echo -e "  ${YELLOW}DOMAIN${NC}           - Domain name (default: localhost)"
+    echo -e "  ${YELLOW}DATA_PATH${NC}        - Data storage path"
+    echo -e "  ${YELLOW}BACKUP_PATH${NC}      - Backup storage path"
     echo ""
-    echo "${CYAN}Configuration:${NC}"
+    echo -e "${CYAN}Configuration:${NC}"
     echo "  Edit .env file to customize deployment settings"
     echo ""
 }
