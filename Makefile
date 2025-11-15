@@ -18,6 +18,85 @@ YELLOW := \033[1;33m
 RED := \033[0;31m
 NC := \033[0m # No Color
 
+# Validation Functions
+define validate_env
+	@if [ ! -f "$(ENV_FILE)" ]; then \
+		echo "$(RED)ERROR: .env file not found$(NC)"; \
+		echo ""; \
+		echo "Please create your .env file from the example:"; \
+		echo "  $(CYAN)cp env.example .env$(NC)"; \
+		echo ""; \
+		echo "Then edit .env with your configuration:"; \
+		echo "  $(CYAN)nano .env$(NC)  # or use your preferred editor"; \
+		echo ""; \
+		echo "$(YELLOW)Required changes:$(NC)"; \
+		echo "  - Set secure passwords for JWT_SECRET and POSTGRES_PASSWORD"; \
+		echo "  - Configure DOMAIN and HOST_IP for your network"; \
+		echo "  - Set SUPER_ADMIN_EMAIL and SUPER_ADMIN_PASSWORD"; \
+		echo ""; \
+		exit 1; \
+	fi
+endef
+
+define validate_backup_config
+	@if [ -f "$(ENV_FILE)" ]; then \
+		. $(ENV_FILE); \
+		if [ -n "$$PGBACKREST_REPO1_TYPE" ] && [ "$$PGBACKREST_REPO1_TYPE" != "none" ]; then \
+			case "$$PGBACKREST_REPO1_TYPE" in \
+				s3) \
+					if [ -z "$$AWS_S3_BUCKET" ] || [ -z "$$AWS_ACCESS_KEY_ID" ] || [ -z "$$AWS_SECRET_ACCESS_KEY" ]; then \
+						echo "$(RED)ERROR: S3 backup requires AWS_S3_BUCKET, AWS_ACCESS_KEY_ID, and AWS_SECRET_ACCESS_KEY$(NC)"; \
+						exit 1; \
+					fi \
+					;; \
+				azure) \
+					if [ -z "$$AZURE_STORAGE_ACCOUNT" ] || [ -z "$$AZURE_STORAGE_KEY" ] || [ -z "$$AZURE_STORAGE_CONTAINER" ]; then \
+						echo "$(RED)ERROR: Azure backup requires AZURE_STORAGE_ACCOUNT, AZURE_STORAGE_KEY, and AZURE_STORAGE_CONTAINER$(NC)"; \
+						exit 1; \
+					fi \
+					;; \
+				gcs) \
+					if [ -z "$$GCS_BUCKET" ] || [ -z "$$GCS_KEY" ]; then \
+						echo "$(RED)ERROR: GCS backup requires GCS_BUCKET and GCS_KEY$(NC)"; \
+						exit 1; \
+					fi \
+					;; \
+				posix) \
+					;; \
+				*) \
+					echo "$(RED)ERROR: Invalid PGBACKREST_REPO1_TYPE: $$PGBACKREST_REPO1_TYPE$(NC)"; \
+					echo "Valid values: none, posix, s3, azure, gcs"; \
+					exit 1; \
+					;; \
+			esac; \
+		fi; \
+	fi
+endef
+
+define check_backup_profile
+	@if [ -f "$(ENV_FILE)" ]; then \
+		. $(ENV_FILE); \
+		if [ -n "$$PGBACKREST_REPO1_TYPE" ] && [ "$$PGBACKREST_REPO1_TYPE" != "none" ]; then \
+			case "$$PGBACKREST_REPO1_TYPE" in \
+				posix|s3|azure|gcs) \
+					echo "$(GREEN)INFO: Backup system enabled (type: $$PGBACKREST_REPO1_TYPE)$(NC)"; \
+					;; \
+				*) \
+					echo "$(YELLOW)WARNING: Invalid PGBACKREST_REPO1_TYPE: $$PGBACKREST_REPO1_TYPE$(NC)"; \
+					echo "         Valid values: none, posix, s3, azure, gcs"; \
+					echo "         Backup service will not start"; \
+					;; \
+			esac; \
+		else \
+			echo "$(CYAN)INFO: Backup system disabled$(NC)"; \
+			if [ -z "$$PGBACKREST_REPO1_TYPE" ] || [ "$$PGBACKREST_REPO1_TYPE" = "none" ]; then \
+				echo "      To enable backups, set PGBACKREST_REPO1_TYPE to: posix, s3, azure, or gcs"; \
+				echo "      See BACKUP_GUIDE.md for configuration details"; \
+			fi; \
+		fi; \
+	fi
+endef
+
 ##@ General
 
 help: ## Display this help message
@@ -35,12 +114,9 @@ perms: ## Make all scripts executable
 
 setup: perms ## Initial setup (permissions + environment check)
 	@echo "$(GREEN)Running initial setup...$(NC)"
-	@if [ ! -f "$(ENV_FILE)" ]; then \
-		echo "$(YELLOW)Creating .env from example...$(NC)"; \
-		cp .env $(ENV_FILE); \
-		echo "$(YELLOW)⚠ Please edit .env with your configuration$(NC)"; \
-		exit 1; \
-	fi
+	$(call validate_env)
+	$(call validate_backup_config)
+	$(call check_backup_profile)
 	@echo "$(GREEN)✓ Setup complete$(NC)"
 
 ##@ Deployment
@@ -51,6 +127,7 @@ deploy: setup ## Full deployment (setup + build + start all services)
 
 start: ## Start all services
 	@echo "$(GREEN)Starting services...$(NC)"
+	$(call validate_env)
 	@$(DEPLOY_SCRIPT) start
 
 stop: ## Stop all services
@@ -63,14 +140,16 @@ restart: ## Restart all services with health checks
 
 ##@ Hosted Database Deployment
 
-deploy-hosted-db-app: setup ## Deploy app with hosted database (app + proxy only)
+deploy-hosted-db-app: ## Deploy app with hosted database (app + proxy only)
 	@echo "$(GREEN)Starting hosted database deployment...$(NC)"
+	$(call validate_env)
 	@echo "$(CYAN)Using hosted database compose file$(NC)"
 	@$(DOCKER_COMPOSE_HOSTED) up -d
 	@echo "$(GREEN)✓ Hosted database deployment complete$(NC)"
 
 start-hosted-db-app: ## Start app services for hosted database deployment
 	@echo "$(GREEN)Starting app services...$(NC)"
+	$(call validate_env)
 	@$(DOCKER_COMPOSE_HOSTED) up -d
 
 stop-hosted-db-app: ## Stop app services for hosted database deployment

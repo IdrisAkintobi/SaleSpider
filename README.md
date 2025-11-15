@@ -36,7 +36,7 @@ make logs      # View logs
 make backup    # Create manual backup
 ```
 
-📖 **For complete deployment instructions:** [Deployment Guide](DEPLOYMENT_GUIDE.md)
+📖 **For complete deployment instructions:** [Deployment Guide](docs/DEPLOYMENT_GUIDE.md)
 
 ## ✨ Key Features
 
@@ -171,10 +171,11 @@ Available aliases:
 
 ### 🚀 Deployment & Operations
 
-- **[Deployment Guide](DEPLOYMENT_GUIDE.md)** - Complete deployment instructions for all environments
-- **[Environment Variables Reference](ENVIRONMENT_VARIABLES.md)** - All configuration options
-- **[Backup Guide](BACKUP_GUIDE.md)** - Database backup and restore procedures
-- **[Makefile Commands](MAKEFILE_GUIDE.md)** - Available automation commands
+- **[Deployment Guide](docs/DEPLOYMENT_GUIDE.md)** - Complete deployment instructions for all environments
+- **[Windows Deployment Guide](docs/WINDOWS_DEPLOYMENT.md)** - Windows Server deployment with WSL 2
+- **[Environment Variables Reference](docs/ENVIRONMENT_VARIABLES.md)** - All configuration options
+- **[Backup Guide](docs/BACKUP_GUIDE.md)** - Database backup and restore procedures
+- **[Makefile Commands](docs/MAKEFILE_GUIDE.md)** - Available automation commands
 
 ### 🏗️ Architecture & Development
 
@@ -195,7 +196,7 @@ make backup        # Manual backup
 make help          # All commands
 ```
 
-**For detailed command references, see [Makefile Commands](MAKEFILE_GUIDE.md)**
+**For detailed command references, see [Makefile Commands](docs/MAKEFILE_GUIDE.md)**
 
 ## 📄 License
 
@@ -211,7 +212,7 @@ If you use SaleSpider in your project, please:
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on how to:
+We welcome contributions! Please see our [Contributing Guidelines](docs/CONTRIBUTING.md) for details on how to:
 
 - Report bugs
 - Suggest features

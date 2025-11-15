@@ -340,14 +340,28 @@ start_services() {
     log "Starting Docker services..."
 
     # Check if backup is enabled and set profiles accordingly
-    local backup_type="${PGBACKREST_REPO1_TYPE:-none}"
+    local backup_type="${PGBACKREST_REPO1_TYPE:-}"
     local profiles=""
 
-    if [ "$backup_type" != "none" ]; then
-        profiles="--profile backup"
-        log "Backup enabled (type: $backup_type) - including backup service"
+    # Only activate backup profile when type is set to: posix, s3, azure, or gcs
+    if [ -n "$backup_type" ] && [ "$backup_type" != "none" ]; then
+        case "$backup_type" in
+            posix|s3|azure|gcs)
+                profiles="--profile backup"
+                success "Backup system enabled (type: $backup_type)"
+                ;;
+            *)
+                warning "Invalid PGBACKREST_REPO1_TYPE: $backup_type"
+                warning "Valid values: none, posix, s3, azure, gcs"
+                warning "Backup service will not start"
+                ;;
+        esac
     else
-        log "Backup disabled - excluding backup service"
+        info "Backup system disabled"
+        if [ -z "$backup_type" ] || [ "$backup_type" = "none" ]; then
+            info "To enable backups, set PGBACKREST_REPO1_TYPE to: posix, s3, azure, or gcs"
+            info "See BACKUP_GUIDE.md for configuration details"
+        fi
     fi
 
     $COMPOSE_CMD -f "$DOCKER_DIR/docker-compose.yml" --env-file "$SCRIPT_DIR/.env" $profiles up -d
@@ -587,6 +601,7 @@ main() {
             show_deployment_info
             ;;
         "stop")
+            check_requirements
             load_environment
             stop_services
             ;;
