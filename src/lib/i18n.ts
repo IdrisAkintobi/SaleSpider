@@ -78,7 +78,8 @@ const translations: Record<string, Record<string, string>> = {
     this_year: 'This Year',
     manager_overview_description:
       "Here's an overview of your store's performance.",
-    cashier_overview_description: "Here's a summary of your sales activity.",
+    cashier_overview_description:
+      "Here's a summary of your sales activity for today.",
     // Breadcrumbs
     dashboard: 'Dashboard',
     overview: 'Overview',
@@ -225,10 +226,17 @@ const translations: Record<string, Record<string, string>> = {
     // Cashier Overview
     my_total_sales_value: 'My Total Sales Value',
     all_sales_recorded: "All sales you've recorded.",
+    todays_sales: "Today's sales",
+    your_sales_activity_today: 'Your sales activity for today',
     my_total_orders: 'My Total Orders',
     total_orders_processed: "Total orders you've processed.",
+    todays_orders: "Today's orders",
     my_average_sale_value: 'My Average Sale Value',
     average_value_per_order: 'Average value per order.',
+    todays_average: "Today's average",
+    date_range_limited: 'Date Range Limited',
+    cashiers_limited_to_7_days:
+      'Cashiers can only view up to 7 days of sales data',
     my_recent_sales: 'My Recent Sales',
     recent_sales: 'Recent Sales',
     view_all_sales: 'View All Sales',
@@ -379,7 +387,8 @@ const translations: Record<string, Record<string, string>> = {
     this_year: 'Cette année',
     manager_overview_description:
       'Voici un aperçu des performances de votre magasin.',
-    cashier_overview_description: 'Voici un résumé de votre activité de vente.',
+    cashier_overview_description:
+      "Voici un résumé de votre activité de vente pour aujourd'hui.",
     // Breadcrumbs
     dashboard: 'Tableau de bord',
     overview: 'Aperçu',
@@ -530,10 +539,17 @@ const translations: Record<string, Record<string, string>> = {
     // Cashier Overview
     my_total_sales_value: 'Ma valeur totale des ventes',
     all_sales_recorded: 'Toutes les ventes que vous avez enregistrées.',
+    todays_sales: "Ventes d'aujourd'hui",
+    your_sales_activity_today: "Votre activité de vente aujourd'hui",
     my_total_orders: 'Mes commandes totales',
     total_orders_processed: 'Total des commandes que vous avez traitées.',
+    todays_orders: "Commandes d'aujourd'hui",
     my_average_sale_value: 'Ma valeur moyenne de vente',
     average_value_per_order: 'Valeur moyenne par commande.',
+    todays_average: "Moyenne d'aujourd'hui",
+    date_range_limited: 'Plage de dates limitée',
+    cashiers_limited_to_7_days:
+      'Les caissiers ne peuvent consulter que 7 jours de données de vente',
     my_recent_sales: 'Mes ventes récentes',
     recent_sales: 'Ventes récentes',
     view_all_sales: 'Voir toutes les ventes',
@@ -688,7 +704,7 @@ const translations: Record<string, Record<string, string>> = {
     manager_overview_description:
       'Aquí hay una visión general del rendimiento de su tienda.',
     cashier_overview_description:
-      'Aquí hay un resumen de su actividad de ventas.',
+      'Aquí hay un resumen de su actividad de ventas de hoy.',
     // Breadcrumbs
     dashboard: 'Panel de control',
     overview: 'Resumen',
@@ -838,10 +854,17 @@ const translations: Record<string, Record<string, string>> = {
     // Cashier Overview
     my_total_sales_value: 'Mi valor total de ventas',
     all_sales_recorded: 'Todas las ventas que has registrado.',
+    todays_sales: 'Ventas de hoy',
+    your_sales_activity_today: 'Tu actividad de ventas de hoy',
     my_total_orders: 'Mis pedidos totales',
     total_orders_processed: 'Total de pedidos que has procesado.',
+    todays_orders: 'Pedidos de hoy',
     my_average_sale_value: 'Mi valor promedio de venta',
     average_value_per_order: 'Valor promedio por pedido.',
+    todays_average: 'Promedio de hoy',
+    date_range_limited: 'Rango de fechas limitado',
+    cashiers_limited_to_7_days:
+      'Los cajeros solo pueden ver hasta 7 días de datos de ventas',
     my_recent_sales: 'Mis ventas recientes',
     recent_sales: 'Ventas recientes',
     view_all_sales: 'Ver todas las ventas',
@@ -994,7 +1017,7 @@ const translations: Record<string, Record<string, string>> = {
     manager_overview_description:
       'Hier ist eine Übersicht über die Leistung Ihres Geschäfts.',
     cashier_overview_description:
-      'Hier ist eine Zusammenfassung Ihrer Verkaufsaktivität.',
+      'Hier ist eine Zusammenfassung Ihrer Verkaufsaktivität für heute.',
     // Breadcrumbs
     dashboard: 'Dashboard',
     overview: 'Übersicht',
@@ -1145,10 +1168,17 @@ const translations: Record<string, Record<string, string>> = {
     // Cashier Overview
     my_total_sales_value: 'Mein Gesamtverkaufswert',
     all_sales_recorded: 'Alle Verkäufe, die Sie aufgezeichnet haben.',
+    todays_sales: 'Heutige Verkäufe',
+    your_sales_activity_today: 'Ihre Verkaufsaktivität heute',
     my_total_orders: 'Meine Gesamtbestellungen',
     total_orders_processed: 'Gesamtbestellungen, die Sie bearbeitet haben.',
+    todays_orders: 'Heutige Bestellungen',
     my_average_sale_value: 'Mein durchschnittlicher Verkaufswert',
     average_value_per_order: 'Durchschnittlicher Wert pro Bestellung.',
+    todays_average: 'Heutiger Durchschnitt',
+    date_range_limited: 'Datumsbereich begrenzt',
+    cashiers_limited_to_7_days:
+      'Kassierer können nur bis zu 7 Tage Verkaufsdaten einsehen',
     my_recent_sales: 'Meine letzten Verkäufe',
     recent_sales: 'Letzte Verkäufe',
     view_all_sales: 'Alle Verkäufe anzeigen',

@@ -192,6 +192,15 @@ export default function SalesPage() {
     setPage(1)
   }
 
+  // Set initial date range for cashiers
+  useEffect(() => {
+    if (userIsCashier && filterDateRange === 'all') {
+      // Set to today for cashiers on initial load
+      setDateRange({ from: startOfToday(), to: endOfToday() })
+      setFilterDateRange('today')
+    }
+  }, [userIsCashier, filterDateRange])
+
   // Sync quick date filter to dateRange
   useEffect(() => {
     if (filterDateRange === 'today') {
@@ -316,6 +325,7 @@ export default function SalesPage() {
               value={filterDateRange}
               onChange={handleDateRangeFilter}
               t={t}
+              isCashier={userIsCashier}
             />
           </div>
         </div>
@@ -379,6 +389,7 @@ export default function SalesPage() {
             value={filterDateRange}
             onChange={handleDateRangeFilter}
             t={t}
+            isCashier={userIsCashier}
           />
           <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
             <PopoverTrigger asChild>
@@ -411,9 +422,19 @@ export default function SalesPage() {
                 selected={dateRange}
                 onSelect={handleDateRangeSelect}
                 numberOfMonths={1}
-                disabled={date =>
-                  date > new Date() || date < new Date('1900-01-01')
-                }
+                disabled={date => {
+                  const today = new Date()
+                  const sevenDaysAgo = new Date(today)
+                  sevenDaysAgo.setDate(today.getDate() - 7)
+
+                  // For cashiers: disable dates older than 7 days
+                  if (userIsCashier) {
+                    return date > today || date < sevenDaysAgo
+                  }
+
+                  // For managers: only disable future dates
+                  return date > today || date < new Date('1900-01-01')
+                }}
               />
             </PopoverContent>
           </Popover>

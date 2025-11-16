@@ -26,8 +26,14 @@ import { useTranslation } from '@/lib/i18n'
 import { fetchJson } from '@/lib/fetch-utils'
 
 async function fetchSalesByCashierId(cashierId: string): Promise<Sale[]> {
+  // Get today's date range
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const tomorrow = new Date(today)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+
   const { data } = await fetchJson<{ data: Sale[] }>(
-    `/api/sales?cashierId=${cashierId}`
+    `/api/sales?cashierId=${cashierId}&from=${today.toISOString()}&to=${tomorrow.toISOString()}`
   )
   return data
 }
@@ -83,8 +89,8 @@ export function CashierOverview() {
   const recentSales = stats.recentSales
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="space-y-4">
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         {isLoadingSales ? (
           <>
             <StatsCardSkeleton />
@@ -97,19 +103,19 @@ export function CashierOverview() {
               title={t('my_total_sales_value')}
               value={formatCurrency(stats.totalValue)}
               icon={DollarSign}
-              description={t('all_sales_recorded')}
+              description={t('todays_sales')}
             />
             <StatsCard
               title={t('my_total_orders')}
               value={stats.totalOrders}
               icon={ShoppingCart}
-              description={t('total_orders_processed')}
+              description={t('todays_orders')}
             />
             <StatsCard
               title={t('my_average_sale_value')}
               value={formatCurrency(stats.averageValue)}
               icon={TrendingUp}
-              description={t('average_value_per_order')}
+              description={t('todays_average')}
             />
           </>
         )}

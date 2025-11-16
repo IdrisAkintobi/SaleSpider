@@ -1,9 +1,9 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react'
 
 interface PageHeaderProps {
-  title: string;
-  description?: string;
-  actions?: ReactNode;
+  title: string
+  description?: string
+  actions?: ReactNode
 }
 
 export function PageHeader({
@@ -12,7 +12,7 @@ export function PageHeader({
   actions,
 }: Readonly<PageHeaderProps>) {
   return (
-    <div className="mb-6 md:mb-8 border-b pb-4">
+    <div className="mb-2 md:mb-4 border-b pb-2">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">
@@ -27,5 +27,5 @@ export function PageHeader({
         {actions && <div className="mt-4 md:mt-0 flex-shrink-0">{actions}</div>}
       </div>
     </div>
-  );
+  )
 }
