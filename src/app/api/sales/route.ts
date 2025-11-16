@@ -295,7 +295,7 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    const { items, totalAmount, paymentMode, cashierId } = validation.data
+    const { items, paymentMode, cashierId } = validation.data
 
     // Validate items and check stock
     for (const item of items) {

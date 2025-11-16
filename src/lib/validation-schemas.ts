@@ -57,19 +57,17 @@ export const updateProductSchema = z.object({
 
 // Sale validation schemas
 export const saleItemSchema = z.object({
-  productId: z.string().uuid('Invalid product ID'),
+  productId: z.string().min(1, 'Product ID is required'),
   productName: z.string().min(1).max(200),
   quantity: z.number().int().positive('Quantity must be positive'),
   price: z.number().positive('Price must be positive'),
 })
 
 export const createSaleSchema = z.object({
-  cashierId: z.string().uuid('Invalid cashier ID'),
+  cashierId: z.string().min(1, 'Cashier ID is required'),
   items: z.array(saleItemSchema).min(1, 'At least one item is required'),
   totalAmount: z.number().positive('Total amount must be positive'),
-  paymentMode: z.nativeEnum(PaymentMode, {
-    errorMap: () => ({ message: 'Invalid payment mode' }),
-  }),
+  paymentMode: z.string().min(1, 'Payment mode is required'),
 })
 
 // Deshelving validation schemas
