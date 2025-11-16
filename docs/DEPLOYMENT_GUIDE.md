@@ -128,6 +128,119 @@ docker compose -f .docker/docker-compose.hosted-db.yml up -d
 - Backup retention policies
 - Disaster recovery procedures
 
+### Option 3: Cloud Platform Deployment (Serverless)
+
+**Best for:** Zero infrastructure management, automatic scaling, global CDN
+
+**Popular platforms:**
+
+- [Vercel](https://vercel.com) - Best for Next.js apps with automatic scaling
+- [Railway](https://railway.app) - All-in-one platform with database included
+- [Render](https://render.com) - Simple deployments with free tier
+- Any platform that supports Node.js 24+ and PostgreSQL
+
+**What's included:**
+
+- Serverless application hosting
+- Automatic HTTPS and CDN
+- Zero server management
+- Hosted PostgreSQL database
+
+**Quick Setup:**
+
+```bash
+# 1. Create environment file from cloud template
+cp .env.cloud.example .env
+
+# 2. Configure your settings
+nano .env
+# Set: DATABASE_URL (from your database provider)
+# Set: JWT_SECRET, NEXTAUTH_SECRET
+# Set: NEXTAUTH_URL (your app URL)
+# Set: SUPER_ADMIN_EMAIL, SUPER_ADMIN_PASSWORD
+
+# 3. Run database migrations
+npm install
+npx prisma migrate deploy
+npm run seed:prod
+
+# 4. Deploy to your platform (see platform-specific guides below)
+```
+
+**Platform-Specific Deployment:**
+
+#### Vercel + Neon Database
+
+1. **Set up Neon database:**
+   - Create account at https://neon.tech
+   - Create new project
+   - Copy connection string
+
+2. **Deploy to Vercel:**
+
+   ```bash
+   # Install Vercel CLI
+   npm i -g vercel
+
+   # Deploy
+   vercel --prod
+   ```
+
+   Or use Vercel dashboard to import from GitHub
+
+3. **Configure environment variables in Vercel:**
+   - Add all variables from `.env`
+   - Update `NEXTAUTH_URL` with your Vercel URL
+
+#### Railway (Database + Hosting)
+
+1. **Create Railway project:**
+   - Go to https://railway.app
+   - Click "New Project" → "Deploy from GitHub"
+   - Connect your repository
+
+2. **Add PostgreSQL:**
+   - Click "New" → "Database" → "PostgreSQL"
+   - Railway auto-sets `DATABASE_URL`
+
+3. **Add environment variables:**
+
+   ```env
+   JWT_SECRET=your-secret
+   NEXTAUTH_SECRET=your-secret
+   NEXTAUTH_URL=${{RAILWAY_PUBLIC_DOMAIN}}
+   SUPER_ADMIN_EMAIL=admin@example.com
+   SUPER_ADMIN_PASSWORD=SecurePass123!
+   SETUP_BACKUP=false
+   ```
+
+4. **Set build command:**
+   - Build: `npm install && npx prisma migrate deploy && npm run build`
+   - Start: `npm start`
+
+#### Render + Supabase
+
+1. **Set up Supabase database:**
+   - Create account at https://supabase.com
+   - Create new project
+   - Copy connection string from Settings → Database
+
+2. **Create Render web service:**
+   - Go to https://render.com
+   - Click "New" → "Web Service"
+   - Connect repository
+
+3. **Configure service:**
+   - Build: `npm install && npx prisma migrate deploy && npm run build`
+   - Start: `npm start`
+   - Add environment variables from `.env`
+
+**Cost Estimates:**
+
+- **Vercel + Neon**: Free tier available, $0-39/month for production
+- **Railway**: $5 credit/month free, $20/month for production
+- **Render + Supabase**: Free tier available, $32/month for production
+
 ---
 
 ## Configuration

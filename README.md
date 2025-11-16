@@ -12,6 +12,8 @@ SaleSpider is a modern, Next.js-based application designed for small and medium-
 
 ## 🚀 Quick Start
 
+### Self-Hosted Deployment
+
 **Deploy SaleSpider in 3 commands:**
 
 ```bash
@@ -27,6 +29,16 @@ make deploy
 
 **That's it!** Your production-ready SaleSpider instance will be running with HTTPS, automated backups, and monitoring.
 
+### Cloud Deployment
+
+**Deploy to Vercel, Railway, or Render:**
+
+1. Set up a PostgreSQL database (Neon, Supabase, Railway)
+2. Copy `.env.cloud.example` to `.env` and configure
+3. Deploy with one click or CLI
+
+📖 **For cloud deployment:** See [Deployment Guide - Option 3](docs/DEPLOYMENT_GUIDE.md#option-3-cloud-platform-deployment-serverless)
+
 ### Quick Commands
 
 ```bash
@@ -36,7 +48,7 @@ make logs      # View logs
 make backup    # Create manual backup
 ```
 
-📖 **For complete deployment instructions:** [Deployment Guide](docs/DEPLOYMENT_GUIDE.md)
+📖 **For complete self-hosted instructions:** [Deployment Guide](docs/DEPLOYMENT_GUIDE.md)
 
 ## ✨ Key Features
 
@@ -171,7 +183,7 @@ Available aliases:
 
 ### 🚀 Deployment & Operations
 
-- **[Deployment Guide](docs/DEPLOYMENT_GUIDE.md)** - Complete deployment instructions for all environments
+- **[Deployment Guide](docs/DEPLOYMENT_GUIDE.md)** - Complete guide for self-hosted, hosted database, and cloud deployments
 - **[Windows Deployment Guide](docs/WINDOWS_DEPLOYMENT.md)** - Windows Server deployment with WSL 2
 - **[Environment Variables Reference](docs/ENVIRONMENT_VARIABLES.md)** - All configuration options
 - **[Backup Guide](docs/BACKUP_GUIDE.md)** - Database backup and restore procedures
