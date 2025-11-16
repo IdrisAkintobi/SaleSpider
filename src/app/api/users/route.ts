@@ -4,6 +4,7 @@ import { AuditTrailService } from '@/lib/audit-trail'
 import * as argon2 from 'argon2'
 import { jsonOk, jsonError, handleException } from '@/lib/api-response'
 import { createChildLogger } from '@/lib/logger'
+import { createUserSchema } from '@/lib/validation-schemas'
 
 import { prisma } from '@/lib/prisma'
 const logger = createChildLogger('api:users')
@@ -86,12 +87,17 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, username, email, password, role } = body
 
-    // Validate required fields
-    if (!name || !username || !email || !password || !role) {
-      return jsonError('All fields are required', 400, { code: 'BAD_REQUEST' })
+    // Validate input with Zod
+    const validation = createUserSchema.safeParse(body)
+    if (!validation.success) {
+      return jsonError(validation.error.errors[0].message, 400, {
+        code: 'VALIDATION_ERROR',
+        details: validation.error.errors,
+      })
     }
+
+    const { name, username, email, password, role } = validation.data
 
     // Check if user already exists
     const existingUser = await prisma.user.findFirst({

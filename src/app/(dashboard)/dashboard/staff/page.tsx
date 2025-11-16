@@ -33,6 +33,9 @@ import { useTableControls } from '@/hooks/use-table-controls'
 import { GenericTable } from '@/components/ui/generic-table'
 import { StaffTableSkeleton } from '@/components/dashboard/staff/staff-table-skeleton'
 import { useTranslation } from '@/lib/i18n'
+import { useIsAccountLocked, useUnlockAccount } from '@/hooks/use-rate-limit'
+import { Unlock } from 'lucide-react'
+import { fetchJson } from '@/lib/fetch-utils'
 
 interface StaffPerformance extends User {
   totalSalesValue: number
@@ -50,16 +53,65 @@ function canEditStaff(
   return false
 }
 
+// Staff Actions Component
+function StaffActions({
+  staff,
+  canEdit,
+  onEdit,
+}: {
+  staff: StaffPerformance
+  canEdit: boolean
+  onEdit: () => void
+}) {
+  const t = useTranslation()
+  const { toast } = useToast()
+  const isLocked = useIsAccountLocked(staff.email)
+  const unlockAccount = useUnlockAccount()
+
+  const handleUnlock = async () => {
+    try {
+      await unlockAccount.mutateAsync(staff.email)
+      toast({
+        title: t('success'),
+        description: `Account unlocked for ${staff.name}`,
+      })
+    } catch (error) {
+      toast({
+        title: t('error'),
+        description:
+          error instanceof Error ? error.message : 'Failed to unlock account',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  return (
+    <div className="text-right space-x-2">
+      {isLocked && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleUnlock}
+          disabled={unlockAccount.isPending}
+        >
+          <Unlock className="mr-2 h-3 w-3" />
+          {unlockAccount.isPending ? t('unlocking') : t('unlock')}
+        </Button>
+      )}
+      <Button variant="ghost" size="sm" onClick={onEdit} disabled={!canEdit}>
+        <Pencil className="mr-2 h-3 w-3" /> {t('edit')}
+      </Button>
+    </div>
+  )
+}
+
 // API function
 async function editUser(update: Partial<User> & { id: string }) {
-  const res = await fetch('/api/users', {
+  return fetchJson('/api/users', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(update),
   })
-  if (!res.ok)
-    throw new Error((await res.json()).message || 'Failed to update user')
-  return res.json()
 }
 
 // Form data extraction helper
@@ -130,16 +182,11 @@ function renderStaffCell(
       )
     case 'actions':
       return (
-        <div className="text-right space-x-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setEditStaff(staff)}
-            disabled={!canEdit}
-          >
-            <Pencil className="mr-2 h-3 w-3" /> {t('edit')}
-          </Button>
-        </div>
+        <StaffActions
+          staff={staff}
+          canEdit={canEdit}
+          onEdit={() => setEditStaff(staff)}
+        />
       )
     default:
       return null

@@ -1,45 +1,71 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Sale, SaleItem, PaymentMode } from "@/lib/types";
-import { usePaginatedQuery } from "./use-paginated-query";
-import { queryKeys, dataTypeCache } from "@/lib/query-keys";
-import { useQueryInvalidator, optimisticUpdates } from "@/lib/query-invalidation";
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import type { Sale, SaleItem, PaymentMode } from '@/lib/types'
+import { usePaginatedQuery } from './use-paginated-query'
+import { queryKeys, dataTypeCache } from '@/lib/query-keys'
+import {
+  useQueryInvalidator,
+  optimisticUpdates,
+} from '@/lib/query-invalidation'
 
 export interface UseSalesParams {
-  page?: number;
-  pageSize?: number;
-  sort?: string;
-  order?: string;
-  searchTerm?: string;
-  cashierId?: string;
-  paymentMethod?: string;
-  from?: string; // ISO date string
-  to?: string;   // ISO date string
+  page?: number
+  pageSize?: number
+  sort?: string
+  order?: string
+  searchTerm?: string
+  cashierId?: string
+  paymentMethod?: string
+  from?: string // ISO date string
+  to?: string // ISO date string
 }
 
 export interface SaleQueryResult {
-  data: Sale[];
-  total: number;
-  paymentMethodTotals?: Record<string, number>;
-  totalSalesValue?: number;
+  data: Sale[]
+  total: number
+  paymentMethodTotals?: Record<string, number>
+  totalSalesValue?: number
 }
 
 async function fetchSalesData(params: UseSalesParams = {}) {
-  const query = new URLSearchParams();
-  if (params.page) query.set("page", params.page.toString());
-  if (params.pageSize) query.set("pageSize", params.pageSize.toString());
-  if (params.sort) query.set("sort", params.sort);
-  if (params.order) query.set("order", params.order);
-  if (params.searchTerm) query.set("search", params.searchTerm);
-  if (params.cashierId && params.cashierId !== "all") query.set("cashierId", params.cashierId);
-  if (params.paymentMethod && params.paymentMethod !== "all") query.set("paymentMethod", params.paymentMethod);
-  if (params.from) query.set("from", params.from);
-  if (params.to) query.set("to", params.to);
-  const res = await fetch(`/api/sales?${query.toString()}`);
+  const query = new URLSearchParams()
+  if (params.page) query.set('page', params.page.toString())
+  if (params.pageSize) query.set('pageSize', params.pageSize.toString())
+  if (params.sort) query.set('sort', params.sort)
+  if (params.order) query.set('order', params.order)
+  if (params.searchTerm) query.set('search', params.searchTerm)
+  if (params.cashierId && params.cashierId !== 'all')
+    query.set('cashierId', params.cashierId)
+  if (params.paymentMethod && params.paymentMethod !== 'all')
+    query.set('paymentMethod', params.paymentMethod)
+  if (params.from) query.set('from', params.from)
+  if (params.to) query.set('to', params.to)
+  const res = await fetch(`/api/sales?${query.toString()}`)
   if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || "Failed to fetch sales");
+    const text = await res.text()
+    let errorMessage = 'Failed to fetch sales'
+    try {
+      const error = JSON.parse(text)
+      errorMessage = error.message || errorMessage
+    } catch {
+      errorMessage = text || errorMessage
+    }
+    throw new Error(errorMessage)
   }
-  return res.json() as Promise<SaleQueryResult>;
+
+  const text = await res.text()
+  if (!text || text.trim() === '') {
+    throw new Error(
+      'Server returned an empty response. Please check if the API is running correctly.'
+    )
+  }
+
+  try {
+    return JSON.parse(text) as SaleQueryResult
+  } catch {
+    throw new Error(
+      'Server returned invalid data. Please try again or contact support if the issue persists.'
+    )
+  }
 }
 
 export function useSales(params: UseSalesParams = {}) {
@@ -47,50 +73,72 @@ export function useSales(params: UseSalesParams = {}) {
     queryKey: queryKeys.sales.list(params),
     queryFn: () => fetchSalesData(params),
     ...dataTypeCache.sales, // Use centralized cache config
-  });
+  })
 }
 
 async function createSale(saleData: {
-  cashierId: string;
-  items: SaleItem[];
-  totalAmount: number;
-  paymentMode: PaymentMode;
+  cashierId: string
+  items: SaleItem[]
+  totalAmount: number
+  paymentMode: PaymentMode
 }) {
-  const res = await fetch("/api/sales", {
-    method: "POST",
+  const res = await fetch('/api/sales', {
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify(saleData),
-  });
+  })
+
   if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || "Failed to record sale");
+    const text = await res.text()
+    let errorMessage = 'Failed to record sale'
+    try {
+      const error = JSON.parse(text)
+      errorMessage = error.message || errorMessage
+    } catch {
+      errorMessage = text || errorMessage
+    }
+    throw new Error(errorMessage)
   }
-  return res.json();
+
+  const text = await res.text()
+  if (!text || text.trim() === '') {
+    throw new Error(
+      'Server returned an empty response. Please check if the API is running correctly.'
+    )
+  }
+
+  try {
+    return JSON.parse(text)
+  } catch {
+    throw new Error(
+      'Server returned invalid data. Please try again or contact support if the issue persists.'
+    )
+  }
 }
 
 export function useCreateSale() {
-  const queryClient = useQueryClient();
-  const invalidator = useQueryInvalidator();
-  
+  const queryClient = useQueryClient()
+  const invalidator = useQueryInvalidator()
+
   return useMutation({
     mutationFn: createSale,
-    onMutate: async (newSale) => {
+    onMutate: async newSale => {
       // Optimistic update: add the sale immediately to the UI
       optimisticUpdates.addSale(queryClient, {
         ...newSale,
         id: `temp-${Date.now()}`, // Temporary ID
         createdAt: new Date().toISOString(),
-      });
+      })
     },
     onSuccess: () => {
       // Use centralized invalidation pattern
-      invalidator.invalidateAfterSaleChange();
+      invalidator.invalidateAfterSaleChange()
     },
     onError: () => {
       // If mutation fails, invalidate to revert optimistic updates
-      invalidator.invalidateAfterSaleChange();
+      invalidator.invalidateAfterSaleChange()
     },
-  });
-} 
+  })
+}

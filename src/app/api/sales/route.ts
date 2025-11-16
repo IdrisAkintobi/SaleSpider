@@ -4,6 +4,7 @@ import { calculateSaleTotals } from '@/lib/vat'
 import { startOfDay, endOfDay } from 'date-fns'
 import { createChildLogger } from '@/lib/logger'
 import { jsonOk, jsonError, handleException } from '@/lib/api-response'
+import { createSaleSchema } from '@/lib/validation-schemas'
 
 import { prisma } from '@/lib/prisma'
 const logger = createChildLogger('sales-api')
@@ -280,21 +281,21 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { items, totalAmount, paymentMode } = await req.json()
+    const body = await req.json()
 
-    // Validate input
-    if (
-      !items ||
-      !Array.isArray(items) ||
-      items.length === 0 ||
-      !totalAmount ||
-      !paymentMode
-    ) {
-      return jsonError('Invalid sale data', 400, { code: 'BAD_REQUEST' })
+    // Add cashierId to body for validation
+    const saleData = { ...body, cashierId: userId }
+
+    // Validate input with Zod
+    const validation = createSaleSchema.safeParse(saleData)
+    if (!validation.success) {
+      return jsonError(validation.error.errors[0].message, 400, {
+        code: 'VALIDATION_ERROR',
+        details: validation.error.errors,
+      })
     }
 
-    // Use the authenticated user's ID as the cashier ID
-    const cashierId = userId
+    const { items, totalAmount, paymentMode, cashierId } = validation.data
 
     // Validate items and check stock
     for (const item of items) {
