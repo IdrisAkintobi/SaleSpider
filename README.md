@@ -54,6 +54,7 @@ make backup    # Create manual backup
 
 - **🏪 Advanced Dashboard & Reporting**: Gain insights into sales performance, manage staff, and track inventory with role-based views
 - **📦 Smart Inventory Management**: Optimize stock levels, product deshelving, and prevent stockouts with AI insights
+- **🔔 Low Stock Notifications**: Real-time alerts for products running low with visual indicators and quick navigation
 - **🔐 Role-Based Access Control**: Secure operations with distinct roles for Managers, Cashiers, and Super Admins
 - **🤖 AI-Driven Recommendations**: Utilize AI for inventory suggestions, loss prevention, and reorder predictions
 - **💰 Sales Recording**: Easy-to-use interface for recording transactions with comprehensive audit trails

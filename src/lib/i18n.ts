@@ -138,6 +138,8 @@ const translations: Record<string, Record<string, string>> = {
     // Overview Components
     active_cashiers: 'Active Cashiers',
     low_stock_items: 'Low Stock Items',
+    low_stock_alerts: 'Low Stock Alerts',
+    view_all_inventory: 'View All Inventory',
     currently_active_staff: 'Currently active staff',
     needs_attention: 'Needs attention',
     all_items_well_stocked: 'All items well stocked',
@@ -449,6 +451,8 @@ const translations: Record<string, Record<string, string>> = {
     // Overview Components
     active_cashiers: 'Caissiers actifs',
     low_stock_items: 'Articles en stock faible',
+    low_stock_alerts: 'Alertes de stock faible',
+    view_all_inventory: "Voir tout l'inventaire",
     currently_active_staff: 'Personnel actuellement actif',
     needs_attention: 'Nécessite une attention',
     all_items_well_stocked: 'Tous les articles bien approvisionnés',
@@ -764,6 +768,8 @@ const translations: Record<string, Record<string, string>> = {
     // Overview Components
     active_cashiers: 'Cajeros activos',
     low_stock_items: 'Artículos con stock bajo',
+    low_stock_alerts: 'Alertas de stock bajo',
+    view_all_inventory: 'Ver todo el inventario',
     currently_active_staff: 'Personal actualmente activo',
     needs_attention: 'Necesita atención',
     all_items_well_stocked: 'Todos los artículos bien abastecidos',
@@ -1077,6 +1083,8 @@ const translations: Record<string, Record<string, string>> = {
     // Overview Components
     active_cashiers: 'Aktive Kassierer',
     low_stock_items: 'Artikel mit niedrigem Bestand',
+    low_stock_alerts: 'Niedrigbestandswarnungen',
+    view_all_inventory: 'Gesamtes Inventar anzeigen',
     currently_active_staff: 'Derzeit aktives Personal',
     needs_attention: 'Benötigt Aufmerksamkeit',
     all_items_well_stocked: 'Alle Artikel gut bestückt',

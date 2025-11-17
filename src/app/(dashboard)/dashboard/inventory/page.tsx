@@ -4,11 +4,11 @@ import { useAuth } from '@/contexts/auth-context'
 import useDebounce from '@/hooks/use-debounce'
 import type { Product } from '@/lib/types'
 import { useQuery } from '@tanstack/react-query'
-import { useCallback, useState } from 'react'
+import { useCallback, useState, useEffect, Suspense } from 'react'
 import { AddProductDialog } from './add-product-dialog'
 import { ProductTable, type SortField, type SortOrder } from './product-table'
 import { ProductTableSkeleton } from './product-table-skeleton'
-import { SearchInput } from './search-input'
+import { SearchInput } from '@/components/shared/search-input'
 import { UpdateProductDialog } from './update-product-dialog'
 import { ProductDetailsDialog } from './product-details-dialog'
 import { UpdateStockDialog } from './update-stock-dialog'
@@ -16,6 +16,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { useTranslation } from '@/lib/i18n'
 import { fetchJson } from '@/lib/fetch-utils'
+import { useSearchParams, useRouter } from 'next/navigation'
 
 // Define the expected API response structure
 interface ProductsResponse {
@@ -23,9 +24,11 @@ interface ProductsResponse {
   totalCount: number
 }
 
-export default function InventoryPage() {
+function InventoryPageContent() {
   const { userIsManager } = useAuth()
   const t = useTranslation()
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
   const debouncedSearchTerm = useDebounce(searchTerm, 300)
   const [page, setPage] = useState(1) // 1-based for TablePagination
@@ -125,6 +128,20 @@ export default function InventoryPage() {
     setSelectedProductForDetails(null)
   }, [])
 
+  // Handle productName from URL (from low stock notification)
+  useEffect(() => {
+    const productNameParam = searchParams.get('productName')
+    if (productNameParam && productNameParam !== searchTerm) {
+      setSearchTerm(productNameParam)
+      // Clear the param after setting search
+      const params = new URLSearchParams(searchParams.toString())
+      params.delete('productName')
+      router.replace(`/dashboard/inventory?${params.toString()}`, {
+        scroll: false,
+      })
+    }
+  }, [searchParams, searchTerm, router])
+
   // Record New Sale button for cashiers
   const recordSaleAction = !userIsManager ? (
     <Button size="lg" asChild>
@@ -197,6 +214,29 @@ export default function InventoryPage() {
         onOpenChange={handleCloseDetailsDialog}
         product={selectedProductForDetails}
       />
+    </>
+  )
+}
+
+export default function InventoryPage() {
+  return (
+    <Suspense fallback={<InventoryPageSkeleton />}>
+      <InventoryPageContent />
+    </Suspense>
+  )
+}
+
+function InventoryPageSkeleton() {
+  const { userIsManager } = useAuth()
+  const t = useTranslation()
+
+  return (
+    <>
+      <PageHeader
+        title={t('inventory')}
+        description={t('inventory_management_description')}
+      />
+      <ProductTableSkeleton userIsManager={userIsManager} />
     </>
   )
 }

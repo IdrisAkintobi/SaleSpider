@@ -98,7 +98,7 @@ function addSearchFilter(where: any, search: string) {
   const paymentModeMatches = getPaymentModeMatches(searchLower)
 
   where.OR = [
-    { id: { contains: search, mode: 'insensitive' } },
+    { id: search }, // Exact match for sale ID
     { cashier: { name: { contains: search, mode: 'insensitive' } } },
     { cashier: { username: { contains: search, mode: 'insensitive' } } },
     {

@@ -1,11 +1,8 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  GenericTable,
-  GenericTableColumn,
-} from "@/components/ui/generic-table";
-import type { Product } from "@/lib/types";
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { GenericTable, GenericTableColumn } from '@/components/ui/generic-table'
+import type { Product } from '@/lib/types'
 import {
   AlertTriangle,
   CheckCircle2,
@@ -17,44 +14,41 @@ import {
   MoreHorizontal,
   Package,
   X,
-} from "lucide-react";
-import Image from "next/image";
-import React, { useState } from "react";
-import { useFormatCurrency } from "@/lib/currency";
-import { useTranslation } from "@/lib/i18n";
-import { useAuth } from "@/contexts/auth-context";
-import {
-  useDeleteProduct,
-  useRestoreProduct,
-} from "@/hooks/use-delete-product";
+} from 'lucide-react'
+import Image from 'next/image'
+import React, { useState } from 'react'
+import { useFormatCurrency } from '@/lib/currency'
+import { useTranslation } from '@/lib/i18n'
+import { useAuth } from '@/contexts/auth-context'
+import { useDeleteProduct, useRestoreProduct } from '@/hooks/use-delete-product'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { DeshelvingDialog } from "@/components/dashboard/deshelving-dialog";
-import { cn } from "@/lib/utils";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+} from '@/components/ui/dropdown-menu'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { DeshelvingDialog } from '@/components/dashboard/deshelving-dialog'
+import { cn } from '@/lib/utils'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 
-export type SortField = "name" | "price" | "quantity" | "updatedAt";
-export type SortOrder = "asc" | "desc";
+export type SortField = 'name' | 'price' | 'quantity' | 'updatedAt'
+export type SortOrder = 'asc' | 'desc'
 
 interface ProductTableProps {
-  products: Product[];
-  userIsManager: boolean;
-  onUpdateStock: (product: Product) => void;
-  onUpdateProduct: (product: Product) => void;
-  onShowDetails?: (product: Product) => void;
-  sortField?: SortField;
-  sortOrder?: SortOrder;
-  onSort?: (field: SortField) => void;
-  page?: number;
-  pageSize?: number;
-  total?: number;
-  onPageChange?: (page: number) => void;
-  onPageSizeChange?: (size: number) => void;
+  products: Product[]
+  userIsManager: boolean
+  onUpdateStock: (product: Product) => void
+  onUpdateProduct: (product: Product) => void
+  onShowDetails?: (product: Product) => void
+  sortField?: SortField
+  sortOrder?: SortOrder
+  onSort?: (field: SortField) => void
+  page?: number
+  pageSize?: number
+  total?: number
+  onPageChange?: (page: number) => void
+  onPageSizeChange?: (size: number) => void
 }
 
 export function ProductTable({
@@ -72,29 +66,29 @@ export function ProductTable({
   onPageChange,
   onPageSizeChange,
 }: Readonly<ProductTableProps>) {
-  const formatCurrency = useFormatCurrency();
-  const t = useTranslation();
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const formatCurrency = useFormatCurrency()
+  const t = useTranslation()
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
 
   // Define columns for the generic table
   const columns: GenericTableColumn<Product>[] = [
     {
-      key: "imageUrl",
-      label: t("image"),
-      align: "left",
+      key: 'imageUrl',
+      label: t('image'),
+      align: 'left',
     },
     {
-      key: "name",
+      key: 'name',
       label: (
         <button
           type="button"
           className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
-          onClick={() => onSort?.("name")}
-          aria-label={`Sort by ${t("name")}`}
+          onClick={() => onSort?.('name')}
+          aria-label={`Sort by ${t('name')}`}
         >
-          {t("name")}{" "}
-          {sortField === "name" &&
-            (sortOrder === "asc" ? (
+          {t('name')}{' '}
+          {sortField === 'name' &&
+            (sortOrder === 'asc' ? (
               <ArrowUp size={14} />
             ) : (
               <ArrowDown size={14} />
@@ -102,20 +96,20 @@ export function ProductTable({
         </button>
       ),
       sortable: true,
-      onSort: () => onSort?.("name"),
+      onSort: () => onSort?.('name'),
     },
     {
-      key: "price",
+      key: 'price',
       label: (
         <button
           type="button"
           className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
-          onClick={() => onSort?.("price")}
-          aria-label={`Sort by ${t("price")}`}
+          onClick={() => onSort?.('price')}
+          aria-label={`Sort by ${t('price')}`}
         >
-          {t("price")}{" "}
-          {sortField === "price" &&
-            (sortOrder === "asc" ? (
+          {t('price')}{' '}
+          {sortField === 'price' &&
+            (sortOrder === 'asc' ? (
               <ArrowUp size={14} />
             ) : (
               <ArrowDown size={14} />
@@ -123,20 +117,20 @@ export function ProductTable({
         </button>
       ),
       sortable: true,
-      onSort: () => onSort?.("price"),
+      onSort: () => onSort?.('price'),
     },
     {
-      key: "quantity",
+      key: 'quantity',
       label: (
         <button
           type="button"
           className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
-          onClick={() => onSort?.("quantity")}
-          aria-label={`Sort by ${t("stock")}`}
+          onClick={() => onSort?.('quantity')}
+          aria-label={`Sort by ${t('stock')}`}
         >
-          {t("stock")}{" "}
-          {sortField === "quantity" &&
-            (sortOrder === "asc" ? (
+          {t('stock')}{' '}
+          {sortField === 'quantity' &&
+            (sortOrder === 'asc' ? (
               <ArrowUp size={14} />
             ) : (
               <ArrowDown size={14} />
@@ -144,20 +138,25 @@ export function ProductTable({
         </button>
       ),
       sortable: true,
-      onSort: () => onSort?.("quantity"),
+      onSort: () => onSort?.('quantity'),
     },
     {
-      key: "updatedAt",
+      key: 'status',
+      label: t('status'),
+      align: 'center',
+    },
+    {
+      key: 'updatedAt',
       label: (
         <button
           type="button"
           className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
-          onClick={() => onSort?.("updatedAt")}
-          aria-label={`Sort by ${t("date_updated")}`}
+          onClick={() => onSort?.('updatedAt')}
+          aria-label={`Sort by ${t('date_updated')}`}
         >
-          {t("date_updated")}{" "}
-          {sortField === "updatedAt" &&
-            (sortOrder === "asc" ? (
+          {t('date_updated')}{' '}
+          {sortField === 'updatedAt' &&
+            (sortOrder === 'asc' ? (
               <ArrowUp size={14} />
             ) : (
               <ArrowDown size={14} />
@@ -165,15 +164,15 @@ export function ProductTable({
         </button>
       ),
       sortable: true,
-      onSort: () => onSort?.("updatedAt"),
+      onSort: () => onSort?.('updatedAt'),
     },
-  ];
+  ]
   if (userIsManager) {
     columns.push({
-      key: "actions",
-      label: <span className="text-right">{t("actions")}</span>,
-      align: "right",
-    });
+      key: 'actions',
+      label: <span className="text-right">{t('actions')}</span>,
+      align: 'right',
+    })
   }
 
   return (
@@ -182,27 +181,34 @@ export function ProductTable({
         <GenericTable
           columns={columns}
           data={products}
-          rowKey={(row) => row.id}
+          rowKey={row => row.id}
+          rowClassName={product =>
+            product.quantity <= product.lowStockMargin
+              ? 'bg-orange-50/50 dark:bg-orange-950/20 hover:bg-orange-100/70 dark:hover:bg-orange-950/30'
+              : undefined
+          }
           renderCell={(product, col) => {
             switch (col.key) {
-              case "imageUrl":
+              case 'imageUrl':
                 return (
                   <button
                     type="button"
                     className="w-12 h-12 flex-shrink-0 bg-muted rounded-md cursor-pointer hover:opacity-80 transition-opacity p-0 border-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
+                    onClick={e => {
+                      e.stopPropagation()
                       setImagePreview(
-                        product.imageUrl ??
-                          "https://placehold.co/64x64.png?text=N/A"
-                      );
+                        product.imageUrl && product.imageUrl.trim() !== ''
+                          ? product.imageUrl
+                          : 'https://placehold.co/64x64.png?text=N/A'
+                      )
                     }}
                     aria-label={`Preview image for ${product.name}`}
                   >
                     <Image
                       src={
-                        product.imageUrl ??
-                        "https://placehold.co/64x64.png?text=N/A"
+                        product.imageUrl && product.imageUrl.trim() !== ''
+                          ? product.imageUrl
+                          : 'https://placehold.co/64x64.png?text=N/A'
                       }
                       alt={product.name}
                       width={48}
@@ -210,16 +216,16 @@ export function ProductTable({
                       className="rounded-md object-contain w-full h-full"
                     />
                   </button>
-                );
-              case "name":
+                )
+              case 'name':
                 return (
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
                       className={cn(
-                        "font-medium cursor-pointer hover:opacity-80 transition-opacity text-left",
+                        'font-medium cursor-pointer hover:opacity-80 transition-opacity text-left',
                         product.deletedAt &&
-                          "line-through text-muted-foreground"
+                          'line-through text-muted-foreground'
                       )}
                       onClick={() =>
                         onShowDetails
@@ -236,12 +242,12 @@ export function ProductTable({
                       </Badge>
                     )}
                   </div>
-                );
-              case "price":
-                return formatCurrency(product.price);
-              case "quantity":
-                return product.quantity;
-              case "status":
+                )
+              case 'price':
+                return formatCurrency(product.price)
+              case 'quantity':
+                return product.quantity
+              case 'status':
                 return product.quantity <= product.lowStockMargin ? (
                   <Badge variant="destructive" className="items-center gap-1">
                     <AlertTriangle className="h-3 w-3" /> Low Stock
@@ -253,12 +259,12 @@ export function ProductTable({
                   >
                     <CheckCircle2 className="h-3 w-3" /> In Stock
                   </Badge>
-                );
-              case "updatedAt":
+                )
+              case 'updatedAt':
                 return product.updatedAt
                   ? new Date(product.updatedAt).toLocaleDateString()
-                  : "";
-              case "actions":
+                  : ''
+              case 'actions':
                 return userIsManager ? (
                   <ProductActionsDropdown
                     product={product}
@@ -266,30 +272,30 @@ export function ProductTable({
                     onUpdateProduct={onUpdateProduct}
                     onRefresh={() => window.location.reload()}
                   />
-                ) : null;
+                ) : null
               default: {
                 const value = (product as unknown as Record<string, unknown>)[
                   col.key as string
-                ];
+                ]
                 if (
-                  typeof value === "string" ||
-                  typeof value === "number" ||
-                  typeof value === "boolean"
+                  typeof value === 'string' ||
+                  typeof value === 'number' ||
+                  typeof value === 'boolean'
                 ) {
-                  return String(value);
+                  return String(value)
                 }
                 if (React.isValidElement(value)) {
-                  return value;
+                  return value
                 }
-                return null;
+                return null
               }
             }
           }}
-          emptyMessage={t("no_products_found")}
+          emptyMessage={t('no_products_found')}
           paginationProps={
-            typeof page === "number" &&
-            typeof pageSize === "number" &&
-            typeof total === "number" &&
+            typeof page === 'number' &&
+            typeof pageSize === 'number' &&
+            typeof total === 'number' &&
             onPageChange &&
             onPageSizeChange
               ? { page, pageSize, total, onPageChange, onPageSizeChange }
@@ -303,15 +309,15 @@ export function ProductTable({
         onClose={() => setImagePreview(null)}
       />
     </Card>
-  );
+  )
 }
 
 // Product Actions Dropdown Component
 interface ProductActionsDropdownProps {
-  product: Product;
-  onUpdateStock: (product: Product) => void;
-  onUpdateProduct: (product: Product) => void;
-  onRefresh: () => void;
+  product: Product
+  onUpdateStock: (product: Product) => void
+  onUpdateProduct: (product: Product) => void
+  onRefresh: () => void
 }
 
 function ProductActionsDropdown({
@@ -320,23 +326,23 @@ function ProductActionsDropdown({
   onUpdateProduct,
   onRefresh,
 }: ProductActionsDropdownProps) {
-  const { user } = useAuth();
-  const t = useTranslation();
-  const deleteProductMutation = useDeleteProduct();
-  const restoreProductMutation = useRestoreProduct();
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showRestoreDialog, setShowRestoreDialog] = useState(false);
+  const { user } = useAuth()
+  const t = useTranslation()
+  const deleteProductMutation = useDeleteProduct()
+  const restoreProductMutation = useRestoreProduct()
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showRestoreDialog, setShowRestoreDialog] = useState(false)
 
-  const isSuperAdmin = user?.role === "SUPER_ADMIN";
-  const isDeleted = !!product.deletedAt;
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN'
+  const isDeleted = !!product.deletedAt
 
   const handleDelete = () => {
-    deleteProductMutation.mutate(product.id);
-  };
+    deleteProductMutation.mutate(product.id)
+  }
 
   const handleRestore = () => {
-    restoreProductMutation.mutate(product.id);
-  };
+    restoreProductMutation.mutate(product.id)
+  }
 
   return (
     <DropdownMenu>
@@ -351,11 +357,11 @@ function ProductActionsDropdown({
           <>
             <DropdownMenuItem onClick={() => onUpdateStock(product)}>
               <Edit3 className="mr-2 h-4 w-4" />
-              {t("update_stock")}
+              {t('update_stock')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onUpdateProduct(product)}>
               <Edit3 className="mr-2 h-4 w-4" />
-              {t("edit_product")}
+              {t('edit_product')}
             </DropdownMenuItem>
             <DeshelvingDialog
               product={{
@@ -365,7 +371,7 @@ function ProductActionsDropdown({
                 price: product.price,
               }}
               trigger={
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                <DropdownMenuItem onSelect={e => e.preventDefault()}>
                   <Package className="mr-2 h-4 w-4" />
                   Deshelve Product
                 </DropdownMenuItem>
@@ -378,7 +384,7 @@ function ProductActionsDropdown({
                 className="text-destructive focus:text-destructive"
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                {t("delete_product")}
+                {t('delete_product')}
               </DropdownMenuItem>
             )}
           </>
@@ -386,7 +392,7 @@ function ProductActionsDropdown({
         {isDeleted && isSuperAdmin && (
           <DropdownMenuItem onClick={() => setShowRestoreDialog(true)}>
             <RotateCcw className="mr-2 h-4 w-4" />
-            {t("restore_product")}
+            {t('restore_product')}
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>
@@ -413,7 +419,7 @@ function ProductActionsDropdown({
         variant="default"
       />
     </DropdownMenu>
-  );
+  )
 }
 
 // Image Preview Dialog Component
@@ -421,10 +427,10 @@ function ImagePreviewDialog({
   imageUrl,
   onClose,
 }: {
-  imageUrl: string | null;
-  onClose: () => void;
+  imageUrl: string | null
+  onClose: () => void
 }) {
-  if (!imageUrl) return null;
+  if (!imageUrl) return null
 
   return (
     <Dialog open={!!imageUrl} onOpenChange={onClose}>
@@ -448,5 +454,5 @@ function ImagePreviewDialog({
         </div>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

@@ -206,6 +206,9 @@ function productSearchWhere(
     ? {
         OR: [
           {
+            id: searchQuery, // Exact match for ID
+          },
+          {
             name: {
               contains: searchQuery,
               mode: 'insensitive',
@@ -213,6 +216,12 @@ function productSearchWhere(
           },
           {
             description: {
+              contains: searchQuery,
+              mode: 'insensitive',
+            },
+          },
+          {
+            gtin: {
               contains: searchQuery,
               mode: 'insensitive',
             },
