@@ -112,11 +112,19 @@ perms: ## Make all scripts executable
 	@find .docker/scripts -type f -name "*.sh" -exec chmod +x {} \;
 	@echo "$(GREEN)✓ All scripts are now executable$(NC)"
 
-setup: perms ## Initial setup (permissions + environment check)
+setup: perms ## Initial setup (permissions + environment check + directories)
 	@echo "$(GREEN)Running initial setup...$(NC)"
 	$(call validate_env)
 	$(call validate_backup_config)
 	$(call check_backup_profile)
+	@echo "$(CYAN)Creating directory structure...$(NC)"
+	@if [ -f "$(ENV_FILE)" ]; then \
+		. $(ENV_FILE); \
+		mkdir -p "$${DATA_PATH:-./data}"/{postgres,uploads,logs,ssl}; \
+		mkdir -p "$${DATA_PATH:-./data}/logs/backup"; \
+		mkdir -p "$${BACKUP_PATH:-./data/backups}"/{postgres,pgbackrest}; \
+		echo "$(GREEN)✓ Directories created$(NC)"; \
+	fi
 	@echo "$(GREEN)✓ Setup complete$(NC)"
 
 ##@ Deployment

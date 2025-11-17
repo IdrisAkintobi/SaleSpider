@@ -130,11 +130,8 @@ services:
 
 volumes:
   backup-data:
-    external: true
   pgbackrest-config:
-    external: true
   app-logs:
-    external: true
 
 networks:
   salespider-net:

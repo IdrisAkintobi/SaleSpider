@@ -323,17 +323,14 @@ start_services() {
         docker network create salespider-net --subnet=172.20.0.0/16 --gateway=172.20.0.1
     fi
     
-    # Create volumes
+    # Ensure directories exist before creating volumes
+    setup_directories
+    
+    # Create only named Docker volumes (non-bind mount volumes)
     log "Creating Docker volumes..."
-    docker volume create postgres-data || true
-    docker volume create postgres-backups || true
-    docker volume create app-uploads || true
-    docker volume create app-logs || true
     docker volume create proxy-data || true
     docker volume create proxy-config || true
     docker volume create ssl-certs || true
-    docker volume create backup-data || true
-    docker volume create backup-logs || true
     docker volume create pgbackrest-config || true
     
     # Start services

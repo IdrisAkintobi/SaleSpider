@@ -61,7 +61,7 @@ mkdir -p "${DATA_PATH}/logs/backup"
 mkdir -p "${DATA_PATH}/ssl"
 
 # Backup volumes
-mkdir -p "${BACKUP_PATH}/pgBackRest"
+mkdir -p "${BACKUP_PATH}/pgbackrest"
 
 echo -e "${GREEN}✓ Created all required directories${NC}"
 
@@ -81,7 +81,7 @@ echo "  - ${DATA_PATH}/logs"
 echo "  - ${DATA_PATH}/logs/backup"
 echo "  - ${DATA_PATH}/ssl"
 echo "  - ${BACKUP_PATH}/postgres"
-echo "  - ${BACKUP_PATH}/pgBackRest"
+echo "  - ${BACKUP_PATH}/pgbackrest"
 
 echo ""
 echo -e "${GREEN}✓ Volume setup complete!${NC}"

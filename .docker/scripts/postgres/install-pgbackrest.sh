@@ -18,7 +18,7 @@ chown -R postgres:postgres /var/lib/pgbackrest \
 
 # Link our mounted config to /etc/pgbackrest
 echo "Linking pgBackRest configuration from shared volume..."
-sudo rm -rf /etc/pgbackrest
+rm -rf /etc/pgbackrest
 ln -s /pgbackrest-config /etc/pgbackrest
 
 # Check if backups are disabled
