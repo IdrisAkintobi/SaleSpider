@@ -2,10 +2,17 @@ import { jwtVerify } from 'jose'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { clearAuthToken } from './app/api/auth/lib/cookie-handler'
+import { checkCORS } from './lib/cors'
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET)
 
 export async function middleware(request: NextRequest) {
+  // Check CORS for API routes
+  if (request.nextUrl.pathname.startsWith('/api')) {
+    const corsError = checkCORS(request)
+    if (corsError) return corsError
+  }
+
   const token = request.cookies.get('auth_token')?.value
 
   // If no token, handle based on route type
