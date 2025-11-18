@@ -145,7 +145,12 @@ export default function SalesPage() {
 
   // Unique cashiers list (moved above usage)
   const uniqueCashiers = useMemo(() => {
-    if (allCashiers?.data) {
+    if (
+      allCashiers &&
+      typeof allCashiers === 'object' &&
+      'data' in allCashiers &&
+      Array.isArray(allCashiers.data)
+    ) {
       return allCashiers.data.map((cashier: { id: string; name: string }) => ({
         id: cashier.id,
         name: cashier.name,

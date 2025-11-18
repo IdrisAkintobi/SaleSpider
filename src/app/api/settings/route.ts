@@ -43,7 +43,7 @@ function buildDefaultSettingsData() {
 
 // GET /api/settings
 // Public endpoint - settings needed for login page (app name, logo, theme, etc.)
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     logger.debug('GET /api/settings start')
 

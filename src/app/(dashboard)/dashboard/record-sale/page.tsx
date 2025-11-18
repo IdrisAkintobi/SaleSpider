@@ -33,7 +33,6 @@ import { useCreateSale } from '@/hooks/use-sales'
 import { ReceiptPrinter } from '@/components/shared/receipt-printer'
 import type { PaymentMode, Product, SaleItem } from '@/lib/types'
 import { ShoppingCart, XCircle } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 import { useCallback, useMemo, useState } from 'react'
 import { useFormatCurrency } from '@/lib/currency'
 import { useTranslation } from '@/lib/i18n'
@@ -61,10 +60,9 @@ interface CartItem extends SaleItem {
 }
 
 export default function RecordSalePage() {
-  const { user, userIsManager } = useAuth()
+  const { user } = useAuth()
   const { toast } = useToast()
   const createSale = useCreateSale()
-  const router = useRouter()
   const formatCurrency = useFormatCurrency()
   const t = useTranslation()
   const { settings } = useSettingsContext()
