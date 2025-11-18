@@ -141,6 +141,9 @@ check_requirements() {
 load_environment() {
     log "Loading environment configuration..."
     
+    # Check requirements first to set COMPOSE_CMD
+    check_requirements
+    
     # Load from .env file if it exists
     if [ -f "$SCRIPT_DIR/.env" ]; then
         log "Loading existing .env file..."
@@ -440,7 +443,8 @@ show_deployment_info() {
 stop_services() {
     log "Stopping $APP_NAME services..."
     
-    $COMPOSE_CMD -f "$DOCKER_DIR/docker-compose.yml" --env-file "$SCRIPT_DIR/.env" down
+    # Stop all services including backup profile
+    $COMPOSE_CMD -f "$DOCKER_DIR/docker-compose.yml" --env-file "$SCRIPT_DIR/.env" --profile backup down
     
     success "$APP_NAME stopped"
 }

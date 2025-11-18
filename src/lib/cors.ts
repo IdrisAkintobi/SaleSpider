@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 // CORS Configuration
 const ALLOWED_ORIGINS = [
   process.env.NEXT_PUBLIC_APP_URL,
+  process.env.NEXTAUTH_URL,
   // Parse space-separated ALLOWED_ORIGINS from env
   ...(process.env.ALLOWED_ORIGINS?.split(' ') || []),
 ].filter(Boolean) as string[]

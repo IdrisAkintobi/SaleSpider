@@ -7,8 +7,8 @@ echo "Starting pgBackRest backup service..."
 
 # Create necessary directories with proper structure
 echo "Creating backup directory structure..."
-mkdir -p /var/lib/pgbackrest/archive/salespider \
-         /var/lib/pgbackrest/backup/salespider \
+mkdir -p /var/lib/pgbackrest/archive \
+         /var/lib/pgbackrest/backup \
          /var/log/pgbackrest \
          /var/spool/pgbackrest
 
@@ -89,12 +89,31 @@ while [ $attempt -lt $max_attempts ]; do
     sleep 2
 done
 
-# Create stanza
-echo "Creating pgBackRest stanza..."
-if pgbackrest --stanza=salespider stanza-create; then
+# Create or upgrade stanza
+echo "Initializing pgBackRest stanza..."
+
+# First, try to upgrade existing stanza (in case of restart)
+if pgbackrest --stanza=salespider stanza-upgrade 2>/dev/null; then
+    echo "Stanza upgraded successfully"
+elif pgbackrest --stanza=salespider stanza-create 2>&1 | tee /tmp/stanza-create.log; then
     echo "Stanza created successfully"
 else
-    echo "WARNING: Stanza creation failed (may already exist or will retry later)"
+    # Check if it already exists
+    if pgbackrest --stanza=salespider info >/dev/null 2>&1; then
+        echo "Stanza already exists and is valid"
+    else
+        echo "ERROR: Failed to create stanza"
+        cat /tmp/stanza-create.log
+        echo "Continuing anyway - will retry on next backup attempt"
+    fi
+fi
+
+# Verify stanza is accessible
+echo "Verifying stanza..."
+if pgbackrest --stanza=salespider info; then
+    echo "Stanza verification successful"
+else
+    echo "WARNING: Stanza verification failed - backups may not work until this is resolved"
 fi
 
 # Setup cron jobs for automated backups
