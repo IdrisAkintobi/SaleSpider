@@ -1,3 +1,5 @@
+import { ReceiptPrinter } from '@/components/shared/receipt-printer'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -6,7 +8,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Table,
   TableBody,
@@ -15,17 +17,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { ReceiptPrinter } from '@/components/shared/receipt-printer'
-import { Eye } from 'lucide-react'
 import type { Sale } from '@/lib/types'
+import { Eye } from 'lucide-react'
 
 interface SaleDetailDialogProps {
-  sale: Sale
-  onOpenChange: (sale: Sale | null) => void
-  formatCurrency: (amount: number) => string
-  formatDate: (timestamp: number) => string
-  t: (key: string) => string
+  readonly sale: Sale
+  readonly onOpenChange: (sale: Sale | null) => void
+  readonly formatCurrency: (amount: number) => string
+  readonly formatDate: (timestamp: number) => string
+  readonly t: (key: string) => string
 }
 
 export function SaleDetailDialog({

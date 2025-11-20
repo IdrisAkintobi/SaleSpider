@@ -1,3 +1,4 @@
+import { ReceiptPrinter } from '@/components/shared/receipt-printer'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -8,6 +9,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { GenericTable } from '@/components/ui/generic-table'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Table,
   TableBody,
@@ -16,11 +19,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { GenericTable } from '@/components/ui/generic-table'
-import { ReceiptPrinter } from '@/components/shared/receipt-printer'
 import type { Sale } from '@/lib/types'
-import { CalendarDays, UserCircle, Eye, ArrowUp, ArrowDown } from 'lucide-react'
+import { ArrowDown, ArrowUp, CalendarDays, Eye, UserCircle } from 'lucide-react'
 import React, { useState } from 'react'
 
 interface SalesTableProps {
@@ -60,7 +60,8 @@ export function SalesTable({
         {
           key: 'createdAt',
           label: (
-            <span
+            <button
+              type="button"
               className="cursor-pointer"
               onClick={() => handleSort('createdAt')}
             >
@@ -71,7 +72,7 @@ export function SalesTable({
                 ) : (
                   <ArrowDown className="inline w-3 h-3" />
                 ))}
-            </span>
+            </button>
           ),
           sortable: true,
           onSort: () => handleSort('createdAt'),
@@ -79,7 +80,8 @@ export function SalesTable({
         {
           key: 'cashierName',
           label: (
-            <span
+            <button
+              type="button"
               className="cursor-pointer"
               onClick={() => handleSort('cashierName')}
             >
@@ -90,7 +92,7 @@ export function SalesTable({
                 ) : (
                   <ArrowDown className="inline w-3 h-3" />
                 ))}
-            </span>
+            </button>
           ),
           sortable: true,
           onSort: () => handleSort('cashierName'),
@@ -99,7 +101,8 @@ export function SalesTable({
         {
           key: 'totalAmount',
           label: (
-            <span
+            <button
+              type="button"
               className="cursor-pointer"
               onClick={() => handleSort('totalAmount')}
             >
@@ -110,7 +113,7 @@ export function SalesTable({
                 ) : (
                   <ArrowDown className="inline w-3 h-3" />
                 ))}
-            </span>
+            </button>
           ),
           sortable: true,
           onSort: () => handleSort('totalAmount'),
@@ -118,7 +121,8 @@ export function SalesTable({
         {
           key: 'paymentMode',
           label: (
-            <span
+            <button
+              type="button"
               className="cursor-pointer"
               onClick={() => handleSort('paymentMode')}
             >
@@ -129,7 +133,7 @@ export function SalesTable({
                 ) : (
                   <ArrowDown className="inline w-3 h-3" />
                 ))}
-            </span>
+            </button>
           ),
           sortable: true,
           onSort: () => handleSort('paymentMode'),
@@ -162,7 +166,7 @@ export function SalesTable({
               </div>
             )
           case 'itemsCount':
-            return `${sale.items.length} item${sale.items.length !== 1 ? 's' : ''}`
+            return `${sale.items.length} item${sale.items.length === 1 ? '' : 's'}`
           case 'totalAmount':
             return (
               <span className="font-medium">
@@ -244,8 +248,8 @@ export function SalesTable({
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                  {selectedSale.items.map((item, index) => (
-                                    <TableRow key={index}>
+                                  {selectedSale.items.map(item => (
+                                    <TableRow key={item.productId}>
                                       <TableCell>{item.productName}</TableCell>
                                       <TableCell>{item.quantity}</TableCell>
                                       <TableCell>
@@ -299,9 +303,7 @@ export function SalesTable({
               </div>
             )
           default: {
-            const value = (sale as unknown as Record<string, unknown>)[
-              col.key as string
-            ]
+            const value = (sale as Record<string, unknown>)[col.key]
             if (
               typeof value === 'string' ||
               typeof value === 'number' ||

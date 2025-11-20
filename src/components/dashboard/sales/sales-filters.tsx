@@ -1,43 +1,46 @@
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Calendar } from '@/components/ui/calendar'
+import { Input } from '@/components/ui/input'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
-import { Filter, CalendarIcon } from 'lucide-react'
 import { format } from 'date-fns'
+import { CalendarIcon, Filter } from 'lucide-react'
 import type { DateRange } from 'react-day-picker'
 import {
-  PaymentMethodSelect,
   CashierSelect,
   DateRangeQuickSelect,
+  PaymentMethodSelect,
 } from './filters'
 
 interface SalesFiltersProps {
-  searchTerm: string
-  onSearchChange: (value: string) => void
-  filterPaymentMethod: string
-  onPaymentMethodChange: (value: string) => void
-  filterCashier: string
-  onCashierChange: (value: string) => void
-  filterDateRange: string
-  onDateRangeChange: (value: string) => void
-  dateRange: DateRange | undefined
-  onDateRangeSelect: (range: DateRange | undefined) => void
-  isDatePickerOpen: boolean
-  onDatePickerOpenChange: (open: boolean) => void
-  onClearDateRange: () => void
-  userIsManager: boolean
-  userIsCashier: boolean
-  enabledPaymentOptions: ReadonlyArray<{
+  readonly searchTerm: string
+  readonly onSearchChange: (value: string) => void
+  readonly filterPaymentMethod: string
+  readonly onPaymentMethodChange: (value: string) => void
+  readonly filterCashier: string
+  readonly onCashierChange: (value: string) => void
+  readonly filterDateRange: string
+  readonly onDateRangeChange: (value: string) => void
+  readonly dateRange: DateRange | undefined
+  readonly onDateRangeSelect: (range: DateRange | undefined) => void
+  readonly isDatePickerOpen: boolean
+  readonly onDatePickerOpenChange: (open: boolean) => void
+  readonly onClearDateRange: () => void
+  readonly userIsManager: boolean
+  readonly userIsCashier: boolean
+  readonly enabledPaymentOptions: ReadonlyArray<{
     readonly label: string
     readonly enum: string
   }>
-  uniqueCashiers: Array<{ id: string; name: string }>
-  t: (key: string) => string
+  readonly uniqueCashiers: ReadonlyArray<{
+    readonly id: string
+    readonly name: string
+  }>
+  readonly t: (key: string) => string
 }
 
 export function SalesFilters({
@@ -102,7 +105,7 @@ export function SalesFilters({
           >
             <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
             <span className="truncate">
-              {dateRange && dateRange.from && dateRange.to ? (
+              {dateRange?.from && dateRange?.to ? (
                 <>
                   {format(dateRange.from, 'LLL dd, y')} -{' '}
                   {format(dateRange.to, 'LLL dd, y')}
