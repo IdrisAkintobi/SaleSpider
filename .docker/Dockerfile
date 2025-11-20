@@ -25,7 +25,6 @@ ENV NEXT_TELEMETRY_DISABLED 1
 
 # Generate Prisma client if prisma directory exists
 RUN if [ -d "prisma" ]; then \
-      npm install prisma @prisma/client && \
       npx prisma generate; \
     fi
 
@@ -39,28 +38,28 @@ WORKDIR /app
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
-# Install wget for health checks
-RUN apk add --no-cache wget
-
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+# Install wget for health checks and create user/group
+RUN apk add --no-cache wget && \
+    addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
 # Copy the public folder for static assets
 COPY --from=builder /app/public ./public
 
 # Set the correct permission for prerender cache
-RUN mkdir .next
-RUN chown nextjs:nodejs .next
+RUN mkdir .next && \
+    chown nextjs:nodejs .next
 
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Copy Prisma files if they exist
+# Copy Prisma files for migrations (minimal - just schema and generated client)
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 
 # Create necessary directories
 RUN mkdir -p logs uploads && \
@@ -80,11 +79,12 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # Start the server with database migration and seeding
 CMD ["sh", "-c", "if [ -d 'prisma' ]; then \
   echo 'Running database migrations...'; \
-  npx prisma migrate deploy; \
+  npx prisma@6.13.0 migrate deploy || { echo 'ERROR: Migration failed'; exit 1; }; \
+  echo 'Migrations completed successfully!'; \
   if [ -z \"$SUPER_ADMIN_EMAIL\" ] || [ -z \"$SUPER_ADMIN_PASSWORD\" ]; then \
     echo 'ERROR: SUPER_ADMIN_EMAIL and SUPER_ADMIN_PASSWORD environment variables are required for seeding'; \
     exit 1; \
   fi; \
   echo 'Running production seeding...'; \
-  npm run seed:prod; \
+  npx tsx@4.20.3 prisma/seeds/seed-production.ts || { echo 'WARNING: Seeding failed, but continuing...'; }; \
 fi && node server.js"]

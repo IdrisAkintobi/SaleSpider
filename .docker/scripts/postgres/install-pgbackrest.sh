@@ -20,8 +20,18 @@ chmod -R 755 /var/log/pgbackrest
 
 # Link our mounted config to /etc/pgbackrest
 echo "Linking pgBackRest configuration from shared volume..."
-rm -rf /etc/pgbackrest
-ln -s /pgbackrest-config /etc/pgbackrest
+if [ -e /etc/pgbackrest ] && [ ! -L /etc/pgbackrest ]; then
+    # If it exists and is not a symlink, try to remove it
+    rm -rf /etc/pgbackrest 2>/dev/null || {
+        echo "Cannot remove existing /etc/pgbackrest, attempting to work around..."
+        # If we can't remove it, just ensure the config directory exists
+        mkdir -p /pgbackrest-config
+    }
+fi
+# Only create symlink if it doesn't already exist
+if [ ! -e /etc/pgbackrest ]; then
+    ln -s /pgbackrest-config /etc/pgbackrest
+fi
 
 # Check if backups are disabled
 if [[ "${PGBACKREST_REPO1_TYPE:-none}" = "none" ]]; then
