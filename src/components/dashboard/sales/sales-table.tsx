@@ -2,7 +2,7 @@ import { Badge } from '@/components/ui/badge'
 import { GenericTable } from '@/components/ui/generic-table'
 import type { Sale } from '@/lib/types'
 import { CalendarDays, UserCircle } from 'lucide-react'
-import React, { useState } from 'react'
+import React from 'react'
 import { SaleDetailDialog } from './sale-detail-dialog'
 import { createSalesTableColumns } from './sales-table-columns'
 
@@ -35,8 +35,6 @@ export function SalesTable({
   handlePageSizeChange,
   t,
 }: SalesTableProps) {
-  const [selectedSale, setSelectedSale] = useState<Sale | null>(null)
-
   return (
     <GenericTable
       columns={createSalesTableColumns(
@@ -81,7 +79,7 @@ export function SalesTable({
               <div className="text-right">
                 <SaleDetailDialog
                   sale={sale}
-                  onOpenChange={setSelectedSale}
+                  onOpenChange={() => {}}
                   formatCurrency={formatCurrency}
                   formatDate={formatDate}
                   t={t}
