@@ -1,9 +1,9 @@
 'use client'
 
+import { SettingsProvider } from '@/contexts/settings-context'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { useState, type ReactNode, useEffect } from 'react'
-import { SettingsProvider } from '@/contexts/settings-context'
+import { useEffect, useState, type ReactNode } from 'react'
 
 interface ProvidersProps {
   children: ReactNode
@@ -15,15 +15,16 @@ interface ProvidersProps {
  * - 401 Unauthorized: Redirects to login
  * - JSON parsing errors: Logs and prevents duplicate console errors
  */
-function GlobalErrorHandler({ children }: { children: React.ReactNode }) {
+function GlobalErrorHandler({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   useEffect(() => {
     const handler = (event: PromiseRejectionEvent) => {
       const error = event.reason
 
       // Handle 401 Unauthorized - redirect to login
       if (
-        (error?.message &&
-          error.message.toLowerCase().includes('unauthorized')) ||
+        error.message?.toLowerCase().includes('unauthorized') ||
         error?.status === 401
       ) {
         globalThis.location.href = '/login'
@@ -31,10 +32,7 @@ function GlobalErrorHandler({ children }: { children: React.ReactNode }) {
       }
 
       // Handle JSON parsing errors - provide better error message
-      if (
-        error?.message &&
-        error.message.includes('Unexpected end of JSON input')
-      ) {
+      if (error.message?.includes('Unexpected end of JSON input')) {
         console.error(
           'JSON Parse Error: Server returned an empty or invalid response',
           error

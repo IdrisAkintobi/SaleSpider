@@ -261,10 +261,8 @@ validate_config() {
     fi
     
     # Validate AWS configuration if backup is enabled
-    if [[ "${BACKUP_REPO2_TYPE:-}" = "s3" ]]; then
-        if [[ -z "$AWS_ACCESS_KEY_ID" ]] || [[ -z "$AWS_SECRET_ACCESS_KEY" ]] || [[ -z "$AWS_S3_BUCKET" ]]; then
-            warning "AWS S3 backup is configured but credentials are missing"
-        fi
+    if [[ "${BACKUP_REPO2_TYPE:-}" = "s3" ]] && { [[ -z "$AWS_ACCESS_KEY_ID" ]] || [[ -z "$AWS_SECRET_ACCESS_KEY" ]] || [[ -z "$AWS_S3_BUCKET" ]]; }; then
+        warning "AWS S3 backup is configured but credentials are missing"
     fi
     
     if [[ $errors -gt 0 ]]; then
