@@ -10,7 +10,6 @@ import { useToast } from '@/hooks/use-toast'
 import { useSales } from '@/hooks/use-sales'
 import { useQuery } from '@tanstack/react-query'
 import { Role } from '@prisma/client'
-import type { Sale } from '@/lib/types'
 import { exportSalesCSV } from '@/lib/csv-export'
 import {
   CalendarDays,
