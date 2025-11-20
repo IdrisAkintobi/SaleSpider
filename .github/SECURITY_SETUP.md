@@ -8,18 +8,18 @@ To run CI workflows securely, configure the following secrets in your GitHub rep
 
 ### CI/CD Secrets (Optional - Fallbacks Provided)
 
-| Secret Name | Description | Example Value |
-|------------|-------------|---------------|
-| `CI_POSTGRES_PASSWORD` | PostgreSQL password for CI tests | `random_secure_test_password_123` |
-| `CI_JWT_SECRET` | JWT secret for CI tests | `random_jwt_secret_for_testing_456` |
-| `CI_NEXTAUTH_SECRET` | NextAuth secret for CI tests | `random_nextauth_secret_for_testing_789` |
-| `CODECOV_TOKEN` | Codecov upload token (optional) | Get from codecov.io |
+| Secret Name            | Description                      | Example Value                       |
+| ---------------------- | -------------------------------- | ----------------------------------- |
+| `CI_POSTGRES_PASSWORD` | PostgreSQL password for CI tests | `random_secure_test_password_123`   |
+| `CI_JWT_SECRET`        | JWT secret for CI tests          | `random_jwt_secret_for_testing_456` |
+| `CODECOV_TOKEN`        | Codecov upload token (optional)  | Get from codecov.io                 |
 
 ### Production Secrets (Never in CI)
 
 **⚠️ NEVER add production secrets to GitHub Actions workflows!**
 
 Production secrets should only be configured in your deployment environment:
+
 - Docker `.env` file (not committed to git)
 - Cloud provider secret managers (AWS Secrets Manager, etc.)
 - Environment variables in hosting platform
@@ -27,6 +27,7 @@ Production secrets should only be configured in your deployment environment:
 ## Security Best Practices
 
 ### ✅ DO:
+
 - Use GitHub Secrets for sensitive values
 - Provide fallback values for non-critical CI tests
 - Use ephemeral test databases in CI
@@ -34,6 +35,7 @@ Production secrets should only be configured in your deployment environment:
 - Use different secrets for each environment
 
 ### ❌ DON'T:
+
 - Hardcode passwords in workflow files
 - Use production credentials in CI
 - Commit secrets to version control
@@ -43,18 +45,21 @@ Production secrets should only be configured in your deployment environment:
 ## CI Environment Security
 
 The CI workflows use **ephemeral test credentials** that are:
+
 - ✅ Destroyed after each test run
 - ✅ Isolated in GitHub Actions containers
 - ✅ Never exposed to production
 - ✅ Different from production credentials
 
 ### Current Fallback Values (CI Only)
+
 If GitHub Secrets are not configured, the workflows use these fallback values:
+
 - `POSTGRES_PASSWORD`: `test_postgres_ci_only`
 - `JWT_SECRET`: `test-jwt-secret-ci-only-do-not-use-in-production`
-- `NEXTAUTH_SECRET`: `test-nextauth-secret-ci-only-do-not-use-in-production`
 
 **These fallbacks are safe because:**
+
 1. They only exist during test execution
 2. They're destroyed immediately after
 3. They have no access to production data
@@ -63,14 +68,15 @@ If GitHub Secrets are not configured, the workflows use these fallback values:
 ## Setting Up GitHub Secrets
 
 ### Step 1: Generate Secure Random Values
+
 ```bash
 # Generate random secrets (Linux/macOS)
 openssl rand -base64 32  # For CI_POSTGRES_PASSWORD
 openssl rand -base64 32  # For CI_JWT_SECRET
-openssl rand -base64 32  # For CI_NEXTAUTH_SECRET
 ```
 
 ### Step 2: Add to GitHub Repository
+
 1. Go to your repository on GitHub
 2. Click **Settings** → **Secrets and variables** → **Actions**
 3. Click **New repository secret**
@@ -78,6 +84,7 @@ openssl rand -base64 32  # For CI_NEXTAUTH_SECRET
 5. Click **Add secret**
 
 ### Step 3: Verify CI Runs
+
 - Push a commit or open a PR
 - Check the Actions tab to verify CI passes
 - Secrets will be masked in logs as `***`

@@ -212,13 +212,13 @@ DELETE /api/admin/rate-limit?email=cashier@salespider.local
 
 ## Security Checklist
 
-- [ ] JWT secret is unique and secure (not default)
-- [ ] ALLOWED_ORIGINS lists all devices that need access
-- [ ] Rate limiting enabled (or consciously disabled)
-- [ ] HTTPS enforced (COOKIE_SECURE=true)
-- [ ] Strong passwords enforced for all users
-- [ ] Network firewall configured
-- [ ] Regular backups enabled
+- ✅ JWT secret is unique and secure (not default)
+- ✅ ALLOWED_ORIGINS lists all devices that need access
+- ✅ Rate limiting enabled (or consciously disabled)
+- ✅ HTTPS enforced (COOKIE_SECURE=true)
+- ✅ Strong passwords enforced for all users
+- ✅ Network firewall configured
+- ✅ Regular backups enabled
 
 ---
 

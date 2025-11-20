@@ -91,11 +91,11 @@ Familiarize yourself with the project structure:
 
 Before submitting your PR, ensure:
 
-- [ ] Code follows project conventions
-- [ ] Tests are written and passing
-- [ ] Documentation is updated
-- [ ] No linting errors
-- [ ] PR description is clear and complete
+- ✅ Code follows project conventions
+- ✅ Tests are written and passing
+- ✅ Documentation is updated
+- ✅ No linting errors
+- ✅ PR description is clear and complete
 
 ## 🙋‍♀️ Getting Help
 

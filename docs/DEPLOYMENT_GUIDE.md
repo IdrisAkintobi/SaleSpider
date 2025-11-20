@@ -89,10 +89,9 @@ docker compose up -d
 
 - [Neon](https://neon.tech) (PostgreSQL)
 - [Supabase](https://supabase.com) (PostgreSQL)
-- [PlanetScale](https://planetscale.com) (MySQL)
 - [Railway](https://railway.app) (PostgreSQL)
 - [Heroku Postgres](https://www.heroku.com/postgres)
-- Any other hosted PostgreSQL/MySQL provider
+- Any other hosted PostgreSQL provider
 
 **What's included:**
 
@@ -155,8 +154,8 @@ cp .env.cloud.example .env
 # 2. Configure your settings
 nano .env
 # Set: DATABASE_URL (from your database provider)
-# Set: JWT_SECRET, NEXTAUTH_SECRET
-# Set: NEXTAUTH_URL (your app URL)
+# Set: JWT_SECRET
+# Set: APP_URL (your app URL)
 # Set: SUPER_ADMIN_EMAIL, SUPER_ADMIN_PASSWORD
 
 # 3. Run database migrations
@@ -190,7 +189,7 @@ npm run seed:prod
 
 3. **Configure environment variables in Vercel:**
    - Add all variables from `.env`
-   - Update `NEXTAUTH_URL` with your Vercel URL
+   - Update `APP_URL` with your Vercel URL
 
 #### Railway (Database + Hosting)
 
@@ -207,8 +206,7 @@ npm run seed:prod
 
    ```env
    JWT_SECRET=your-secret
-   NEXTAUTH_SECRET=your-secret
-   NEXTAUTH_URL=${{RAILWAY_PUBLIC_DOMAIN}}
+   APP_URL=${{RAILWAY_PUBLIC_DOMAIN}}
    SUPER_ADMIN_EMAIL=admin@example.com
    SUPER_ADMIN_PASSWORD=SecurePass123!
    SETUP_BACKUP=false
@@ -254,7 +252,6 @@ Edit your `.env` file with these required settings:
 ```bash
 # JWT and authentication secrets (required)
 JWT_SECRET=your-super-secret-jwt-key-min-32-characters-long
-NEXTAUTH_SECRET=your-nextauth-secret-key-min-32-characters-long
 
 # Super admin account
 SUPER_ADMIN_EMAIL=admin@yourcompany.com
@@ -373,7 +370,6 @@ LANGUAGE=en
 # Feature flags
 ENABLE_ANALYTICS=false
 ENABLE_REPORTS=true
-ENABLE_BARCODE_SCANNER=true
 ```
 
 ### Complete Configuration Reference

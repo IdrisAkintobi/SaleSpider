@@ -230,7 +230,6 @@ POSTGRES_PASSWORD=YourSecurePassword123!
 
 # Application Security
 JWT_SECRET=your-super-secret-jwt-key-min-32-characters-long
-NEXTAUTH_SECRET=your-nextauth-secret-key-min-32-characters-long
 
 # Admin Account
 SUPER_ADMIN_EMAIL=admin@yourcompany.com

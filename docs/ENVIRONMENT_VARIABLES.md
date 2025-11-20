@@ -61,13 +61,12 @@ HOST_IP=127.0.0.1
 
 ### Security Configuration
 
-| Variable          | Default                    | Description                              | Required |
-| ----------------- | -------------------------- | ---------------------------------------- | -------- |
-| `JWT_SECRET`      | (none)                     | Secret key for JWT tokens (min 32 chars) | Yes      |
-| `TOKEN_EXPIRY`    | `12h`                      | JWT token expiration time                | No       |
-| `COOKIE_SECURE`   | `true`                     | Enable secure cookies (HTTPS only)       | No       |
-| `NEXTAUTH_SECRET` | (none)                     | NextAuth.js secret key (min 32 chars)    | Yes      |
-| `NEXTAUTH_URL`    | `https://salespider.local` | Base URL for NextAuth.js callbacks       | Yes      |
+| Variable        | Default                    | Description                              | Required |
+| --------------- | -------------------------- | ---------------------------------------- | -------- |
+| `JWT_SECRET`    | (none)                     | Secret key for JWT tokens (min 32 chars) | Yes      |
+| `TOKEN_EXPIRY`  | `12h`                      | JWT token expiration time                | No       |
+| `COOKIE_SECURE` | `true`                     | Enable secure cookies (HTTPS only)       | No       |
+| `APP_URL`       | `https://salespider.local` | Base URL for the application             | Yes      |
 
 ### Admin Account
 
@@ -113,12 +112,11 @@ All the above app settings have corresponding `NEXT_PUBLIC_` versions that make 
 
 ### Feature Flags
 
-| Variable                 | Default | Description                  |
-| ------------------------ | ------- | ---------------------------- |
-| `ENABLE_ANALYTICS`       | `false` | Enable analytics features    |
-| `ENABLE_REPORTS`         | `true`  | Enable reporting features    |
-| `ENABLE_BARCODE_SCANNER` | `true`  | Enable barcode scanning      |
-| `OFFLINE_MODE`           | `true`  | Enable offline functionality |
+| Variable           | Default | Description                  |
+| ------------------ | ------- | ---------------------------- |
+| `ENABLE_ANALYTICS` | `false` | Enable analytics features    |
+| `ENABLE_REPORTS`   | `true`  | Enable reporting features    |
+| `OFFLINE_MODE`     | `true`  | Enable offline functionality |
 
 ### Performance Settings
 
@@ -394,7 +392,6 @@ The system validates critical environment variables on startup. Missing required
 **Required Variables:**
 
 - `JWT_SECRET` (min 32 characters)
-- `NEXTAUTH_SECRET` (min 32 characters)
 - `SUPER_ADMIN_EMAIL`
 - `SUPER_ADMIN_PASSWORD`
 - `POSTGRES_PASSWORD` (for self-hosted)
