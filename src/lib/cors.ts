@@ -34,15 +34,25 @@ export function checkCORS(request: NextRequest): NextResponse | null {
     try {
       const allowedUrl = new URL(allowed)
       const originUrl = new URL(origin)
-      return allowedUrl.host === originUrl.host
+      // Match both protocol and host
+      return (
+        allowedUrl.protocol === originUrl.protocol &&
+        allowedUrl.host === originUrl.host
+      )
     } catch {
       return false
     }
   })
 
   if (!isAllowed) {
+    // Log for debugging (only in development)
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('CORS blocked origin:', origin)
+    }
     return new NextResponse(
-      JSON.stringify({ message: 'Forbidden - Invalid origin' }),
+      JSON.stringify({
+        message: 'Forbidden - Invalid origin',
+      }),
       {
         status: 403,
         headers: { 'Content-Type': 'application/json' },

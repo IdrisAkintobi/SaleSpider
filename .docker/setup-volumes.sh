@@ -16,12 +16,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # Load environment variables from project root
-if [ -f "$PROJECT_ROOT/.env" ]; then
+if [[ -f "$PROJECT_ROOT/.env" ]]; then
     set -a
     source "$PROJECT_ROOT/.env"
     set +a
     echo -e "${GREEN}Loaded environment from $PROJECT_ROOT/.env${NC}"
-elif [ -f .env ]; then
+elif [[ -f .env ]]; then
     set -a
     source .env
     set +a

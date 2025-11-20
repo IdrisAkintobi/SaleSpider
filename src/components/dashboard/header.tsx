@@ -165,14 +165,14 @@ export function DashboardHeader() {
 
 // Example breadcrumb generation (can be more sophisticated)
 function generateBreadcrumbs(pathname: string, t: (key: string) => string) {
-  const paths = pathname.split('/').filter(p => p)
+  const paths = pathname.split('/').filter(Boolean)
   const crumbs = [{ href: '/dashboard/overview', label: t('dashboard') }]
   let currentPath = '/dashboard'
-  paths.slice(1).forEach(part => {
-    if (part === 'dashboard') return
+  for (const part of paths.slice(1)) {
+    if (part === 'dashboard') continue
     currentPath += `/${part}`
     // Prefer i18n route labels under `routes.*`, fall back to humanized slug
-    const labelKey = part.replace(/-/g, '_')
+    const labelKey = part.replaceAll('-', '_')
     const routeKey = `routes.${labelKey}`
     const translated = t(routeKey)
 
@@ -188,6 +188,6 @@ function generateBreadcrumbs(pathname: string, t: (key: string) => string) {
       href: currentPath,
       label,
     })
-  })
+  }
   return crumbs
 }

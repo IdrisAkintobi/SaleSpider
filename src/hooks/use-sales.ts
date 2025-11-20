@@ -26,7 +26,7 @@ export interface SaleQueryResult {
   totalSalesValue?: number
 }
 
-async function fetchSalesData(params: UseSalesParams = {}) {
+function buildSalesQueryParams(params: UseSalesParams): URLSearchParams {
   const query = new URLSearchParams()
   if (params.page) query.set('page', params.page.toString())
   if (params.pageSize) query.set('pageSize', params.pageSize.toString())
@@ -39,19 +39,10 @@ async function fetchSalesData(params: UseSalesParams = {}) {
     query.set('paymentMethod', params.paymentMethod)
   if (params.from) query.set('from', params.from)
   if (params.to) query.set('to', params.to)
-  const res = await fetch(`/api/sales?${query.toString()}`)
-  if (!res.ok) {
-    const text = await res.text()
-    let errorMessage = 'Failed to fetch sales'
-    try {
-      const error = JSON.parse(text)
-      errorMessage = error.message || errorMessage
-    } catch {
-      errorMessage = text || errorMessage
-    }
-    throw new Error(errorMessage)
-  }
+  return query
+}
 
+async function parseResponseText(res: Response) {
   const text = await res.text()
   if (!text || text.trim() === '') {
     throw new Error(
@@ -60,12 +51,35 @@ async function fetchSalesData(params: UseSalesParams = {}) {
   }
 
   try {
-    return JSON.parse(text) as SaleQueryResult
+    return JSON.parse(text)
   } catch {
     throw new Error(
       'Server returned invalid data. Please try again or contact support if the issue persists.'
     )
   }
+}
+
+async function handleErrorResponse(res: Response, defaultMessage: string) {
+  const text = await res.text()
+  let errorMessage = defaultMessage
+  try {
+    const error = JSON.parse(text)
+    errorMessage = error.message || errorMessage
+  } catch {
+    errorMessage = text || errorMessage
+  }
+  throw new Error(errorMessage)
+}
+
+async function fetchSalesData(params: UseSalesParams = {}) {
+  const query = buildSalesQueryParams(params)
+  const res = await fetch(`/api/sales?${query.toString()}`)
+
+  if (!res.ok) {
+    await handleErrorResponse(res, 'Failed to fetch sales')
+  }
+
+  return parseResponseText(res) as Promise<SaleQueryResult>
 }
 
 export function useSales(params: UseSalesParams = {}) {
@@ -91,31 +105,10 @@ async function createSale(saleData: {
   })
 
   if (!res.ok) {
-    const text = await res.text()
-    let errorMessage = 'Failed to record sale'
-    try {
-      const error = JSON.parse(text)
-      errorMessage = error.message || errorMessage
-    } catch {
-      errorMessage = text || errorMessage
-    }
-    throw new Error(errorMessage)
+    await handleErrorResponse(res, 'Failed to record sale')
   }
 
-  const text = await res.text()
-  if (!text || text.trim() === '') {
-    throw new Error(
-      'Server returned an empty response. Please check if the API is running correctly.'
-    )
-  }
-
-  try {
-    return JSON.parse(text)
-  } catch {
-    throw new Error(
-      'Server returned invalid data. Please try again or contact support if the issue persists.'
-    )
-  }
+  return parseResponseText(res)
 }
 
 export function useCreateSale() {

@@ -7,14 +7,16 @@ set -e
 echo "Configuring pgBackRest in PostgreSQL container..."
 
 # Create necessary directories
-mkdir -p /var/lib/pgbackrest \
+mkdir -p /var/lib/pgbackrest/archive \
+         /var/lib/pgbackrest/backup \
          /var/log/pgbackrest \
          /var/spool/pgbackrest
 
-# Set permissions
-chown -R postgres:postgres /var/lib/pgbackrest \
-                          /var/log/pgbackrest \
-                          /var/spool/pgbackrest
+# Set permissions for cross-container access
+# Use 777 to allow both postgres (UID 999) and backup container (root) to access
+chmod -R 777 /var/lib/pgbackrest
+chmod -R 777 /var/spool/pgbackrest
+chmod -R 755 /var/log/pgbackrest
 
 # Link our mounted config to /etc/pgbackrest
 echo "Linking pgBackRest configuration from shared volume..."
@@ -22,7 +24,7 @@ rm -rf /etc/pgbackrest
 ln -s /pgbackrest-config /etc/pgbackrest
 
 # Check if backups are disabled
-if [ "${PGBACKREST_REPO1_TYPE:-none}" = "none" ]; then
+if [[ "${PGBACKREST_REPO1_TYPE:-none}" = "none" ]]; then
     echo "Backups disabled - updating PostgreSQL configuration to disable archiving"
 
     # Update postgresql.conf to disable archiving
@@ -32,7 +34,7 @@ if [ "${PGBACKREST_REPO1_TYPE:-none}" = "none" ]; then
     echo "PostgreSQL archiving disabled"
 else
     # Verify configuration
-    if [ -f /etc/pgbackrest/pgbackrest.conf ]; then
+    if [[ -f /etc/pgbackrest/pgbackrest.conf ]]; then
         echo "Configuration found and ready"
         cat /etc/pgbackrest/pgbackrest.conf
     else

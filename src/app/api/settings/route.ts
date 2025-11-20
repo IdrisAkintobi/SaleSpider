@@ -19,7 +19,7 @@ function buildDefaultSettingsData() {
     currency: process.env.CURRENCY || DEFAULT_SETTINGS.currency,
     currencySymbol:
       process.env.CURRENCY_SYMBOL || DEFAULT_SETTINGS.currencySymbol,
-    vatPercentage: parseFloat(
+    vatPercentage: Number.parseFloat(
       process.env.VAT_PERCENTAGE || DEFAULT_SETTINGS.vatPercentage.toString()
     ),
     timezone: process.env.TIMEZONE || DEFAULT_SETTINGS.timezone,
@@ -51,12 +51,12 @@ export async function GET() {
     let settings = await prisma.appSettings.findFirst()
 
     // If no settings exist, create default settings
-    if (!settings) {
+    settings ??= await (async () => {
       logger.warn('No settings found, creating defaults')
-      settings = await prisma.appSettings.create({
+      return prisma.appSettings.create({
         data: buildDefaultSettingsData(),
       })
-    }
+    })()
 
     logger.debug({ settingsId: settings.id }, 'GET /api/settings success')
     return jsonOk(settings)
@@ -136,11 +136,9 @@ export async function PATCH(request: NextRequest) {
     let settings = await prisma.appSettings.findFirst()
 
     // If no settings exist, create with defaults
-    if (!settings) {
-      settings = await prisma.appSettings.create({
-        data: buildDefaultSettingsData(),
-      })
-    }
+    settings ??= await prisma.appSettings.create({
+      data: buildDefaultSettingsData(),
+    })
 
     // Update settings with provided values
     const updatedSettings = await prisma.appSettings.update({

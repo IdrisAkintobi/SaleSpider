@@ -7,8 +7,13 @@ import { checkCORS } from './lib/cors'
 const secret = new TextEncoder().encode(process.env.JWT_SECRET)
 
 export async function middleware(request: NextRequest) {
-  // Check CORS for API routes
-  if (request.nextUrl.pathname.startsWith('/api')) {
+  // Check CORS for API routes (excluding auth endpoints which are public)
+  if (
+    request.nextUrl.pathname.startsWith('/api') &&
+    !request.nextUrl.pathname.startsWith('/api/auth') &&
+    !request.nextUrl.pathname.startsWith('/api/health') &&
+    !request.nextUrl.pathname.startsWith('/api/settings')
+  ) {
     const corsError = checkCORS(request)
     if (corsError) return corsError
   }

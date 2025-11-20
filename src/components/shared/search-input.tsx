@@ -17,7 +17,7 @@ export function SearchInput({
   isLoading,
   placeholderKey = 'search',
   placeholder,
-}: SearchInputProps) {
+}: Readonly<SearchInputProps>) {
   const t = useTranslation()
 
   return (

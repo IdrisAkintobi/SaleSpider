@@ -10,6 +10,49 @@ import { createChildLogger } from '@/lib/logger'
 import { prisma } from '@/lib/prisma'
 const logger = createChildLogger('api:products:id')
 
+async function validateAndNormalizeGtin(
+  gtin: string | null | undefined,
+  productId: string
+) {
+  const normalizedGtin = gtin?.trim() || null
+
+  if (normalizedGtin) {
+    const existingProduct = await prisma.product.findUnique({
+      where: { gtin: normalizedGtin },
+    })
+
+    if (existingProduct && existingProduct.id !== productId) {
+      return {
+        error: jsonError(
+          `A product with GTIN ${normalizedGtin} already exists: ${existingProduct.name}`,
+          409,
+          { code: 'DUPLICATE_GTIN' }
+        ),
+      }
+    }
+  }
+
+  return { normalizedGtin }
+}
+
+function prepareUpdatePayload(updateData: any) {
+  const updatePayload: any = { ...updateData }
+  const changedFields: Record<string, any> = {}
+
+  if (updateData.quantity !== undefined) {
+    updatePayload.quantity = { increment: updateData.quantity }
+    changedFields.quantity = `+${updateData.quantity}`
+  }
+
+  for (const key of Object.keys(updateData)) {
+    if (key !== 'quantity') {
+      changedFields[key] = updateData[key]
+    }
+  }
+
+  return { updatePayload, changedFields }
+}
+
 // Function to get product by ID
 export async function GET(
   _: Request,
@@ -56,7 +99,6 @@ export async function PATCH(
   try {
     // Check if product exists before update
     const exists = await productExists(prisma, id)
-
     if (!exists) {
       return jsonError('Product not found', 404, { code: 'NOT_FOUND' })
     }
@@ -71,45 +113,15 @@ export async function PATCH(
       })
     }
 
-    // Normalize GTIN: convert empty string to null to allow multiple products without GTIN
+    // Normalize GTIN and check for duplicates
     if ('gtin' in updateData) {
-      updateData.gtin = updateData.gtin?.trim() || null
-
-      // Check if another product already has this GTIN (only if GTIN is provided)
-      if (updateData.gtin) {
-        const existingProduct = await prisma.product.findUnique({
-          where: { gtin: updateData.gtin },
-        })
-
-        if (existingProduct && existingProduct.id !== id) {
-          return jsonError(
-            `A product with GTIN ${updateData.gtin} already exists: ${existingProduct.name}`,
-            409,
-            { code: 'DUPLICATE_GTIN' }
-          )
-        }
-      }
+      const gtinResult = await validateAndNormalizeGtin(updateData.gtin, id)
+      if (gtinResult.error) return gtinResult.error
+      updateData.gtin = gtinResult.normalizedGtin
     }
 
     // Prepare the data for update and audit trail
-    const updatePayload: any = { ...updateData }
-    const changedFields: Record<string, any> = {}
-
-    // Handle quantity increment logic
-    if (updateData.quantity !== undefined) {
-      updatePayload.quantity = {
-        increment: updateData.quantity,
-      }
-      // For audit trail, we need to track the increment amount
-      changedFields.quantity = `+${updateData.quantity}`
-    }
-
-    // Track other changed fields for audit trail
-    for (const key of Object.keys(updateData)) {
-      if (key !== 'quantity') {
-        changedFields[key] = updateData[key]
-      }
-    }
+    const { updatePayload, changedFields } = prepareUpdatePayload(updateData)
 
     const updatedProduct = await prisma.product.update({
       where: { id },

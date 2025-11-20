@@ -9,7 +9,7 @@ interface RateLimitEntry {
 }
 
 class RateLimiter {
-  private attempts: Map<string, RateLimitEntry> = new Map()
+  private readonly attempts: Map<string, RateLimitEntry> = new Map()
   private readonly maxAttempts: number
   private readonly windowMs: number
   private readonly blockDurationMs: number

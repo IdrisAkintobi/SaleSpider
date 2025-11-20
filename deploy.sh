@@ -126,7 +126,7 @@ check_requirements() {
     
     # Check available disk space
     local available_space=$(df "$SCRIPT_DIR" | awk 'NR==2 {print $4}')
-    if [ "$available_space" -lt 2097152 ]; then  # 2GB in KB
+    if [[ "$available_space" -lt 2097152 ]]; then  # 2GB in KB
         warning "Low disk space detected. At least 2GB recommended."
     fi
     
@@ -145,13 +145,13 @@ load_environment() {
     check_requirements
     
     # Load from .env file if it exists
-    if [ -f "$SCRIPT_DIR/.env" ]; then
+    if [[ -f "$SCRIPT_DIR/.env" ]]; then
         log "Loading existing .env file..."
         set -a  # automatically export all variables
         source "$SCRIPT_DIR/.env"
         set +a
         success "Environment loaded from .env file"
-    elif [ -f "$SCRIPT_DIR/env.example" ]; then
+    elif [[ -f "$SCRIPT_DIR/env.example" ]]; then
         log "Creating .env from example..."
         cp "$SCRIPT_DIR/env.example" "$SCRIPT_DIR/.env"
         warning "Please edit .env file with your configuration before proceeding"
@@ -172,7 +172,7 @@ load_environment() {
     export ARCHITECTURE="${ARCHITECTURE:-$(detect_architecture)}"
 
     # Resolve HOST_IP if set to "auto" or empty
-    if [ -z "$HOST_IP" ] || [ "$HOST_IP" = "auto" ]; then
+    if [[ -z "$HOST_IP" ]] || [[ "$HOST_IP" = "auto" ]]; then
         export HOST_IP="$(get_host_ip)"
         log "Auto-detected HOST_IP: $HOST_IP"
     fi
@@ -210,19 +210,19 @@ generate_secrets() {
     log "Generating secure secrets..."
     
     # Generate JWT secret if not set
-    if [ -z "$JWT_SECRET" ] || [ "$JWT_SECRET" = "your-super-secret-jwt-key-min-32-characters-long" ]; then
+    if [[ -z "$JWT_SECRET" ]] || [[ "$JWT_SECRET" = "your-super-secret-jwt-key-min-32-characters-long" ]]; then
         export JWT_SECRET=$(openssl rand -base64 32 2>/dev/null || head -c 32 /dev/urandom | base64 | tr -d '\n')
         log "Generated new JWT secret"
     fi
     
     # Generate backup encryption key if not set
-    if [ -z "$BACKUP_ENCRYPTION_KEY" ] || [ "$BACKUP_ENCRYPTION_KEY" = "your-32-character-backup-encryption-key" ]; then
+    if [[ -z "$BACKUP_ENCRYPTION_KEY" ]] || [[ "$BACKUP_ENCRYPTION_KEY" = "your-32-character-backup-encryption-key" ]]; then
         export BACKUP_ENCRYPTION_KEY=$(openssl rand -base64 32 2>/dev/null || head -c 32 /dev/urandom | base64 | tr -d '\n')
         log "Generated new backup encryption key"
     fi
     
     # Update .env file with generated secrets
-    if [ -f "$SCRIPT_DIR/.env" ]; then
+    if [[ -f "$SCRIPT_DIR/.env" ]]; then
         # Update secrets in .env file
         sed -i.tmp "s|JWT_SECRET=.*|JWT_SECRET=$JWT_SECRET|g" "$SCRIPT_DIR/.env"
         sed -i.tmp "s|BACKUP_ENCRYPTION_KEY=.*|BACKUP_ENCRYPTION_KEY=$BACKUP_ENCRYPTION_KEY|g" "$SCRIPT_DIR/.env"
@@ -241,33 +241,33 @@ validate_config() {
     local errors=0
     
     # Check required variables
-    if [ -z "$POSTGRES_PASSWORD" ] || [ "$POSTGRES_PASSWORD" = "SecurePostgresPassword123!" ]; then
+    if [[ -z "$POSTGRES_PASSWORD" ]] || [[ "$POSTGRES_PASSWORD" = "SecurePostgresPassword123!" ]]; then
         error "POSTGRES_PASSWORD must be set to a secure password"
         errors=$((errors + 1))
     fi
     
-    if [ -z "$SUPER_ADMIN_EMAIL" ]; then
+    if [[ -z "$SUPER_ADMIN_EMAIL" ]]; then
         error "SUPER_ADMIN_EMAIL must be set"
         errors=$((errors + 1))
     fi
 
-    if [ -z "$SUPER_ADMIN_PASSWORD" ] || [ "$SUPER_ADMIN_PASSWORD" = "ChangeThisPassword123!" ]; then
+    if [[ -z "$SUPER_ADMIN_PASSWORD" ]] || [[ "$SUPER_ADMIN_PASSWORD" = "ChangeThisPassword123!" ]]; then
         error "SUPER_ADMIN_PASSWORD must be set to a secure password"
         errors=$((errors + 1))
     fi
     
-    if [ -z "$DOMAIN" ] || [ "$DOMAIN" = "salespider.local" ]; then
+    if [[ -z "$DOMAIN" ]] || [[ "$DOMAIN" = "salespider.local" ]]; then
         warning "DOMAIN is set to default value. Consider setting a custom domain."
     fi
     
     # Validate AWS configuration if backup is enabled
-    if [ "${BACKUP_REPO2_TYPE:-}" = "s3" ]; then
-        if [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ] || [ -z "$AWS_S3_BUCKET" ]; then
+    if [[ "${BACKUP_REPO2_TYPE:-}" = "s3" ]]; then
+        if [[ -z "$AWS_ACCESS_KEY_ID" ]] || [[ -z "$AWS_SECRET_ACCESS_KEY" ]] || [[ -z "$AWS_S3_BUCKET" ]]; then
             warning "AWS S3 backup is configured but credentials are missing"
         fi
     fi
     
-    if [ $errors -gt 0 ]; then
+    if [[ $errors -gt 0 ]]; then
         error "Configuration validation failed with $errors errors"
         exit 1
     fi
@@ -282,7 +282,7 @@ generate_ssl_certificates() {
     local ssl_dir="$DATA_PATH/ssl"
     
     # Check if certificates already exist
-    if [ -f "$ssl_dir/cert.pem" ] && [ -f "$ssl_dir/key.pem" ]; then
+    if [[ -f "$ssl_dir/cert.pem" ]] && [[ -f "$ssl_dir/key.pem" ]]; then
         success "SSL certificates already exist"
         return 0
     fi
@@ -293,7 +293,7 @@ generate_ssl_certificates() {
     export SSL_DIR="$ssl_dir"
     
     # Run the existing SSL generation script
-    if [ -f "$DOCKER_DIR/scripts/setup/setup-ssl.sh" ]; then
+    if [[ -f "$DOCKER_DIR/scripts/setup/setup-ssl.sh" ]]; then
         bash "$DOCKER_DIR/scripts/setup/setup-ssl.sh" || {
             error "Failed to generate SSL certificates"
             exit 1
@@ -337,7 +337,7 @@ start_services() {
     local profiles=""
 
     # Only activate backup profile when type is set to: posix, s3, azure, or gcs
-    if [ -n "$backup_type" ] && [ "$backup_type" != "none" ]; then
+    if [[ -n "$backup_type" ]] && [[ "$backup_type" != "none" ]]; then
         case "$backup_type" in
             posix|s3|azure|gcs)
                 profiles="--profile backup"
@@ -351,7 +351,7 @@ start_services() {
         esac
     else
         info "Backup system disabled"
-        if [ -z "$backup_type" ] || [ "$backup_type" = "none" ]; then
+        if [[ -z "$backup_type" ]] || [[ "$backup_type" = "none" ]]; then
             info "To enable backups, set PGBACKREST_REPO1_TYPE to: posix, s3, azure, or gcs"
             info "See BACKUP_GUIDE.md for configuration details"
         fi
@@ -364,13 +364,13 @@ start_services() {
     local timeout=120  # 2 minutes
     local elapsed=0
     
-    while [ $elapsed -lt $timeout ]; do
+    while [[ $elapsed -lt $timeout ]]; do
         # Count only running services with health checks (exclude setup and other one-time services)
         local running_services=$($COMPOSE_CMD -f "$DOCKER_DIR/docker-compose.yml" --env-file "$SCRIPT_DIR/.env" ps --format json 2>/dev/null | jq -r 'select(.State == "running") | .Name' | wc -l || echo "0")
         local healthy_services=$($COMPOSE_CMD -f "$DOCKER_DIR/docker-compose.yml" --env-file "$SCRIPT_DIR/.env" ps --format json 2>/dev/null | jq -r 'select(.Health == "healthy") | .Name' | wc -l || echo "0")
         
         # Check if we have running services and they are healthy
-        if [ "$running_services" -gt 0 ] && [ "$healthy_services" -ge 2 ]; then
+        if [[ "$running_services" -gt 0 ]] && [[ "$healthy_services" -ge 2 ]]; then
             success "Core services are healthy! (app, postgres)"
             break
         fi
@@ -380,7 +380,7 @@ start_services() {
         elapsed=$((elapsed + 10))
     done
     
-    if [ $elapsed -ge $timeout ]; then
+    if [[ $elapsed -ge $timeout ]]; then
         warning "Some services may not be fully healthy yet"
         log "Check service status with: $0 status"
         log ""
@@ -451,11 +451,11 @@ show_status() {
     
     echo ""
     echo -e "💾 ${CYAN}Storage Usage:${NC}"
-    if [ -d "$DATA_PATH" ]; then
+    if [[ -d "$DATA_PATH" ]]; then
         du -sh "$DATA_PATH" 2>/dev/null || echo "Data directory not accessible"
     fi
     
-    if [ -d "$BACKUP_PATH" ]; then
+    if [[ -d "$BACKUP_PATH" ]]; then
         du -sh "$BACKUP_PATH" 2>/dev/null || echo "Backup directory not accessible"
     fi
     
@@ -469,7 +469,7 @@ show_status() {
 show_logs() {
     local service="$1"
     
-    if [ -n "$service" ]; then
+    if [[ -n "$service" ]]; then
         log "Showing logs for service: $service"
         $COMPOSE_CMD -f "$DOCKER_DIR/docker-compose.yml" --env-file "$SCRIPT_DIR/.env" logs -f "$service"
     else
@@ -508,7 +508,7 @@ reset_deployment() {
     echo "Are you absolutely sure? Type 'DELETE' to confirm:"
     read -r confirmation
     
-    if [ "$confirmation" != "DELETE" ]; then
+    if [[ "$confirmation" != "DELETE" ]]; then
         log "Reset cancelled"
         return 0
     fi

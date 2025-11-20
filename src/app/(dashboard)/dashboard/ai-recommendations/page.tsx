@@ -89,6 +89,12 @@ export default function AIRecommendationsPage() {
     )
   }
 
+  const getButtonLabel = () => {
+    if (isLoading) return t('generating')
+    if (insights) return t('refresh_insights')
+    return t('generate_insights')
+  }
+
   return (
     <>
       <PageHeader
@@ -103,11 +109,7 @@ export default function AIRecommendationsPage() {
             <RefreshCw
               className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
             />
-            {isLoading
-              ? t('generating')
-              : insights
-                ? t('refresh_insights')
-                : t('generate_insights')}
+            {getButtonLabel()}
           </Button>
         }
       />

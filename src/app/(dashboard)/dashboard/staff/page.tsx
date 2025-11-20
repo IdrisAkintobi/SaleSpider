@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast'
 
 import { useStaff, useUpdateUserStatus } from '@/hooks/use-staff'
 import type { User, Role, UserStatus } from '@/lib/types'
-import { ArrowUp, ArrowDown, Pencil } from 'lucide-react'
+import { ArrowUp, ArrowDown, Pencil, Unlock } from 'lucide-react'
 import { SearchInput } from '@/components/shared/search-input'
 import React, { useMemo, useState } from 'react'
 import { AddStaffDialog } from './add-staff-dialog'
@@ -35,7 +35,6 @@ import { GenericTable } from '@/components/ui/generic-table'
 import { StaffTableSkeleton } from '@/components/dashboard/staff/staff-table-skeleton'
 import { useTranslation } from '@/lib/i18n'
 import { useIsAccountLocked, useUnlockAccount } from '@/hooks/use-rate-limit'
-import { Unlock } from 'lucide-react'
 import { fetchJson } from '@/lib/fetch-utils'
 
 // Permission check helpers
@@ -54,11 +53,11 @@ function StaffActions({
   staff,
   canEdit,
   onEdit,
-}: {
+}: Readonly<{
   staff: User
   canEdit: boolean
   onEdit: () => void
-}) {
+}>) {
   const t = useTranslation()
   const { toast } = useToast()
   const isLocked = useIsAccountLocked(staff.email)

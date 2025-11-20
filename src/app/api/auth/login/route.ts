@@ -16,6 +16,79 @@ const tokenExpiry = process.env.TOKEN_EXPIRY ?? '12h'
 const alg = 'HS256'
 const logger = createChildLogger('api:auth:login')
 
+async function checkRateLimit(req: NextRequest, email: string) {
+  const clientId = getClientIdentifier(req, email)
+
+  if (isRateLimitingEnabled() && loginRateLimiter.isRateLimited(clientId)) {
+    const resetTime = loginRateLimiter.getResetTime(clientId)
+    logger.warn({ email, resetTime }, 'Rate limit exceeded for account')
+    return {
+      error: NextResponse.json(
+        {
+          message: `Too many failed login attempts for this account. Please try again in ${Math.ceil(resetTime / 60)} minutes.`,
+          retryAfter: resetTime,
+        },
+        { status: 429 }
+      ),
+    }
+  }
+
+  return { clientId }
+}
+
+async function validateCredentials(
+  email: string,
+  password: string,
+  clientId: string
+) {
+  const user = await prisma.user.findUnique({ where: { email } })
+
+  if (!user) {
+    if (isRateLimitingEnabled()) {
+      loginRateLimiter.recordFailedAttempt(clientId)
+    }
+    logger.warn({ email }, 'Login attempt with non-existent user')
+    return {
+      error: NextResponse.json(
+        { message: 'Invalid credentials' },
+        { status: 401 }
+      ),
+    }
+  }
+
+  if (user.status !== 'ACTIVE') {
+    logger.warn(
+      { email, status: user.status },
+      'Login attempt with inactive account'
+    )
+    return {
+      error: NextResponse.json(
+        {
+          message: 'Your account is inactive. Please contact an administrator.',
+        },
+        { status: 403 }
+      ),
+    }
+  }
+
+  const passwordMatch = await argon2.verify(user.password, password)
+
+  if (!passwordMatch) {
+    if (isRateLimitingEnabled()) {
+      loginRateLimiter.recordFailedAttempt(clientId)
+    }
+    logger.warn({ email }, 'Login attempt with incorrect password')
+    return {
+      error: NextResponse.json(
+        { message: 'Invalid credentials' },
+        { status: 401 }
+      ),
+    }
+  }
+
+  return { user }
+}
+
 // Function to login
 export async function POST(req: NextRequest) {
   const startTime = Date.now()
@@ -42,70 +115,23 @@ export async function POST(req: NextRequest) {
 
     const { username: email, password } = validation.data
 
-    // Use email as identifier for rate limiting (not IP)
-    // This prevents one user's failed attempts from locking out the entire store
-    const clientId = getClientIdentifier(req, email)
+    // Check rate limit
+    const rateLimitResult = await checkRateLimit(req, email)
+    if (rateLimitResult.error) return rateLimitResult.error
 
-    // Check rate limit (if enabled)
-    if (isRateLimitingEnabled() && loginRateLimiter.isRateLimited(clientId)) {
-      const resetTime = loginRateLimiter.getResetTime(clientId)
-      logger.warn({ email, resetTime }, 'Rate limit exceeded for account')
-      return NextResponse.json(
-        {
-          message: `Too many failed login attempts for this account. Please try again in ${Math.ceil(resetTime / 60)} minutes.`,
-          retryAfter: resetTime,
-        },
-        { status: 429 }
-      )
-    }
+    // Validate credentials
+    const validationResult = await validateCredentials(
+      email,
+      password,
+      rateLimitResult.clientId
+    )
+    if (validationResult.error) return validationResult.error
 
-    const user = await prisma.user.findUnique({
-      where: {
-        email,
-      },
-    })
-
-    if (!user) {
-      if (isRateLimitingEnabled()) {
-        loginRateLimiter.recordFailedAttempt(clientId)
-      }
-      logger.warn({ email }, 'Login attempt with non-existent user')
-      return NextResponse.json(
-        { message: 'Invalid credentials' },
-        { status: 401 }
-      )
-    }
-
-    if (user.status !== 'ACTIVE') {
-      logger.warn(
-        { email, status: user.status },
-        'Login attempt with inactive account'
-      )
-      return NextResponse.json(
-        {
-          message: 'Your account is inactive. Please contact an administrator.',
-        },
-        { status: 403 }
-      )
-    }
-
-    // Use argon2.verify for password comparison
-    const passwordMatch = await argon2.verify(user.password, password)
-
-    if (!passwordMatch) {
-      if (isRateLimitingEnabled()) {
-        loginRateLimiter.recordFailedAttempt(clientId)
-      }
-      logger.warn({ email }, 'Login attempt with incorrect password')
-      return NextResponse.json(
-        { message: 'Invalid credentials' },
-        { status: 401 }
-      )
-    }
+    const { user } = validationResult
 
     // Clear rate limit on successful login
     if (isRateLimitingEnabled()) {
-      loginRateLimiter.clearAttempts(clientId)
+      loginRateLimiter.clearAttempts(rateLimitResult.clientId)
     }
 
     const userData = {

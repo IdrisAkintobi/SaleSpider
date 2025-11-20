@@ -127,13 +127,53 @@ For offline operation within your local network:
 # In .env
 DOMAIN=salespider.local
 HOST_IP=192.168.1.100  # Your server's local IP
+ALLOWED_ORIGINS="https://salespider.local https://192.168.1.100"
 ```
 
 **Access from:**
 
-- Server: `https://localhost` or `https://192.168.1.100`
-- Other PCs: `https://192.168.1.100`
+- Server: `https://salespider.local` or `https://192.168.1.100`
+- Other PCs: `https://192.168.1.100` (or `https://salespider.local` with hosts file)
 - Mobile devices: `https://192.168.1.100`
+
+#### Configure Hosts File on Client Computers (Recommended)
+
+For a better experience, add the domain to the hosts file on each client computer. This allows users to access the application using the friendly domain name instead of the IP address.
+
+**On Windows:**
+
+1. Open Notepad as Administrator
+2. Open file: `C:\Windows\System32\drivers\etc\hosts`
+3. Add this line:
+   ```
+   192.168.1.100  salespider.local
+   ```
+4. Save and close
+
+**On macOS/Linux:**
+
+1. Open terminal
+2. Edit hosts file:
+   ```bash
+   sudo nano /etc/hosts
+   ```
+3. Add this line:
+   ```
+   192.168.1.100  salespider.local
+   ```
+4. Save (Ctrl+O, Enter, Ctrl+X)
+
+**On Android:**
+
+- Requires root access or use a hosts file editor app
+- Not recommended for most users - use IP address instead
+
+**On iOS:**
+
+- Not possible without jailbreak
+- Use IP address instead
+
+After configuring the hosts file, users can access the application at `https://salespider.local` from any device on the network.
 
 ### SSL Certificates for Offline
 

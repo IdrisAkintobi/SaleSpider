@@ -1,28 +1,10 @@
 'use client'
 
 import { PageHeader } from '@/components/shared/page-header'
-import { ReceiptPrinter } from '@/components/shared/receipt-printer'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { useAuth } from '@/contexts/auth-context'
 import { useToast } from '@/hooks/use-toast'
 import { useSales } from '@/hooks/use-sales'
@@ -32,29 +14,19 @@ import type { Sale } from '@/lib/types'
 import { exportSalesCSV } from '@/lib/csv-export'
 import {
   CalendarDays,
-  Filter,
   UserCircle,
-  Eye,
-  ArrowUp,
-  ArrowDown,
   ShoppingCart,
   Search,
   Download,
-  CalendarIcon,
 } from 'lucide-react'
 import React, { useMemo, useState, useEffect } from 'react'
-import { Calendar } from '@/components/ui/calendar'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
-import { format } from 'date-fns'
-import { cn } from '@/lib/utils'
 import type { DateRange } from 'react-day-picker'
 import { useTableControls } from '@/hooks/use-table-controls'
 import { GenericTable } from '@/components/ui/generic-table'
 import { SalesTableSkeleton } from '@/components/dashboard/sales/sales-table-skeleton'
+import { SalesFilters } from '@/components/dashboard/sales/sales-filters'
+import { SaleDetailDialog } from '@/components/dashboard/sales/sale-detail-dialog'
+import { createSalesTableColumns } from '@/components/dashboard/sales/sales-table-columns'
 import Link from 'next/link'
 import { useFormatCurrency } from '@/lib/currency'
 import { useTranslation } from '@/lib/i18n'
@@ -100,7 +72,6 @@ export default function SalesPage() {
   const [filterDateRange, setFilterDateRange] = useState<string>('all')
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false)
-  const [selectedSale, setSelectedSale] = useState<Sale | null>(null)
   const [isExporting, setIsExporting] = useState(false)
 
   // Fetch all cashiers and managers for dropdown (independent of current filter)
@@ -365,99 +336,29 @@ export default function SalesPage() {
       />
 
       <div className="mb-6 space-y-4">
-        <div className="flex flex-col lg:flex-row gap-3 overflow-x-auto">
-          <Input
-            placeholder={
-              userIsCashier
-                ? t('search_sales_product')
-                : t('search_sales_cashier')
-            }
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="w-full lg:w-[200px] flex-shrink-0"
-            icon={<Filter className="h-4 w-4 text-muted-foreground" />}
-          />
-          <PaymentMethodSelectShared
-            value={filterPaymentMethod}
-            onChange={handlePaymentMethodFilter}
-            options={enabledPaymentOptions}
-            t={t}
-          />
-          <CashierSelectShared
-            show={userIsManager}
-            value={filterCashier}
-            onChange={handleCashierFilter}
-            cashiers={uniqueCashiers}
-            t={t}
-          />
-          <DateRangeQuickSelectShared
-            value={filterDateRange}
-            onChange={handleDateRangeFilter}
-            t={t}
-            isCashier={userIsCashier}
-          />
-          <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  'w-full lg:w-[220px] justify-start text-left font-normal overflow-hidden flex-shrink-0',
-                  !dateRange ||
-                    (!dateRange.from &&
-                      !dateRange.to &&
-                      'text-muted-foreground')
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
-                <span className="truncate">
-                  {dateRange && dateRange.from && dateRange.to ? (
-                    <>
-                      {format(dateRange.from, 'LLL dd, y')} -{' '}
-                      {format(dateRange.to, 'LLL dd, y')}
-                    </>
-                  ) : (
-                    t('pick_date_range')
-                  )}
-                </span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                initialFocus
-                mode="range"
-                defaultMonth={dateRange?.from}
-                selected={dateRange}
-                onSelect={handleDateRangeSelect}
-                numberOfMonths={1}
-                disabled={date => {
-                  const today = new Date()
-                  const sevenDaysAgo = new Date(today)
-                  sevenDaysAgo.setDate(today.getDate() - 7)
-
-                  // For cashiers: disable dates older than 7 days
-                  if (userIsCashier) {
-                    return date > today || date < sevenDaysAgo
-                  }
-
-                  // For managers: only disable future dates
-                  return date > today || date < new Date('1900-01-01')
-                }}
-              />
-            </PopoverContent>
-          </Popover>
-          {dateRange && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setDateRange(undefined)
-                setIsDatePickerOpen(false)
-              }}
-            >
-              {t('clear_range')}
-            </Button>
-          )}
-        </div>
+        <SalesFilters
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          filterPaymentMethod={filterPaymentMethod}
+          onPaymentMethodChange={handlePaymentMethodFilter}
+          filterCashier={filterCashier}
+          onCashierChange={handleCashierFilter}
+          filterDateRange={filterDateRange}
+          onDateRangeChange={handleDateRangeFilter}
+          dateRange={dateRange}
+          onDateRangeSelect={handleDateRangeSelect}
+          isDatePickerOpen={isDatePickerOpen}
+          onDatePickerOpenChange={setIsDatePickerOpen}
+          onClearDateRange={() => {
+            setDateRange(undefined)
+            setIsDatePickerOpen(false)
+          }}
+          userIsManager={userIsManager}
+          userIsCashier={userIsCashier}
+          enabledPaymentOptions={enabledPaymentOptions}
+          uniqueCashiers={uniqueCashiers}
+          t={t}
+        />
 
         <Card>
           <CardContent className="p-4">
@@ -484,90 +385,7 @@ export default function SalesPage() {
       <Card className="shadow-lg">
         <CardContent className="p-0">
           <GenericTable
-            columns={[
-              {
-                key: 'createdAt',
-                label: (
-                  <span
-                    className="cursor-pointer"
-                    onClick={() => handleSort('createdAt')}
-                  >
-                    {t('date')}{' '}
-                    {sort === 'createdAt' &&
-                      (order === 'asc' ? (
-                        <ArrowUp className="inline w-3 h-3" />
-                      ) : (
-                        <ArrowDown className="inline w-3 h-3" />
-                      ))}
-                  </span>
-                ),
-                sortable: true,
-                onSort: () => handleSort('createdAt'),
-              },
-              {
-                key: 'cashierName',
-                label: (
-                  <span
-                    className="cursor-pointer"
-                    onClick={() => handleSort('cashierName')}
-                  >
-                    {t('cashier')}{' '}
-                    {sort === 'cashierName' &&
-                      (order === 'asc' ? (
-                        <ArrowUp className="inline w-3 h-3" />
-                      ) : (
-                        <ArrowDown className="inline w-3 h-3" />
-                      ))}
-                  </span>
-                ),
-                sortable: true,
-                onSort: () => handleSort('cashierName'),
-              },
-              { key: 'itemsCount', label: t('items_count') },
-              {
-                key: 'totalAmount',
-                label: (
-                  <span
-                    className="cursor-pointer"
-                    onClick={() => handleSort('totalAmount')}
-                  >
-                    {t('total_amount')}{' '}
-                    {sort === 'totalAmount' &&
-                      (order === 'asc' ? (
-                        <ArrowUp className="inline w-3 h-3" />
-                      ) : (
-                        <ArrowDown className="inline w-3 h-3" />
-                      ))}
-                  </span>
-                ),
-                sortable: true,
-                onSort: () => handleSort('totalAmount'),
-              },
-              {
-                key: 'paymentMode',
-                label: (
-                  <span
-                    className="cursor-pointer"
-                    onClick={() => handleSort('paymentMode')}
-                  >
-                    {t('payment_mode')}{' '}
-                    {sort === 'paymentMode' &&
-                      (order === 'asc' ? (
-                        <ArrowUp className="inline w-3 h-3" />
-                      ) : (
-                        <ArrowDown className="inline w-3 h-3" />
-                      ))}
-                  </span>
-                ),
-                sortable: true,
-                onSort: () => handleSort('paymentMode'),
-              },
-              {
-                key: 'actions',
-                label: <span className="text-right">{t('actions')}</span>,
-                align: 'right',
-              },
-            ]}
+            columns={createSalesTableColumns(t, sort, order, handleSort)}
             data={sales.map(sale => ({
               ...sale,
               itemsCount: sale.items.length,
@@ -590,7 +408,7 @@ export default function SalesPage() {
                     </div>
                   )
                 case 'itemsCount':
-                  return `${sale.items.length} item${sale.items.length !== 1 ? 's' : ''}`
+                  return `${sale.items.length} item${sale.items.length === 1 ? '' : 's'}`
                 case 'totalAmount':
                   return (
                     <span className="font-medium">
@@ -602,134 +420,13 @@ export default function SalesPage() {
                 case 'actions':
                   return (
                     <div className="text-right">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setSelectedSale(sale)}
-                          >
-                            <Eye className="mr-2 h-3 w-3" />
-                            {t('view_details')}
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl max-h-[80vh]">
-                          <DialogHeader>
-                            <DialogTitle>{t('sale_details')}</DialogTitle>
-                            <DialogDescription>
-                              {t('complete_transaction_information')}
-                            </DialogDescription>
-                          </DialogHeader>
-                          {selectedSale && (
-                            <ScrollArea className="max-h-[60vh]">
-                              <div className="space-y-4 pr-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <p className="text-sm font-medium text-muted-foreground">
-                                      {t('sale_id')}
-                                    </p>
-                                    <p className="text-sm">{selectedSale.id}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-sm font-medium text-muted-foreground">
-                                      {t('date')}
-                                    </p>
-                                    <p className="text-sm">
-                                      {formatDate(selectedSale.timestamp)}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <p className="text-sm font-medium text-muted-foreground">
-                                      {t('cashier')}
-                                    </p>
-                                    <p className="text-sm">
-                                      {selectedSale.cashierName}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <p className="text-sm font-medium text-muted-foreground">
-                                      {t('payment_method')}
-                                    </p>
-                                    <p className="text-sm">
-                                      {selectedSale.paymentMode}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium text-muted-foreground mb-2">
-                                    {t('items')}
-                                  </p>
-                                  <div className="border rounded-lg">
-                                    <Table>
-                                      <TableHeader>
-                                        <TableRow>
-                                          <TableHead>{t('product')}</TableHead>
-                                          <TableHead>{t('quantity')}</TableHead>
-                                          <TableHead>{t('price')}</TableHead>
-                                          <TableHead className="text-right">
-                                            {t('total_amount')}
-                                          </TableHead>
-                                        </TableRow>
-                                      </TableHeader>
-                                      <TableBody>
-                                        {selectedSale.items.map(
-                                          (item, index) => (
-                                            <TableRow key={index}>
-                                              <TableCell>
-                                                {item.productName}
-                                              </TableCell>
-                                              <TableCell>
-                                                {item.quantity}
-                                              </TableCell>
-                                              <TableCell>
-                                                {formatCurrency(item.price)}
-                                              </TableCell>
-                                              <TableCell className="text-right">
-                                                {formatCurrency(
-                                                  item.quantity * item.price
-                                                )}
-                                              </TableCell>
-                                            </TableRow>
-                                          )
-                                        )}
-                                      </TableBody>
-                                    </Table>
-                                  </div>
-                                </div>
-                                <div className="border-t pt-4 space-y-2">
-                                  <div className="flex justify-between items-center">
-                                    <span className="text-sm text-muted-foreground">
-                                      {t('subtotal')}
-                                    </span>
-                                    <span className="text-sm">
-                                      {formatCurrency(selectedSale.subtotal)}
-                                    </span>
-                                  </div>
-                                  <div className="flex justify-between items-center">
-                                    <span className="text-sm text-muted-foreground">
-                                      {t('vat')} ({selectedSale.vatPercentage}%)
-                                    </span>
-                                    <span className="text-sm">
-                                      {formatCurrency(selectedSale.vatAmount)}
-                                    </span>
-                                  </div>
-                                  <div className="flex justify-between items-center border-t pt-2">
-                                    <span className="text-lg font-semibold">
-                                      {t('total_amount')}
-                                    </span>
-                                    <span className="text-lg font-bold">
-                                      {formatCurrency(selectedSale.totalAmount)}
-                                    </span>
-                                  </div>
-                                  <div className="flex justify-center pt-4 border-t">
-                                    <ReceiptPrinter sale={selectedSale} />
-                                  </div>
-                                </div>
-                              </div>
-                            </ScrollArea>
-                          )}
-                        </DialogContent>
-                      </Dialog>
+                      <SaleDetailDialog
+                        sale={sale}
+                        onOpenChange={() => {}}
+                        formatCurrency={formatCurrency}
+                        formatDate={formatDate}
+                        t={t}
+                      />
                     </div>
                   )
                 default: {

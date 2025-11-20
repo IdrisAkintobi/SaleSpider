@@ -72,6 +72,8 @@ export function useAuth() {
     onSuccess: (user: User) => {
       // Update the session query with the new user
       queryClient.setQueryData(['auth', 'session'], user)
+      // Clear all cached queries to prevent stale data after login
+      queryClient.invalidateQueries()
       toast({
         title: 'Login Successful',
         description: `Welcome back, ${user.name}!`,
@@ -93,8 +95,8 @@ export function useAuth() {
     onSuccess: () => {
       // Clear the session query
       queryClient.setQueryData(['auth', 'session'], null)
-      // Invalidate all queries to clear cached data
-      queryClient.invalidateQueries()
+      // Remove all queries without refetching (prevents 401 errors after logout)
+      queryClient.clear()
       toast({
         title: 'Logged Out',
         description: 'You have been successfully logged out.',

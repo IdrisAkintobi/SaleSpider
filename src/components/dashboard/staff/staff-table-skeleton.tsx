@@ -14,7 +14,9 @@ interface StaffTableSkeletonProps {
   rows?: number
 }
 
-export function StaffTableSkeleton({ rows = 10 }: StaffTableSkeletonProps) {
+export function StaffTableSkeleton({
+  rows = 10,
+}: Readonly<StaffTableSkeletonProps>) {
   const t = useTranslation()
   return (
     <Card className="shadow-lg">
@@ -31,7 +33,7 @@ export function StaffTableSkeleton({ rows = 10 }: StaffTableSkeletonProps) {
           </TableHeader>
           <TableBody>
             {Array.from({ length: rows }).map((_, index) => (
-              <TableRow key={index}>
+              <TableRow key={`skeleton-${index}`}>
                 <TableCell>
                   <Skeleton className="h-4 w-[120px]" />
                 </TableCell>

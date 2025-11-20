@@ -9,7 +9,7 @@ export const createUserSchema = z.object({
     .min(3, 'Username must be at least 3 characters')
     .max(50, 'Username too long')
     .regex(
-      /^[a-zA-Z0-9_]+$/,
+      /^\w+$/,
       'Username can only contain letters, numbers, and underscores'
     ),
   email: z.string().email('Invalid email address'),
@@ -101,11 +101,7 @@ export const loginSchema = z.object({
 
 export const registerSchema = z.object({
   email: z.string().email('Invalid email address'),
-  username: z
-    .string()
-    .min(3)
-    .max(50)
-    .regex(/^[a-zA-Z0-9_]+$/),
+  username: z.string().min(3).max(50).regex(/^\w+$/),
   name: z.string().min(1).max(100),
   password: z.string().min(8).max(128),
   role: z.nativeEnum(Role).optional(),

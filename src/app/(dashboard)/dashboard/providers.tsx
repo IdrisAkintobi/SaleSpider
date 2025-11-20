@@ -26,7 +26,7 @@ function GlobalErrorHandler({ children }: { children: React.ReactNode }) {
           error.message.toLowerCase().includes('unauthorized')) ||
         error?.status === 401
       ) {
-        window.location.href = '/login'
+        globalThis.location.href = '/login'
         return
       }
 
@@ -44,8 +44,8 @@ function GlobalErrorHandler({ children }: { children: React.ReactNode }) {
         // The error will still be caught by React Query and shown in the UI
       }
     }
-    window.addEventListener('unhandledrejection', handler)
-    return () => window.removeEventListener('unhandledrejection', handler)
+    globalThis.addEventListener('unhandledrejection', handler)
+    return () => globalThis.removeEventListener('unhandledrejection', handler)
   }, [])
   return <>{children}</>
 }
