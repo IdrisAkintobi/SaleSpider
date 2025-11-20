@@ -172,11 +172,7 @@ describe('Filter Components', () => {
   describe('DateRangeQuickSelect', () => {
     it('renders with correct structure', () => {
       render(
-        <DateRangeQuickSelect
-          value=""
-          onChange={mockOnChange}
-          t={mockT}
-        />
+        <DateRangeQuickSelect value="" onChange={mockOnChange} t={mockT} />
       )
 
       const trigger = screen.getByRole('combobox')
@@ -186,11 +182,7 @@ describe('Filter Components', () => {
 
     it('displays selected date range label', () => {
       render(
-        <DateRangeQuickSelect
-          value="week"
-          onChange={mockOnChange}
-          t={mockT}
-        />
+        <DateRangeQuickSelect value="week" onChange={mockOnChange} t={mockT} />
       )
 
       expect(screen.getByText('This Week')).toBeInTheDocument()
@@ -198,15 +190,11 @@ describe('Filter Components', () => {
 
     it('has correct CSS classes', () => {
       render(
-        <DateRangeQuickSelect
-          value=""
-          onChange={mockOnChange}
-          t={mockT}
-        />
+        <DateRangeQuickSelect value="" onChange={mockOnChange} t={mockT} />
       )
 
       const trigger = screen.getByRole('combobox')
-      expect(trigger).toHaveClass('w-full', 'sm:w-[200px]')
+      expect(trigger).toHaveClass('w-full', 'lg:w-[140px]')
     })
   })
 
