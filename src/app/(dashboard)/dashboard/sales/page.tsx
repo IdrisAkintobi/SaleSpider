@@ -365,7 +365,7 @@ export default function SalesPage() {
       />
 
       <div className="mb-6 space-y-4">
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col lg:flex-row gap-3 overflow-x-auto">
           <Input
             placeholder={
               userIsCashier
@@ -374,7 +374,7 @@ export default function SalesPage() {
             }
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="flex-1"
+            className="w-full lg:w-[200px] flex-shrink-0"
             icon={<Filter className="h-4 w-4 text-muted-foreground" />}
           />
           <PaymentMethodSelectShared
@@ -401,22 +401,24 @@ export default function SalesPage() {
               <Button
                 variant="outline"
                 className={cn(
-                  'w-full sm:w-[280px] justify-start text-left font-normal',
+                  'w-full lg:w-[220px] justify-start text-left font-normal overflow-hidden flex-shrink-0',
                   !dateRange ||
                     (!dateRange.from &&
                       !dateRange.to &&
                       'text-muted-foreground')
                 )}
               >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {dateRange && dateRange.from && dateRange.to ? (
-                  <>
-                    {format(dateRange.from, 'LLL dd, y')} -{' '}
-                    {format(dateRange.to, 'LLL dd, y')}
-                  </>
-                ) : (
-                  t('pick_date_range')
-                )}
+                <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                <span className="truncate">
+                  {dateRange && dateRange.from && dateRange.to ? (
+                    <>
+                      {format(dateRange.from, 'LLL dd, y')} -{' '}
+                      {format(dateRange.to, 'LLL dd, y')}
+                    </>
+                  ) : (
+                    t('pick_date_range')
+                  )}
+                </span>
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">

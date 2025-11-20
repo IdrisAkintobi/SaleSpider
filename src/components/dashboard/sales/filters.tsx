@@ -25,7 +25,7 @@ export function PaymentMethodSelect({
 }>) {
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-full sm:w-[240px]">
+      <SelectTrigger className="w-full lg:w-[160px] flex-shrink-0">
         <SelectValue placeholder={t('filter_by_payment_method')} />
       </SelectTrigger>
       <SelectContent>
@@ -56,7 +56,7 @@ export function CashierSelect({
   if (!show) return null
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-full sm:w-[220px]">
+      <SelectTrigger className="w-full lg:w-[160px] flex-shrink-0">
         <SelectValue placeholder={t('filter_by_cashier')} />
       </SelectTrigger>
       <SelectContent>
@@ -84,7 +84,7 @@ export function DateRangeQuickSelect({
 }>) {
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-full sm:w-[200px]">
+      <SelectTrigger className="w-full lg:w-[140px] flex-shrink-0">
         <SelectValue placeholder={t('filter_by_date')} />
       </SelectTrigger>
       <SelectContent>

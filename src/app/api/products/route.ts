@@ -130,6 +130,24 @@ export async function POST(req: NextRequest) {
       return jsonError('Missing required fields', 400, { code: 'BAD_REQUEST' })
     }
 
+    // Normalize GTIN: convert empty string to null to allow multiple products without GTIN
+    const normalizedGtin = gtin?.trim() || null
+
+    // Check if a product with the same GTIN already exists (only if GTIN is provided)
+    if (normalizedGtin) {
+      const existingProduct = await prisma.product.findUnique({
+        where: { gtin: normalizedGtin },
+      })
+
+      if (existingProduct) {
+        return jsonError(
+          `A product with GTIN ${normalizedGtin} already exists: ${existingProduct.name}`,
+          409,
+          { code: 'DUPLICATE_GTIN' }
+        )
+      }
+    }
+
     const newProduct = await prisma.product.create({
       data: {
         name,
@@ -139,7 +157,7 @@ export async function POST(req: NextRequest) {
         lowStockMargin,
         quantity,
         imageUrl,
-        gtin,
+        gtin: normalizedGtin,
       },
     })
 

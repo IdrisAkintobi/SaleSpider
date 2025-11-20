@@ -1,21 +1,21 @@
-import { NextRequest } from "next/server";
-import { Role } from "@prisma/client";
-import { SoftDeleteService } from "@/lib/soft-delete";
-import { AuditTrailService } from "@/lib/audit-trail";
-import { jsonOk, jsonError, handleException } from "@/lib/api-response";
-import { getUserFromHeader } from "@/lib/api-auth";
-import { getProductBasic, productExists } from "@/lib/products";
-import { createChildLogger } from "@/lib/logger";
+import { NextRequest } from 'next/server'
+import { Role } from '@prisma/client'
+import { SoftDeleteService } from '@/lib/soft-delete'
+import { AuditTrailService } from '@/lib/audit-trail'
+import { jsonOk, jsonError, handleException } from '@/lib/api-response'
+import { getUserFromHeader } from '@/lib/api-auth'
+import { getProductBasic, productExists } from '@/lib/products'
+import { createChildLogger } from '@/lib/logger'
 
-import { prisma } from "@/lib/prisma";
-const logger = createChildLogger('api:products:id');
+import { prisma } from '@/lib/prisma'
+const logger = createChildLogger('api:products:id')
 
 // Function to get product by ID
 export async function GET(
   _: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
+  const { id } = await params
 
   try {
     const product = await prisma.product.findUnique({
@@ -23,16 +23,19 @@ export async function GET(
         id,
         deletedAt: null,
       },
-    });
+    })
 
     if (!product) {
-      return jsonError("Product not found", 404, { code: "NOT_FOUND" });
+      return jsonError('Product not found', 404, { code: 'NOT_FOUND' })
     }
 
-    return jsonOk(product);
+    return jsonOk(product)
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to fetch product');
-    return handleException(error, "Failed to fetch product", 500);
+    logger.error(
+      { error: error instanceof Error ? error.message : 'Unknown error' },
+      'Failed to fetch product'
+    )
+    return handleException(error, 'Failed to fetch product', 500)
   }
 }
 
@@ -41,55 +44,77 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
-  const updateData = await request.json();
+  const { id } = await params
+  const updateData = await request.json()
 
   // Read user from header and validate role
-  const { userId, user } = await getUserFromHeader(request, prisma);
+  const { userId, user } = await getUserFromHeader(request, prisma)
   if (!userId || !user || user.role === Role.CASHIER) {
-    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
+    return jsonError('Unauthorized', 401, { code: 'UNAUTHORIZED' })
   }
 
   try {
     // Check if product exists before update
-    const exists = await productExists(prisma, id);
+    const exists = await productExists(prisma, id)
 
     if (!exists) {
-      return jsonError("Product not found", 404, { code: "NOT_FOUND" });
+      return jsonError('Product not found', 404, { code: 'NOT_FOUND' })
     }
 
     // Validate quantity if provided
     if (
       updateData.quantity !== undefined &&
-      typeof updateData.quantity !== "number"
+      typeof updateData.quantity !== 'number'
     ) {
-      return jsonError("Invalid quantity provided", 400, { code: "BAD_REQUEST" });
+      return jsonError('Invalid quantity provided', 400, {
+        code: 'BAD_REQUEST',
+      })
+    }
+
+    // Normalize GTIN: convert empty string to null to allow multiple products without GTIN
+    if ('gtin' in updateData) {
+      updateData.gtin = updateData.gtin?.trim() || null
+
+      // Check if another product already has this GTIN (only if GTIN is provided)
+      if (updateData.gtin) {
+        const existingProduct = await prisma.product.findUnique({
+          where: { gtin: updateData.gtin },
+        })
+
+        if (existingProduct && existingProduct.id !== id) {
+          return jsonError(
+            `A product with GTIN ${updateData.gtin} already exists: ${existingProduct.name}`,
+            409,
+            { code: 'DUPLICATE_GTIN' }
+          )
+        }
+      }
     }
 
     // Prepare the data for update and audit trail
-    const updatePayload: any = { ...updateData };
-    const changedFields: Record<string, any> = {};
-    
+    const updatePayload: any = { ...updateData }
+    const changedFields: Record<string, any> = {}
+
     // Handle quantity increment logic
     if (updateData.quantity !== undefined) {
       updatePayload.quantity = {
         increment: updateData.quantity,
-      };
+      }
       // For audit trail, we need to track the increment amount
-      changedFields.quantity = `+${updateData.quantity}`;
+      changedFields.quantity = `+${updateData.quantity}`
     }
-    
+
     // Track other changed fields for audit trail
     for (const key of Object.keys(updateData)) {
       if (key !== 'quantity') {
-        changedFields[key] = updateData[key];
+        changedFields[key] = updateData[key]
       }
     }
 
     const updatedProduct = await prisma.product.update({
       where: { id },
       data: updatePayload,
-    });
+    })
 
     // Log audit trail
     await AuditTrailService.logProductUpdate(
@@ -98,15 +123,20 @@ export async function PATCH(
       userId,
       user.email,
       {
-        ip: (request as NextRequest).headers.get('x-forwarded-for') || (request as NextRequest).headers.get('x-real-ip'),
+        ip:
+          (request as NextRequest).headers.get('x-forwarded-for') ||
+          (request as NextRequest).headers.get('x-real-ip'),
         userAgent: (request as NextRequest).headers.get('user-agent'),
       }
-    );
+    )
 
-    return jsonOk(updatedProduct);
+    return jsonOk(updatedProduct)
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to update product');
-    return handleException(error, "Failed to update product", 500);
+    logger.error(
+      { error: error instanceof Error ? error.message : 'Unknown error' },
+      'Failed to update product'
+    )
+    return handleException(error, 'Failed to update product', 500)
   }
 }
 
@@ -115,42 +145,50 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
+  const { id } = await params
 
   // Read user from header and validate role
-  const { userId, user } = await getUserFromHeader(request, prisma);
+  const { userId, user } = await getUserFromHeader(request, prisma)
   if (!userId || !user || user.role !== Role.SUPER_ADMIN) {
-    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
+    return jsonError('Unauthorized', 401, { code: 'UNAUTHORIZED' })
   }
 
   try {
     // Check if product exists and is not already deleted
-    const product = await getProductBasic(prisma, id);
+    const product = await getProductBasic(prisma, id)
 
     if (!product) {
-      return jsonError("Product not found", 404, { code: "NOT_FOUND" });
+      return jsonError('Product not found', 404, { code: 'NOT_FOUND' })
     }
 
     if (product.deletedAt) {
-      return jsonError("Product is already deleted", 400, { code: "BAD_REQUEST" });
+      return jsonError('Product is already deleted', 400, {
+        code: 'BAD_REQUEST',
+      })
     }
 
     // Soft delete the product
-    await SoftDeleteService.deleteProduct(id, userId);
+    await SoftDeleteService.deleteProduct(id, userId)
 
-    logger.info({ 
-      productId: id, 
-      productName: product.name,
-      userId,
-      userRole: user.role
-    }, 'Product soft deleted by super admin');
+    logger.info(
+      {
+        productId: id,
+        productName: product.name,
+        userId,
+        userRole: user.role,
+      },
+      'Product soft deleted by super admin'
+    )
 
-    return jsonOk({ 
-      message: "Product deleted successfully",
-      productId: id 
-    });
+    return jsonOk({
+      message: 'Product deleted successfully',
+      productId: id,
+    })
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to delete product');
-    return handleException(error, "Failed to delete product", 500);
+    logger.error(
+      { error: error instanceof Error ? error.message : 'Unknown error' },
+      'Failed to delete product'
+    )
+    return handleException(error, 'Failed to delete product', 500)
   }
 }
