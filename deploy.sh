@@ -215,12 +215,6 @@ generate_secrets() {
         log "Generated new JWT secret"
     fi
     
-    # Generate NextAuth secret if not set
-    if [ -z "$NEXTAUTH_SECRET" ] || [ "$NEXTAUTH_SECRET" = "your-nextauth-secret-key-min-32-characters-long" ]; then
-        export NEXTAUTH_SECRET=$(openssl rand -base64 32 2>/dev/null || head -c 32 /dev/urandom | base64 | tr -d '\n')
-        log "Generated new NextAuth secret"
-    fi
-    
     # Generate backup encryption key if not set
     if [ -z "$BACKUP_ENCRYPTION_KEY" ] || [ "$BACKUP_ENCRYPTION_KEY" = "your-32-character-backup-encryption-key" ]; then
         export BACKUP_ENCRYPTION_KEY=$(openssl rand -base64 32 2>/dev/null || head -c 32 /dev/urandom | base64 | tr -d '\n')
@@ -231,7 +225,6 @@ generate_secrets() {
     if [ -f "$SCRIPT_DIR/.env" ]; then
         # Update secrets in .env file
         sed -i.tmp "s|JWT_SECRET=.*|JWT_SECRET=$JWT_SECRET|g" "$SCRIPT_DIR/.env"
-        sed -i.tmp "s|NEXTAUTH_SECRET=.*|NEXTAUTH_SECRET=$NEXTAUTH_SECRET|g" "$SCRIPT_DIR/.env"
         sed -i.tmp "s|BACKUP_ENCRYPTION_KEY=.*|BACKUP_ENCRYPTION_KEY=$BACKUP_ENCRYPTION_KEY|g" "$SCRIPT_DIR/.env"
         
         # Clean up temp files

@@ -36,6 +36,7 @@ yarn-error.log*
 # IDE
 .idea
 .vscode
+.kiro
 
 # typescript
 *.tsbuildinfo
@@ -57,3 +58,8 @@ certificates
 .docker/ssl/*.crt
 .docker/ssl/*.key
 .docker/ssl/*.cnf
+
+# VitePress documentation
+docs/.vitepress/cache
+docs/.vitepress/dist
+docs/node_modules
