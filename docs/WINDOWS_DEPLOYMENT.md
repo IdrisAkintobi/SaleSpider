@@ -805,7 +805,7 @@ docker compose config      # Show config
 
 ## Additional Resources
 
-- **Main Documentation:** [README.md](../README.md)
+- **Main Documentation:** [README.md](../README)
 - **Deployment Guide:** [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)
 - **Environment Variables:** [ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md)
 - **Backup Guide:** [BACKUP_GUIDE.md](BACKUP_GUIDE.md)
