@@ -241,7 +241,7 @@ export function ProductTable({
                     product={product}
                     onUpdateStock={onUpdateStock}
                     onUpdateProduct={onUpdateProduct}
-                    onRefresh={() => window.location.reload()}
+                    onRefresh={() => globalThis.window.location.reload()}
                   />
                 ) : null
               default: {
