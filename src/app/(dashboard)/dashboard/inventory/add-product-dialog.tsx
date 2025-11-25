@@ -11,19 +11,19 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { useToast } from '@/hooks/use-toast'
+import { useCurrencySettings } from '@/lib/currency'
+import { fetchJson } from '@/lib/fetch-utils'
+import { useTranslation } from '@/lib/i18n'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ProductCategory } from '@prisma/client'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { PlusCircle } from 'lucide-react'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import * as z from 'zod'
-import { useCurrencySettings } from '@/lib/currency'
-import { useTranslation } from '@/lib/i18n'
-import { fetchJson } from '@/lib/fetch-utils'
 
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
-  description: z.string().min(10, 'Product description is required'),
+  description: z.string().min(10, 'Description must be at least 10 characters'),
   // Coerce to number to accept string inputs from HTML inputs
   price: z.coerce.number().min(0.01, 'Price must be positive'),
   category: z.nativeEnum(ProductCategory),
