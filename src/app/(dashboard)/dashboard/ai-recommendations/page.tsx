@@ -1,52 +1,15 @@
 'use client'
 
-import { PageHeader } from '@/components/shared/page-header'
 import { AIRecommendationsDisplay } from '@/components/dashboard/ai/recommendations-display'
-import { useAuth } from '@/contexts/auth-context'
-import { useTranslation } from '@/lib/i18n'
-import { useState } from 'react'
-import { useToast } from '@/hooks/use-toast'
+import { PageHeader } from '@/components/shared/page-header'
 import { Button } from '@/components/ui/button'
-import { RefreshCw, Lightbulb } from 'lucide-react'
+import { useAuth } from '@/contexts/auth-context'
+import { useToast } from '@/hooks/use-toast'
 import { fetchJson } from '@/lib/fetch-utils'
-
-interface AIInsightsData {
-  analytics: {
-    totalSales: number
-    totalRevenue: number
-    averageOrderValue: number
-    topSellingProducts: Array<{
-      productId: string
-      productName: string
-      totalQuantitySold: number
-      totalRevenue: number
-    }>
-    lowStockProducts: Array<{
-      id: string
-      name: string
-      quantity: number
-      lowStockMargin: number
-    }>
-    salesTrends: Array<{
-      date: string
-      totalSales: number
-      totalRevenue: number
-    }>
-  }
-  recommendations: {
-    optimalLevels: string
-    promotionalOpportunities: string
-    reorderAmounts: string
-  }
-  metadata: {
-    generatedAt: string
-    dataRange: {
-      daysBack: number
-      startDate: string
-      endDate: string
-    }
-  }
-}
+import { useTranslation } from '@/lib/i18n'
+import type { AIInsightsData } from '@/types/ai-insights'
+import { Lightbulb, RefreshCw } from 'lucide-react'
+import { useState } from 'react'
 
 export default function AIRecommendationsPage() {
   const { user } = useAuth()

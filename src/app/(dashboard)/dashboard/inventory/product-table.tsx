@@ -1,36 +1,35 @@
+import { DeshelvingDialog } from '@/components/dashboard/deshelving-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { GenericTable, GenericTableColumn } from '@/components/ui/generic-table'
-import type { Product } from '@/lib/types'
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Edit3,
-  ArrowDown,
-  ArrowUp,
-  Trash2,
-  RotateCcw,
-  MoreHorizontal,
-  Package,
-  X,
-} from 'lucide-react'
-import Image from 'next/image'
-import React, { useState } from 'react'
-import { useFormatCurrency } from '@/lib/currency'
-import { useTranslation } from '@/lib/i18n'
-import { useAuth } from '@/contexts/auth-context'
-import { useDeleteProduct, useRestoreProduct } from '@/hooks/use-delete-product'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { DeshelvingDialog } from '@/components/dashboard/deshelving-dialog'
+import { GenericTable, GenericTableColumn } from '@/components/ui/generic-table'
+import { SortableHeader } from '@/components/ui/sortable-header'
+import { useAuth } from '@/contexts/auth-context'
+import { useDeleteProduct, useRestoreProduct } from '@/hooks/use-delete-product'
+import { useFormatCurrency } from '@/lib/currency'
+import { useTranslation } from '@/lib/i18n'
+import type { Product } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Edit3,
+  MoreHorizontal,
+  Package,
+  RotateCcw,
+  Trash2,
+  X,
+} from 'lucide-react'
+import Image from 'next/image'
+import React, { useState } from 'react'
 
 export type SortField = 'name' | 'price' | 'quantity' | 'updatedAt'
 export type SortOrder = 'asc' | 'desc'
@@ -80,20 +79,13 @@ export function ProductTable({
     {
       key: 'name',
       label: (
-        <button
-          type="button"
-          className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
-          onClick={() => onSort?.('name')}
-          aria-label={`Sort by ${t('name')}`}
-        >
-          {t('name')}{' '}
-          {sortField === 'name' &&
-            (sortOrder === 'asc' ? (
-              <ArrowUp size={14} />
-            ) : (
-              <ArrowDown size={14} />
-            ))}
-        </button>
+        <SortableHeader
+          label={t('name')}
+          field="name"
+          currentSort={sortField}
+          order={sortOrder}
+          onSort={field => onSort?.(field as SortField)}
+        />
       ),
       sortable: true,
       onSort: () => onSort?.('name'),
@@ -101,20 +93,13 @@ export function ProductTable({
     {
       key: 'price',
       label: (
-        <button
-          type="button"
-          className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
-          onClick={() => onSort?.('price')}
-          aria-label={`Sort by ${t('price')}`}
-        >
-          {t('price')}{' '}
-          {sortField === 'price' &&
-            (sortOrder === 'asc' ? (
-              <ArrowUp size={14} />
-            ) : (
-              <ArrowDown size={14} />
-            ))}
-        </button>
+        <SortableHeader
+          label={t('price')}
+          field="price"
+          currentSort={sortField}
+          order={sortOrder}
+          onSort={field => onSort?.(field as SortField)}
+        />
       ),
       sortable: true,
       onSort: () => onSort?.('price'),
@@ -122,20 +107,13 @@ export function ProductTable({
     {
       key: 'quantity',
       label: (
-        <button
-          type="button"
-          className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
-          onClick={() => onSort?.('quantity')}
-          aria-label={`Sort by ${t('stock')}`}
-        >
-          {t('stock')}{' '}
-          {sortField === 'quantity' &&
-            (sortOrder === 'asc' ? (
-              <ArrowUp size={14} />
-            ) : (
-              <ArrowDown size={14} />
-            ))}
-        </button>
+        <SortableHeader
+          label={t('stock')}
+          field="quantity"
+          currentSort={sortField}
+          order={sortOrder}
+          onSort={field => onSort?.(field as SortField)}
+        />
       ),
       sortable: true,
       onSort: () => onSort?.('quantity'),
@@ -148,20 +126,13 @@ export function ProductTable({
     {
       key: 'updatedAt',
       label: (
-        <button
-          type="button"
-          className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
-          onClick={() => onSort?.('updatedAt')}
-          aria-label={`Sort by ${t('date_updated')}`}
-        >
-          {t('date_updated')}{' '}
-          {sortField === 'updatedAt' &&
-            (sortOrder === 'asc' ? (
-              <ArrowUp size={14} />
-            ) : (
-              <ArrowDown size={14} />
-            ))}
-        </button>
+        <SortableHeader
+          label={t('date_updated')}
+          field="updatedAt"
+          currentSort={sortField}
+          order={sortOrder}
+          onSort={field => onSort?.(field as SortField)}
+        />
       ),
       sortable: true,
       onSort: () => onSort?.('updatedAt'),

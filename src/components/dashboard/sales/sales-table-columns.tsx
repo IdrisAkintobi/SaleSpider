@@ -1,4 +1,29 @@
-import { ArrowUp, ArrowDown } from 'lucide-react'
+import { ArrowDown, ArrowUp } from 'lucide-react'
+
+// Helper to create sortable column header
+function createSortableHeader(
+  key: string,
+  label: string,
+  currentSort: string,
+  order: 'asc' | 'desc',
+  onSort: (key: string) => void
+) {
+  return (
+    <button
+      type="button"
+      className="cursor-pointer hover:underline focus:outline-none focus:underline"
+      onClick={() => onSort(key)}
+    >
+      {label}{' '}
+      {currentSort === key &&
+        (order === 'asc' ? (
+          <ArrowUp className="inline w-3 h-3" />
+        ) : (
+          <ArrowDown className="inline w-3 h-3" />
+        ))}
+    </button>
+  )
+}
 
 export function createSalesTableColumns(
   t: (key: string) => string,
@@ -9,40 +34,24 @@ export function createSalesTableColumns(
   return [
     {
       key: 'createdAt',
-      label: (
-        <button
-          type="button"
-          className="cursor-pointer hover:underline focus:outline-none focus:underline"
-          onClick={() => handleSort('createdAt')}
-        >
-          {t('date')}{' '}
-          {sort === 'createdAt' &&
-            (order === 'asc' ? (
-              <ArrowUp className="inline w-3 h-3" />
-            ) : (
-              <ArrowDown className="inline w-3 h-3" />
-            ))}
-        </button>
+      label: createSortableHeader(
+        'createdAt',
+        t('date'),
+        sort,
+        order,
+        handleSort
       ),
       sortable: true,
       onSort: () => handleSort('createdAt'),
     },
     {
       key: 'cashierName',
-      label: (
-        <button
-          type="button"
-          className="cursor-pointer hover:underline focus:outline-none focus:underline"
-          onClick={() => handleSort('cashierName')}
-        >
-          {t('cashier')}{' '}
-          {sort === 'cashierName' &&
-            (order === 'asc' ? (
-              <ArrowUp className="inline w-3 h-3" />
-            ) : (
-              <ArrowDown className="inline w-3 h-3" />
-            ))}
-        </button>
+      label: createSortableHeader(
+        'cashierName',
+        t('cashier'),
+        sort,
+        order,
+        handleSort
       ),
       sortable: true,
       onSort: () => handleSort('cashierName'),
@@ -50,40 +59,24 @@ export function createSalesTableColumns(
     { key: 'itemsCount', label: t('items_count') },
     {
       key: 'totalAmount',
-      label: (
-        <button
-          type="button"
-          className="cursor-pointer hover:underline focus:outline-none focus:underline"
-          onClick={() => handleSort('totalAmount')}
-        >
-          {t('total_amount')}{' '}
-          {sort === 'totalAmount' &&
-            (order === 'asc' ? (
-              <ArrowUp className="inline w-3 h-3" />
-            ) : (
-              <ArrowDown className="inline w-3 h-3" />
-            ))}
-        </button>
+      label: createSortableHeader(
+        'totalAmount',
+        t('total_amount'),
+        sort,
+        order,
+        handleSort
       ),
       sortable: true,
       onSort: () => handleSort('totalAmount'),
     },
     {
       key: 'paymentMode',
-      label: (
-        <button
-          type="button"
-          className="cursor-pointer hover:underline focus:outline-none focus:underline"
-          onClick={() => handleSort('paymentMode')}
-        >
-          {t('payment_mode')}{' '}
-          {sort === 'paymentMode' &&
-            (order === 'asc' ? (
-              <ArrowUp className="inline w-3 h-3" />
-            ) : (
-              <ArrowDown className="inline w-3 h-3" />
-            ))}
-        </button>
+      label: createSortableHeader(
+        'paymentMode',
+        t('payment_mode'),
+        sort,
+        order,
+        handleSort
       ),
       sortable: true,
       onSort: () => handleSort('paymentMode'),
