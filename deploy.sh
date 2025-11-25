@@ -126,7 +126,7 @@ check_requirements() {
     
     # Check available disk space
     local available_space=$(df "$SCRIPT_DIR" | awk 'NR==2 {print $4}')
-    if [ "$available_space" -lt 2097152 ]; then  # 2GB in KB
+    if [[ "$available_space" -lt 2097152 ]]; then  # 2GB in KB
         warning "Low disk space detected. At least 2GB recommended."
     fi
     
@@ -141,14 +141,17 @@ check_requirements() {
 load_environment() {
     log "Loading environment configuration..."
     
+    # Check requirements first to set COMPOSE_CMD
+    check_requirements
+    
     # Load from .env file if it exists
-    if [ -f "$SCRIPT_DIR/.env" ]; then
+    if [[ -f "$SCRIPT_DIR/.env" ]]; then
         log "Loading existing .env file..."
         set -a  # automatically export all variables
         source "$SCRIPT_DIR/.env"
         set +a
         success "Environment loaded from .env file"
-    elif [ -f "$SCRIPT_DIR/env.example" ]; then
+    elif [[ -f "$SCRIPT_DIR/env.example" ]]; then
         log "Creating .env from example..."
         cp "$SCRIPT_DIR/env.example" "$SCRIPT_DIR/.env"
         warning "Please edit .env file with your configuration before proceeding"
@@ -169,7 +172,7 @@ load_environment() {
     export ARCHITECTURE="${ARCHITECTURE:-$(detect_architecture)}"
 
     # Resolve HOST_IP if set to "auto" or empty
-    if [ -z "$HOST_IP" ] || [ "$HOST_IP" = "auto" ]; then
+    if [[ -z "$HOST_IP" ]] || [[ "$HOST_IP" = "auto" ]]; then
         export HOST_IP="$(get_host_ip)"
         log "Auto-detected HOST_IP: $HOST_IP"
     fi
@@ -207,28 +210,21 @@ generate_secrets() {
     log "Generating secure secrets..."
     
     # Generate JWT secret if not set
-    if [ -z "$JWT_SECRET" ] || [ "$JWT_SECRET" = "your-super-secret-jwt-key-min-32-characters-long" ]; then
+    if [[ -z "$JWT_SECRET" ]] || [[ "$JWT_SECRET" = "your-super-secret-jwt-key-min-32-characters-long" ]]; then
         export JWT_SECRET=$(openssl rand -base64 32 2>/dev/null || head -c 32 /dev/urandom | base64 | tr -d '\n')
         log "Generated new JWT secret"
     fi
     
-    # Generate NextAuth secret if not set
-    if [ -z "$NEXTAUTH_SECRET" ] || [ "$NEXTAUTH_SECRET" = "your-nextauth-secret-key-min-32-characters-long" ]; then
-        export NEXTAUTH_SECRET=$(openssl rand -base64 32 2>/dev/null || head -c 32 /dev/urandom | base64 | tr -d '\n')
-        log "Generated new NextAuth secret"
-    fi
-    
     # Generate backup encryption key if not set
-    if [ -z "$BACKUP_ENCRYPTION_KEY" ] || [ "$BACKUP_ENCRYPTION_KEY" = "your-32-character-backup-encryption-key" ]; then
+    if [[ -z "$BACKUP_ENCRYPTION_KEY" ]] || [[ "$BACKUP_ENCRYPTION_KEY" = "your-32-character-backup-encryption-key" ]]; then
         export BACKUP_ENCRYPTION_KEY=$(openssl rand -base64 32 2>/dev/null || head -c 32 /dev/urandom | base64 | tr -d '\n')
         log "Generated new backup encryption key"
     fi
     
     # Update .env file with generated secrets
-    if [ -f "$SCRIPT_DIR/.env" ]; then
+    if [[ -f "$SCRIPT_DIR/.env" ]]; then
         # Update secrets in .env file
         sed -i.tmp "s|JWT_SECRET=.*|JWT_SECRET=$JWT_SECRET|g" "$SCRIPT_DIR/.env"
-        sed -i.tmp "s|NEXTAUTH_SECRET=.*|NEXTAUTH_SECRET=$NEXTAUTH_SECRET|g" "$SCRIPT_DIR/.env"
         sed -i.tmp "s|BACKUP_ENCRYPTION_KEY=.*|BACKUP_ENCRYPTION_KEY=$BACKUP_ENCRYPTION_KEY|g" "$SCRIPT_DIR/.env"
         
         # Clean up temp files
@@ -245,33 +241,31 @@ validate_config() {
     local errors=0
     
     # Check required variables
-    if [ -z "$POSTGRES_PASSWORD" ] || [ "$POSTGRES_PASSWORD" = "SecurePostgresPassword123!" ]; then
+    if [[ -z "$POSTGRES_PASSWORD" ]] || [[ "$POSTGRES_PASSWORD" = "SecurePostgresPassword123!" ]]; then
         error "POSTGRES_PASSWORD must be set to a secure password"
         errors=$((errors + 1))
     fi
     
-    if [ -z "$SUPER_ADMIN_EMAIL" ]; then
+    if [[ -z "$SUPER_ADMIN_EMAIL" ]]; then
         error "SUPER_ADMIN_EMAIL must be set"
         errors=$((errors + 1))
     fi
 
-    if [ -z "$SUPER_ADMIN_PASSWORD" ] || [ "$SUPER_ADMIN_PASSWORD" = "ChangeThisPassword123!" ]; then
+    if [[ -z "$SUPER_ADMIN_PASSWORD" ]] || [[ "$SUPER_ADMIN_PASSWORD" = "ChangeThisPassword123!" ]]; then
         error "SUPER_ADMIN_PASSWORD must be set to a secure password"
         errors=$((errors + 1))
     fi
     
-    if [ -z "$DOMAIN" ] || [ "$DOMAIN" = "salespider.local" ]; then
+    if [[ -z "$DOMAIN" ]] || [[ "$DOMAIN" = "salespider.local" ]]; then
         warning "DOMAIN is set to default value. Consider setting a custom domain."
     fi
     
     # Validate AWS configuration if backup is enabled
-    if [ "${BACKUP_REPO2_TYPE:-}" = "s3" ]; then
-        if [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ] || [ -z "$AWS_S3_BUCKET" ]; then
-            warning "AWS S3 backup is configured but credentials are missing"
-        fi
+    if [[ "${BACKUP_REPO2_TYPE:-}" = "s3" ]] && { [[ -z "$AWS_ACCESS_KEY_ID" ]] || [[ -z "$AWS_SECRET_ACCESS_KEY" ]] || [[ -z "$AWS_S3_BUCKET" ]]; }; then
+        warning "AWS S3 backup is configured but credentials are missing"
     fi
     
-    if [ $errors -gt 0 ]; then
+    if [[ $errors -gt 0 ]]; then
         error "Configuration validation failed with $errors errors"
         exit 1
     fi
@@ -286,7 +280,7 @@ generate_ssl_certificates() {
     local ssl_dir="$DATA_PATH/ssl"
     
     # Check if certificates already exist
-    if [ -f "$ssl_dir/cert.pem" ] && [ -f "$ssl_dir/key.pem" ]; then
+    if [[ -f "$ssl_dir/cert.pem" ]] && [[ -f "$ssl_dir/key.pem" ]]; then
         success "SSL certificates already exist"
         return 0
     fi
@@ -297,7 +291,7 @@ generate_ssl_certificates() {
     export SSL_DIR="$ssl_dir"
     
     # Run the existing SSL generation script
-    if [ -f "$DOCKER_DIR/scripts/setup/setup-ssl.sh" ]; then
+    if [[ -f "$DOCKER_DIR/scripts/setup/setup-ssl.sh" ]]; then
         bash "$DOCKER_DIR/scripts/setup/setup-ssl.sh" || {
             error "Failed to generate SSL certificates"
             exit 1
@@ -323,31 +317,42 @@ start_services() {
         docker network create salespider-net --subnet=172.20.0.0/16 --gateway=172.20.0.1
     fi
     
-    # Create volumes
+    # Ensure directories exist before creating volumes
+    setup_directories
+    
+    # Create only named Docker volumes (non-bind mount volumes)
     log "Creating Docker volumes..."
-    docker volume create postgres-data || true
-    docker volume create postgres-backups || true
-    docker volume create app-uploads || true
-    docker volume create app-logs || true
     docker volume create proxy-data || true
     docker volume create proxy-config || true
     docker volume create ssl-certs || true
-    docker volume create backup-data || true
-    docker volume create backup-logs || true
     docker volume create pgbackrest-config || true
     
     # Start services
     log "Starting Docker services..."
 
     # Check if backup is enabled and set profiles accordingly
-    local backup_type="${PGBACKREST_REPO1_TYPE:-none}"
+    local backup_type="${PGBACKREST_REPO1_TYPE:-}"
     local profiles=""
 
-    if [ "$backup_type" != "none" ]; then
-        profiles="--profile backup"
-        log "Backup enabled (type: $backup_type) - including backup service"
+    # Only activate backup profile when type is set to: posix, s3, azure, or gcs
+    if [[ -n "$backup_type" ]] && [[ "$backup_type" != "none" ]]; then
+        case "$backup_type" in
+            posix|s3|azure|gcs)
+                profiles="--profile backup"
+                success "Backup system enabled (type: $backup_type)"
+                ;;
+            *)
+                warning "Invalid PGBACKREST_REPO1_TYPE: $backup_type"
+                warning "Valid values: none, posix, s3, azure, gcs"
+                warning "Backup service will not start"
+                ;;
+        esac
     else
-        log "Backup disabled - excluding backup service"
+        info "Backup system disabled"
+        if [[ -z "$backup_type" ]] || [[ "$backup_type" = "none" ]]; then
+            info "To enable backups, set PGBACKREST_REPO1_TYPE to: posix, s3, azure, or gcs"
+            info "See BACKUP_GUIDE.md for configuration details"
+        fi
     fi
 
     $COMPOSE_CMD -f "$DOCKER_DIR/docker-compose.yml" --env-file "$SCRIPT_DIR/.env" $profiles up -d
@@ -357,13 +362,13 @@ start_services() {
     local timeout=120  # 2 minutes
     local elapsed=0
     
-    while [ $elapsed -lt $timeout ]; do
+    while [[ $elapsed -lt $timeout ]]; do
         # Count only running services with health checks (exclude setup and other one-time services)
         local running_services=$($COMPOSE_CMD -f "$DOCKER_DIR/docker-compose.yml" --env-file "$SCRIPT_DIR/.env" ps --format json 2>/dev/null | jq -r 'select(.State == "running") | .Name' | wc -l || echo "0")
         local healthy_services=$($COMPOSE_CMD -f "$DOCKER_DIR/docker-compose.yml" --env-file "$SCRIPT_DIR/.env" ps --format json 2>/dev/null | jq -r 'select(.Health == "healthy") | .Name' | wc -l || echo "0")
         
         # Check if we have running services and they are healthy
-        if [ "$running_services" -gt 0 ] && [ "$healthy_services" -ge 2 ]; then
+        if [[ "$running_services" -gt 0 ]] && [[ "$healthy_services" -ge 2 ]]; then
             success "Core services are healthy! (app, postgres)"
             break
         fi
@@ -373,7 +378,7 @@ start_services() {
         elapsed=$((elapsed + 10))
     done
     
-    if [ $elapsed -ge $timeout ]; then
+    if [[ $elapsed -ge $timeout ]]; then
         warning "Some services may not be fully healthy yet"
         log "Check service status with: $0 status"
         log ""
@@ -385,35 +390,35 @@ start_services() {
 show_deployment_info() {
     success "$APP_NAME deployment completed!"
     echo ""
-    echo "🎉 ${GREEN}Deployment Summary${NC}"
+    echo -e "🎉 ${GREEN}Deployment Summary${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
-    echo "📱 ${CYAN}Access URLs:${NC}"
+    echo -e "📱 ${CYAN}Access URLs:${NC}"
     echo "   • Local:   https://${DOMAIN:-localhost}"
     echo "   • Network: https://$HOST_IP"
     echo "   • Fallback: http://localhost:3000"
     echo ""
-    echo "🔐 ${CYAN}Admin Account:${NC}"
+    echo -e "🔐 ${CYAN}Admin Account:${NC}"
     echo "   • Email:    ${SUPER_ADMIN_EMAIL:-admin@localhost}"
     echo "   • Password: [Set in environment]"
     echo ""
-    echo "🗄️  ${CYAN}Database:${NC}"
+    echo -e "🗄️  ${CYAN}Database:${NC}"
     echo "   • Host: postgres (internal)"
     echo "   • Database: ${POSTGRES_DB:-salespider}"
     echo "   • User: ${POSTGRES_USER:-postgres}"
     echo ""
-    echo "💾 ${CYAN}Data Storage:${NC}"
+    echo -e "💾 ${CYAN}Data Storage:${NC}"
     echo "   • Application: $DATA_PATH"
     echo "   • Backups: $BACKUP_PATH"
     echo ""
-    echo "🔧 ${CYAN}Management Commands:${NC}"
+    echo -e "🔧 ${CYAN}Management Commands:${NC}"
     echo "   • Status:  $0 status"
     echo "   • Logs:    $0 logs [service]"
     echo "   • Stop:    $0 stop"
     echo "   • Restart: $0 restart"
     echo "   • Backup:  $0 backup"
     echo ""
-    echo "📋 ${CYAN}Next Steps:${NC}"
+    echo -e "📋 ${CYAN}Next Steps:${NC}"
     echo "   1. Accept SSL certificate in browser"
     echo "   2. Log in with admin credentials"
     echo "   3. Configure application settings"
@@ -421,7 +426,7 @@ show_deployment_info() {
     echo ""
     
     # Show service status
-    echo "📊 ${CYAN}Service Status:${NC}"
+    echo -e "📊 ${CYAN}Service Status:${NC}"
     $COMPOSE_CMD -f "$DOCKER_DIR/docker-compose.yml" --env-file "$SCRIPT_DIR/.env" ps
 }
 
@@ -429,30 +434,31 @@ show_deployment_info() {
 stop_services() {
     log "Stopping $APP_NAME services..."
     
-    $COMPOSE_CMD -f "$DOCKER_DIR/docker-compose.yml" --env-file "$SCRIPT_DIR/.env" down
+    # Stop all services including backup profile
+    $COMPOSE_CMD -f "$DOCKER_DIR/docker-compose.yml" --env-file "$SCRIPT_DIR/.env" --profile backup down
     
     success "$APP_NAME stopped"
 }
 
 # Show status
 show_status() {
-    echo "📊 ${CYAN}$APP_NAME Status${NC}"
+    echo -e "📊 ${CYAN}$APP_NAME Status${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     
     $COMPOSE_CMD -f "$DOCKER_DIR/docker-compose.yml" --env-file "$SCRIPT_DIR/.env" ps
     
     echo ""
-    echo "💾 ${CYAN}Storage Usage:${NC}"
-    if [ -d "$DATA_PATH" ]; then
+    echo -e "💾 ${CYAN}Storage Usage:${NC}"
+    if [[ -d "$DATA_PATH" ]]; then
         du -sh "$DATA_PATH" 2>/dev/null || echo "Data directory not accessible"
     fi
     
-    if [ -d "$BACKUP_PATH" ]; then
+    if [[ -d "$BACKUP_PATH" ]]; then
         du -sh "$BACKUP_PATH" 2>/dev/null || echo "Backup directory not accessible"
     fi
     
     echo ""
-    echo "🌐 ${CYAN}Network Access:${NC}"
+    echo -e "🌐 ${CYAN}Network Access:${NC}"
     echo "   • Local:   https://${DOMAIN:-localhost}"
     echo "   • Network: https://$HOST_IP"
 }
@@ -461,7 +467,7 @@ show_status() {
 show_logs() {
     local service="$1"
     
-    if [ -n "$service" ]; then
+    if [[ -n "$service" ]]; then
         log "Showing logs for service: $service"
         $COMPOSE_CMD -f "$DOCKER_DIR/docker-compose.yml" --env-file "$SCRIPT_DIR/.env" logs -f "$service"
     else
@@ -488,7 +494,7 @@ perform_backup() {
 
 # Reset deployment (destructive)
 reset_deployment() {
-    echo "⚠️  ${RED}DESTRUCTIVE OPERATION${NC}"
+    echo -e "⚠️  ${RED}DESTRUCTIVE OPERATION${NC}"
     echo ""
     echo "This will permanently delete:"
     echo "   • All database data"
@@ -500,7 +506,7 @@ reset_deployment() {
     echo "Are you absolutely sure? Type 'DELETE' to confirm:"
     read -r confirmation
     
-    if [ "$confirmation" != "DELETE" ]; then
+    if [[ "$confirmation" != "DELETE" ]]; then
         log "Reset cancelled"
         return 0
     fi
@@ -536,37 +542,37 @@ update_deployment() {
 
 # Show help
 show_help() {
-    echo "${PURPLE}SaleSpider Deployment Script v$SCRIPT_VERSION${NC}"
+    echo -e "${PURPLE}SaleSpider Deployment Script v$SCRIPT_VERSION${NC}"
     echo ""
     echo "Platform-agnostic deployment script for SaleSpider"
     echo ""
-    echo "${CYAN}Usage:${NC}"
+    echo -e "${CYAN}Usage:${NC}"
     echo "  $0 [command] [options]"
     echo ""
-    echo "${CYAN}Commands:${NC}"
-    echo "  ${GREEN}deploy${NC}    - Deploy SaleSpider (default)"
-    echo "  ${GREEN}start${NC}     - Start services"
-    echo "  ${GREEN}stop${NC}      - Stop services"
-    echo "  ${GREEN}restart${NC}   - Restart services"
-    echo "  ${GREEN}status${NC}    - Show service status"
-    echo "  ${GREEN}logs${NC}      - Show logs [service]"
-    echo "  ${GREEN}backup${NC}    - Perform manual backup"
-    echo "  ${GREEN}update${NC}    - Update deployment"
-    echo "  ${GREEN}reset${NC}     - Reset deployment (destructive)"
-    echo "  ${GREEN}help${NC}      - Show this help"
+    echo -e "${CYAN}Commands:${NC}"
+    echo -e "  ${GREEN}deploy${NC}    - Deploy SaleSpider (default)"
+    echo -e "  ${GREEN}start${NC}     - Start services"
+    echo -e "  ${GREEN}stop${NC}      - Stop services"
+    echo -e "  ${GREEN}restart${NC}   - Restart services"
+    echo -e "  ${GREEN}status${NC}    - Show service status"
+    echo -e "  ${GREEN}logs${NC}      - Show logs [service]"
+    echo -e "  ${GREEN}backup${NC}    - Perform manual backup"
+    echo -e "  ${GREEN}update${NC}    - Update deployment"
+    echo -e "  ${GREEN}reset${NC}     - Reset deployment (destructive)"
+    echo -e "  ${GREEN}help${NC}      - Show this help"
     echo ""
-    echo "${CYAN}Examples:${NC}"
+    echo -e "${CYAN}Examples:${NC}"
     echo "  $0 deploy         # Full deployment"
     echo "  $0 logs app       # Show application logs"
     echo "  $0 logs postgres  # Show database logs"
     echo "  $0 status         # Show service status"
     echo ""
-    echo "${CYAN}Environment Variables:${NC}"
-    echo "  ${YELLOW}DOMAIN${NC}           - Domain name (default: localhost)"
-    echo "  ${YELLOW}DATA_PATH${NC}        - Data storage path"
-    echo "  ${YELLOW}BACKUP_PATH${NC}      - Backup storage path"
+    echo -e "${CYAN}Environment Variables:${NC}"
+    echo -e "  ${YELLOW}DOMAIN${NC}           - Domain name (default: localhost)"
+    echo -e "  ${YELLOW}DATA_PATH${NC}        - Data storage path"
+    echo -e "  ${YELLOW}BACKUP_PATH${NC}      - Backup storage path"
     echo ""
-    echo "${CYAN}Configuration:${NC}"
+    echo -e "${CYAN}Configuration:${NC}"
     echo "  Edit .env file to customize deployment settings"
     echo ""
 }
@@ -587,6 +593,7 @@ main() {
             show_deployment_info
             ;;
         "stop")
+            check_requirements
             load_environment
             stop_services
             ;;

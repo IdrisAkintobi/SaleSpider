@@ -12,6 +12,8 @@ SaleSpider is a modern, Next.js-based application designed for small and medium-
 
 ## 🚀 Quick Start
 
+### Self-Hosted Deployment
+
 **Deploy SaleSpider in 3 commands:**
 
 ```bash
@@ -27,6 +29,16 @@ make deploy
 
 **That's it!** Your production-ready SaleSpider instance will be running with HTTPS, automated backups, and monitoring.
 
+### Cloud Deployment
+
+**Deploy to Vercel, Railway, or Render:**
+
+1. Set up a PostgreSQL database (Neon, Supabase, Railway)
+2. Copy `.env.cloud.example` to `.env` and configure
+3. Deploy with one click or CLI
+
+📖 **For cloud deployment:** See [Cloud Platforms Guide](https://idrisakintobi.github.io/SaleSpider/deployment/cloud-platforms)
+
 ### Quick Commands
 
 ```bash
@@ -36,12 +48,13 @@ make logs      # View logs
 make backup    # Create manual backup
 ```
 
-📖 **For complete deployment instructions:** [Deployment Guide](DEPLOYMENT_GUIDE.md)
+📖 **For complete self-hosted instructions:** [Deployment Guide](https://idrisakintobi.github.io/SaleSpider/deployment/)
 
 ## ✨ Key Features
 
 - **🏪 Advanced Dashboard & Reporting**: Gain insights into sales performance, manage staff, and track inventory with role-based views
 - **📦 Smart Inventory Management**: Optimize stock levels, product deshelving, and prevent stockouts with AI insights
+- **🔔 Low Stock Notifications**: Real-time alerts for products running low with visual indicators and quick navigation
 - **🔐 Role-Based Access Control**: Secure operations with distinct roles for Managers, Cashiers, and Super Admins
 - **🤖 AI-Driven Recommendations**: Utilize AI for inventory suggestions, loss prevention, and reorder predictions
 - **💰 Sales Recording**: Easy-to-use interface for recording transactions with comprehensive audit trails
@@ -80,7 +93,7 @@ Create your own extended version tailored to your specific business requirements
 
 - **PostgreSQL 16**: Production-ready database with optimization
 - **Prisma ORM**: Type-safe database access with migrations
-- **NextAuth.js**: Secure authentication and session management
+- **JWT Authentication**: Secure token-based authentication and session management
 - **Genkit AI**: Firebase's generative AI toolkit for smart insights
 
 ### Deployment & Infrastructure
@@ -169,17 +182,41 @@ Available aliases:
 
 ## 📚 Documentation
 
-### 🚀 Deployment & Operations
+**📖 [View Full Documentation](https://idrisakintobi.github.io/SaleSpider/)**
 
-- **[Deployment Guide](DEPLOYMENT_GUIDE.md)** - Complete deployment instructions for all environments
-- **[Environment Variables Reference](ENVIRONMENT_VARIABLES.md)** - All configuration options
-- **[Backup Guide](BACKUP_GUIDE.md)** - Database backup and restore procedures
-- **[Makefile Commands](MAKEFILE_GUIDE.md)** - Available automation commands
+Our comprehensive documentation site includes:
 
-### 🏗️ Architecture & Development
+### 🚀 Getting Started
 
-- **[Project Blueprint](docs/BLUEPRINT.MD)** - Architecture, design patterns, and system overview
-- **[Application Settings](docs/SETTINGS.MD)** - Configuration and settings management
+- **[Quick Start Guide](https://idrisakintobi.github.io/SaleSpider/getting-started)** - Get up and running in minutes
+- **[Deployment Options](https://idrisakintobi.github.io/SaleSpider/deployment/)** - Self-hosted, hosted database, and cloud platforms
+
+### 📦 Features
+
+- **[Dashboard & Reporting](https://idrisakintobi.github.io/SaleSpider/features/dashboard)** - Analytics and insights
+- **[Inventory Management](https://idrisakintobi.github.io/SaleSpider/features/inventory)** - Stock tracking and management
+- **[Sales Recording](https://idrisakintobi.github.io/SaleSpider/features/sales)** - Point-of-sale operations
+- **[Staff Management](https://idrisakintobi.github.io/SaleSpider/features/staff)** - User roles and permissions
+- **[AI Features](https://idrisakintobi.github.io/SaleSpider/features/ai)** - Smart recommendations
+
+### ⚙️ Configuration
+
+- **[Environment Variables](https://idrisakintobi.github.io/SaleSpider/configuration/environment-variables)** - All configuration options
+- **[Security Settings](https://idrisakintobi.github.io/SaleSpider/configuration/security)** - Authentication and security
+- **[Backup Configuration](https://idrisakintobi.github.io/SaleSpider/configuration/backup)** - Data protection
+
+### 🔧 Operations
+
+- **[Backup & Restore](https://idrisakintobi.github.io/SaleSpider/operations/backup-restore)** - Database backup procedures
+- **[Makefile Commands](https://idrisakintobi.github.io/SaleSpider/operations/makefile)** - Automation commands
+- **[Monitoring](https://idrisakintobi.github.io/SaleSpider/operations/monitoring)** - System monitoring
+- **[Troubleshooting](https://idrisakintobi.github.io/SaleSpider/operations/troubleshooting)** - Common issues
+
+### 💻 Development
+
+- **[Local Setup](https://idrisakintobi.github.io/SaleSpider/development/local-setup)** - Development environment
+- **[Architecture](https://idrisakintobi.github.io/SaleSpider/development/architecture)** - System design
+- **[Contributing](https://idrisakintobi.github.io/SaleSpider/development/contributing)** - How to contribute
 
 ### ⚡ Quick Reference
 
@@ -195,7 +232,7 @@ make backup        # Manual backup
 make help          # All commands
 ```
 
-**For detailed command references, see [Makefile Commands](MAKEFILE_GUIDE.md)**
+**For detailed command references, see [Makefile Commands](https://idrisakintobi.github.io/SaleSpider/operations/makefile)**
 
 ## 📄 License
 
@@ -211,7 +248,7 @@ If you use SaleSpider in your project, please:
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on how to:
+We welcome contributions! Please see our [Contributing Guidelines](https://idrisakintobi.github.io/SaleSpider/development/contributing) for details on how to:
 
 - Report bugs
 - Suggest features

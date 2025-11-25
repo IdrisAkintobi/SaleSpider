@@ -27,8 +27,8 @@ The fastest way to get SaleSpider running with all default settings:
 ### Three-Step Deployment
 
 ```bash
-# 1. Initial setup
-make setup
+# 1. Create your environment configuration file
+cp env.example .env
 
 # 2. Edit configuration (set passwords, domain, etc.)
 nano .env
@@ -37,7 +37,9 @@ nano .env
 make deploy
 ```
 
-**That's it!** Your production-ready SaleSpider instance will be running with HTTPS, automated backups, and monitoring.
+**Important:** The `.env` file is required for deployment. This is a security best practice that prevents accidental commits of sensitive credentials to version control. The `env.example` file serves as a template - copy it to `.env` and customize it with your specific configuration before deploying.
+
+**That's it!** Your SaleSpider instance will be running with HTTPS. By default, backups are disabled for faster setup - see the [Backup Configuration](#backup-configuration) section to enable them if needed.
 
 ### Quick Commands
 
@@ -60,6 +62,7 @@ SaleSpider supports two main deployment configurations:
 **Best for:** Complete control, on-premises deployment, development environments
 
 **What's included:**
+
 - PostgreSQL database container
 - pgBackRest backup system
 - Application container
@@ -67,6 +70,7 @@ SaleSpider supports two main deployment configurations:
 - Monitoring and health checks
 
 **Setup:**
+
 ```bash
 # Use default configuration
 make deploy
@@ -82,31 +86,158 @@ docker compose up -d
 **Best for:** Production deployments, managed database services, simplified maintenance
 
 **Supported providers:**
+
 - [Neon](https://neon.tech) (PostgreSQL)
 - [Supabase](https://supabase.com) (PostgreSQL)
-- [PlanetScale](https://planetscale.com) (MySQL)
 - [Railway](https://railway.app) (PostgreSQL)
 - [Heroku Postgres](https://www.heroku.com/postgres)
-- Any other hosted PostgreSQL/MySQL provider
+- Any other hosted PostgreSQL provider
 
 **What's included:**
+
 - Application container only
 - Caddy reverse proxy with SSL
 - No local database or backup containers
 
+**Important:** When using a hosted database provider, **do not enable the backup system**. Hosted database providers manage their own backups, snapshots, and point-in-time recovery. Running the SaleSpider backup system with a hosted database would be redundant and waste resources.
+
 **Setup:**
+
 ```bash
-# Configure for hosted database
+# 1. Create your environment file
+cp env.example .env
+
+# 2. Configure for hosted database
 nano .env
 # Set: DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require"
+# Set: PGBACKREST_REPO1_TYPE=none  (or leave as default)
 # Set: SETUP_BACKUP=false
 
-# Deploy with hosted database
+# 3. Deploy with hosted database
 make deploy-hosted-db-app
 
 # Or manually:
 docker compose -f .docker/docker-compose.hosted-db.yml up -d
 ```
+
+**Backup Management:** Your hosted database provider handles all backup operations. Refer to your provider's documentation for:
+
+- Automated backup schedules
+- Point-in-time recovery
+- Backup retention policies
+- Disaster recovery procedures
+
+### Option 3: Cloud Platform Deployment (Serverless)
+
+**Best for:** Zero infrastructure management, automatic scaling, global CDN
+
+**Popular platforms:**
+
+- [Vercel](https://vercel.com) - Best for Next.js apps with automatic scaling
+- [Railway](https://railway.app) - All-in-one platform with database included
+- [Render](https://render.com) - Simple deployments with free tier
+- Any platform that supports Node.js 24+ and PostgreSQL
+
+**What's included:**
+
+- Serverless application hosting
+- Automatic HTTPS and CDN
+- Zero server management
+- Hosted PostgreSQL database
+
+**Quick Setup:**
+
+```bash
+# 1. Create environment file from cloud template
+cp .env.cloud.example .env
+
+# 2. Configure your settings
+nano .env
+# Set: DATABASE_URL (from your database provider)
+# Set: JWT_SECRET
+# Set: APP_URL (your app URL)
+# Set: SUPER_ADMIN_EMAIL, SUPER_ADMIN_PASSWORD
+
+# 3. Run database migrations
+npm install
+npx prisma migrate deploy
+npm run seed:prod
+
+# 4. Deploy to your platform (see platform-specific guides below)
+```
+
+**Platform-Specific Deployment:**
+
+#### Vercel + Neon Database
+
+1. **Set up Neon database:**
+   - Create account at https://neon.tech
+   - Create new project
+   - Copy connection string
+
+2. **Deploy to Vercel:**
+
+   ```bash
+   # Install Vercel CLI
+   npm i -g vercel
+
+   # Deploy
+   vercel --prod
+   ```
+
+   Or use Vercel dashboard to import from GitHub
+
+3. **Configure environment variables in Vercel:**
+   - Add all variables from `.env`
+   - Update `APP_URL` with your Vercel URL
+
+#### Railway (Database + Hosting)
+
+1. **Create Railway project:**
+   - Go to https://railway.app
+   - Click "New Project" → "Deploy from GitHub"
+   - Connect your repository
+
+2. **Add PostgreSQL:**
+   - Click "New" → "Database" → "PostgreSQL"
+   - Railway auto-sets `DATABASE_URL`
+
+3. **Add environment variables:**
+
+   ```env
+   JWT_SECRET=your-secret
+   APP_URL=${{RAILWAY_PUBLIC_DOMAIN}}
+   SUPER_ADMIN_EMAIL=admin@example.com
+   SUPER_ADMIN_PASSWORD=SecurePass123!
+   SETUP_BACKUP=false
+   ```
+
+4. **Set build command:**
+   - Build: `npm install && npx prisma migrate deploy && npm run build`
+   - Start: `npm start`
+
+#### Render + Supabase
+
+1. **Set up Supabase database:**
+   - Create account at https://supabase.com
+   - Create new project
+   - Copy connection string from Settings → Database
+
+2. **Create Render web service:**
+   - Go to https://render.com
+   - Click "New" → "Web Service"
+   - Connect repository
+
+3. **Configure service:**
+   - Build: `npm install && npx prisma migrate deploy && npm run build`
+   - Start: `npm start`
+   - Add environment variables from `.env`
+
+**Cost Estimates:**
+
+- **Vercel + Neon**: Free tier available, $0-39/month for production
+- **Railway**: $5 credit/month free, $20/month for production
+- **Render + Supabase**: Free tier available, $32/month for production
 
 ---
 
@@ -117,10 +248,10 @@ docker compose -f .docker/docker-compose.hosted-db.yml up -d
 Edit your `.env` file with these required settings:
 
 #### **Security Settings**
+
 ```bash
 # JWT and authentication secrets (required)
 JWT_SECRET=your-super-secret-jwt-key-min-32-characters-long
-NEXTAUTH_SECRET=your-nextauth-secret-key-min-32-characters-long
 
 # Super admin account
 SUPER_ADMIN_EMAIL=admin@yourcompany.com
@@ -128,6 +259,7 @@ SUPER_ADMIN_PASSWORD=ChangeThisPassword123!
 ```
 
 #### **Domain and Network**
+
 ```bash
 # For internal company deployment
 DOMAIN=salespider.yourcompany.com
@@ -141,6 +273,7 @@ HOST_IP=127.0.0.1
 #### **Database Configuration**
 
 **For self-hosted database:**
+
 ```bash
 POSTGRES_DB=salespider
 POSTGRES_USER=postgres
@@ -149,10 +282,78 @@ DATABASE_URL="postgresql://postgres:SecurePostgresPassword123!@postgres:5432/sal
 ```
 
 **For hosted database:**
+
 ```bash
 DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require"
+PGBACKREST_REPO1_TYPE=none  # Backups managed by provider
 SETUP_BACKUP=false
 ```
+
+### Backup Configuration
+
+**By default, backups are disabled** to simplify initial setup. The backup system is only needed for self-hosted database deployments.
+
+#### Disabling Backups (Default)
+
+```bash
+# Backups disabled - fastest setup
+PGBACKREST_REPO1_TYPE=none
+```
+
+This is the recommended setting for:
+
+- Initial testing and evaluation
+- Development environments
+- Deployments using hosted database providers (Neon, Supabase, etc.)
+
+#### Enabling Backups
+
+To enable backups for self-hosted databases, set `PGBACKREST_REPO1_TYPE` to one of the following:
+
+**Local Filesystem Backups (posix):**
+
+```bash
+PGBACKREST_REPO1_TYPE=posix
+PGBACKREST_REPO1_PATH=/var/lib/pgbackrest
+```
+
+Best for: Simple setups, local storage, testing backup functionality
+
+**AWS S3 Cloud Backups (s3):**
+
+```bash
+PGBACKREST_REPO1_TYPE=s3
+AWS_S3_BUCKET=your-backup-bucket
+AWS_S3_REGION=us-east-1
+AWS_ACCESS_KEY_ID=your-access-key
+AWS_SECRET_ACCESS_KEY=your-secret-key
+```
+
+Best for: Production deployments, off-site backups, automatic retention
+
+**Azure Blob Storage Backups (azure):**
+
+```bash
+PGBACKREST_REPO1_TYPE=azure
+AZURE_STORAGE_ACCOUNT=your-account
+AZURE_STORAGE_KEY=your-key
+AZURE_STORAGE_CONTAINER=your-container
+```
+
+Best for: Azure-based infrastructure, enterprise deployments
+
+**Google Cloud Storage Backups (gcs):**
+
+```bash
+PGBACKREST_REPO1_TYPE=gcs
+GCS_BUCKET=your-backup-bucket
+GCS_KEY=your-service-account-key
+```
+
+Best for: GCP-based infrastructure, multi-region backups
+
+For detailed backup configuration, management, and recovery procedures, see:
+📖 **[Backup Guide](BACKUP_GUIDE.md)**
 
 ### Application Settings
 
@@ -169,7 +370,6 @@ LANGUAGE=en
 # Feature flags
 ENABLE_ANALYTICS=false
 ENABLE_REPORTS=true
-ENABLE_BARCODE_SCANNER=true
 ```
 
 ### Complete Configuration Reference
@@ -194,16 +394,19 @@ The system uses **self-signed certificates**, which is appropriate for internal 
 ### Browser Certificate Acceptance
 
 #### Chrome/Edge/Brave
+
 1. Visit `https://salespider.local` (or your domain)
 2. Click **"Advanced"** or **"Show details"**
 3. Click **"Proceed to site"** or **"Continue"**
 
 #### Firefox
+
 1. Visit your domain
 2. Click **"Advanced"**
 3. Click **"Accept the Risk and Continue"**
 
 #### Safari
+
 1. Visit your domain
 2. Click **"Show Details"**
 3. Click **"visit this website"**
@@ -214,28 +417,33 @@ The system uses **self-signed certificates**, which is appropriate for internal 
 For better user experience, install the certificate system-wide:
 
 #### macOS
+
 ```bash
 sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain .docker/ssl/cert.pem
 ```
 
 #### Linux (Ubuntu/Debian)
+
 ```bash
 sudo cp .docker/ssl/cert.pem /usr/local/share/ca-certificates/salespider.crt
 sudo update-ca-certificates
 ```
 
 #### Windows
+
 1. Double-click `.docker\ssl\cert.pem`
 2. Install to **"Trusted Root Certification Authorities"**
 
 ### Mobile Device Access
 
 #### iOS
+
 1. Email the certificate file to yourself
 2. Install the profile in Settings
 3. Trust the certificate in **Certificate Trust Settings**
 
 #### Android
+
 1. Transfer certificate to device
 2. Install via **Settings → Security → Encryption & credentials**
 
@@ -269,6 +477,7 @@ docker logs salespider-proxy
 ## Platform-Specific Instructions
 
 ### Linux
+
 ```bash
 # Install Docker and Docker Compose
 curl -fsSL https://get.docker.com -o get-docker.sh
@@ -282,6 +491,7 @@ make deploy
 ```
 
 ### macOS
+
 ```bash
 # Install Docker Desktop from docker.com
 # Or via Homebrew:
@@ -294,14 +504,23 @@ make deploy
 ```
 
 ### Windows
-1. Install **Docker Desktop** from docker.com
-2. Enable **WSL 2** integration
-3. Clone repository and deploy:
+
+**⚠️ Windows users must use WSL 2 for deployment.**
+
+For complete Windows deployment instructions, see: **[Windows Deployment Guide](WINDOWS_DEPLOYMENT.md)**
+
+**Quick start:**
+
+1. Install **WSL 2** and **Ubuntu**
+2. Install **Docker Desktop** with WSL 2 integration
+3. Deploy from within Ubuntu (WSL):
    ```bash
    git clone <repository-url>
    cd SaleSpider
    make deploy
    ```
+
+📖 **Full guide covers:** WSL setup, Docker configuration, firewall rules, SSL certificates, troubleshooting, and Windows-specific issues.
 
 ---
 
@@ -310,6 +529,7 @@ make deploy
 ### Common Issues
 
 #### **Services Not Starting**
+
 ```bash
 # Check service status
 make status
@@ -322,6 +542,7 @@ docker stats
 ```
 
 #### **Database Connection Issues**
+
 ```bash
 # Verify database is running
 docker compose ps postgres
@@ -342,6 +563,7 @@ docker exec salespider-postgres psql -U postgres -d salespider -c "\dt"
 **Solutions:**
 
 1. **Accept certificate in browser** (affects all API calls):
+
    ```
    1. Visit https://your-domain-or-ip
    2. Click "Advanced" → "Proceed to site"
@@ -349,6 +571,7 @@ docker exec salespider-postgres psql -U postgres -d salespider -c "\dt"
    ```
 
 2. **Regenerate certificates** if corrupted:
+
    ```bash
    .docker/scripts/setup/setup-ssl.sh
    docker compose restart proxy
@@ -357,6 +580,7 @@ docker exec salespider-postgres psql -U postgres -d salespider -c "\dt"
 3. **Trust certificate system-wide** (optional):
 
    **On the server machine:**
+
    ```bash
    # macOS
    sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain .docker/ssl/cert.pem
@@ -371,6 +595,7 @@ docker exec salespider-postgres psql -U postgres -d salespider -c "\dt"
    **Step 1: Get the certificate**
 
    Option A - Copy certificate file:
+
    ```bash
    # Share via network folder, USB, or email
    # From server: cp .docker/ssl/cert.pem /shared/folder/
@@ -381,6 +606,7 @@ docker exec salespider-postgres psql -U postgres -d salespider -c "\dt"
    ```
 
    Option B - Export via browser:
+
    ```
    1. Visit https://192.168.1.133 (accept warning)
    2. Click padlock icon → "Certificate"
@@ -391,6 +617,7 @@ docker exec salespider-postgres psql -U postgres -d salespider -c "\dt"
    **Step 2: Install the certificate**
 
    System-wide installation:
+
    ```bash
    # macOS
    sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain cert.pem
@@ -404,12 +631,14 @@ docker exec salespider-postgres psql -U postgres -d salespider -c "\dt"
    ```
 
    Browser-only installation:
+
    ```
    Chrome/Edge: Settings → Privacy → Security → Manage Certificates → Trusted Root → Import
    Firefox: Settings → Privacy → Certificates → View Certificates → Authorities → Import
    ```
 
 4. **Check configuration**:
+
    ```bash
    # Check Caddy configuration
    docker exec salespider-proxy cat /etc/caddy/Caddyfile
@@ -421,7 +650,9 @@ docker exec salespider-postgres psql -U postgres -d salespider -c "\dt"
 **Note:** Certificate warnings are normal and expected for internal tools using self-signed certificates.
 
 #### **Memory Issues**
+
 For systems with limited memory, reduce resource limits in `.env`:
+
 ```bash
 APP_MEMORY_LIMIT=1G
 APP_MEMORY_RESERVATION=512M
@@ -430,7 +661,9 @@ POSTGRES_SHARED_BUFFERS=128MB
 ```
 
 #### **Port Conflicts**
+
 If ports 80/443 are in use:
+
 ```bash
 # Change ports in .env
 HTTP_PORT=8080
@@ -443,6 +676,7 @@ make restart
 ### Environment-Specific Troubleshooting
 
 #### **Development Environment**
+
 ```bash
 NODE_ENV=development
 DEBUG=true
@@ -451,6 +685,7 @@ SKIP_SEED=false
 ```
 
 #### **Production Environment**
+
 ```bash
 NODE_ENV=production
 DEBUG=false
@@ -480,6 +715,7 @@ SKIP_SEED=true  # After initial deployment
 ### From Self-Hosted to Hosted Database
 
 1. **Export current database**:
+
    ```bash
    docker exec salespider-postgres pg_dump -U postgres salespider > backup.sql
    ```
@@ -487,6 +723,7 @@ SKIP_SEED=true  # After initial deployment
 2. **Import to hosted provider** (follow provider's instructions)
 
 3. **Switch configuration**:
+
    ```bash
    # Update .env
    DATABASE_URL="postgresql://user:pass@host:port/db?sslmode=require"

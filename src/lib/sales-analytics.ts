@@ -1,65 +1,68 @@
-import { createChildLogger } from "@/lib/logger";
-import { prisma } from "@/lib/prisma";
-import { DeshelvingService } from "@/lib/deshelving-service";
-const logger = createChildLogger('sales-analytics');
+import { createChildLogger } from '@/lib/logger'
+import { prisma } from '@/lib/prisma'
+import { DeshelvingService } from '@/lib/deshelving-service'
+const logger = createChildLogger('sales-analytics')
 
 export interface SalesAnalytics {
-  totalSales: number;
-  totalRevenue: number;
-  averageOrderValue: number;
+  totalSales: number
+  totalRevenue: number
+  averageOrderValue: number
   topSellingProducts: Array<{
-    productId: string;
-    productName: string;
-    totalQuantitySold: number;
-    totalRevenue: number;
-  }>;
+    productId: string
+    productName: string
+    totalQuantitySold: number
+    totalRevenue: number
+  }>
   lowStockProducts: Array<{
-    id: string;
-    name: string;
-    quantity: number;
-    lowStockMargin: number;
-  }>;
+    id: string
+    name: string
+    quantity: number
+    lowStockMargin: number
+  }>
   salesTrends: Array<{
-    date: string;
-    totalSales: number;
-    totalRevenue: number;
-  }>;
+    date: string
+    totalSales: number
+    totalRevenue: number
+  }>
   deshelvingInsights?: {
-    totalQuantityDeshelved: number;
-    totalValueLost: number;
+    totalQuantityDeshelved: number
+    totalValueLost: number
     topDeshelvingReasons: Array<{
-      reason: string;
-      quantity: number;
-      value: number;
-      count: number;
-    }>;
+      reason: string
+      quantity: number
+      value: number
+      count: number
+    }>
     highRiskProducts: Array<{
-      productId: string;
-      productName: string;
-      deshelvingCount: number; // total units deshelved
-      totalLoss: number;
-    }>;
-  };
+      productId: string
+      productName: string
+      deshelvingCount: number // total units deshelved
+      totalLoss: number
+    }>
+  }
 }
 
 export interface ProductPerformance {
-  productId: string;
-  productName: string;
-  totalQuantitySold: number;
-  totalRevenue: number;
-  averageSellingPrice: number;
-  lastSaleDate: Date | null;
-  daysWithoutSale: number;
+  productId: string
+  productName: string
+  totalQuantitySold: number
+  totalRevenue: number
+  averageSellingPrice: number
+  lastSaleDate: Date | null
+  daysWithoutSale: number
 }
 
 export class SalesAnalyticsService {
   /**
    * Get comprehensive sales analytics for AI insights
    */
-  static async getSalesAnalytics(daysBack: number = 30, maxRecords: number = 1000): Promise<SalesAnalytics> {
+  static async getSalesAnalytics(
+    daysBack: number = 30,
+    maxRecords: number = 1000
+  ): Promise<SalesAnalytics> {
     try {
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - daysBack);
+      const startDate = new Date()
+      startDate.setDate(startDate.getDate() - daysBack)
 
       // Get total sales and revenue (limited by maxRecords)
       const salesSummary = await prisma.sale.aggregate({
@@ -75,11 +78,11 @@ export class SalesAnalyticsService {
           totalAmount: true,
         },
         take: maxRecords,
-      });
+      })
 
-      const totalSales = salesSummary._count.id || 0;
-      const totalRevenue = salesSummary._sum.totalAmount || 0;
-      const averageOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
+      const totalSales = salesSummary._count.id || 0
+      const totalRevenue = salesSummary._sum.totalAmount || 0
+      const averageOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0
 
       // Get top selling products
       const topSellingProducts = await prisma.saleItem.groupBy({
@@ -101,10 +104,10 @@ export class SalesAnalyticsService {
           },
         },
         take: 10,
-      });
+      })
 
       // Get product names for top selling products
-      const productIds = topSellingProducts.map(item => item.productId);
+      const productIds = topSellingProducts.map(item => item.productId)
       const products = await prisma.product.findMany({
         where: {
           id: {
@@ -115,38 +118,43 @@ export class SalesAnalyticsService {
           id: true,
           name: true,
         },
-      });
+      })
 
-      const productMap = new Map(products.map(p => [p.id, p.name]));
+      const productMap = new Map(products.map(p => [p.id, p.name]))
 
       const topSellingWithNames = topSellingProducts.map(item => ({
         productId: item.productId,
         productName: productMap.get(item.productId) || 'Unknown Product',
         totalQuantitySold: item._sum?.quantity || 0,
         totalRevenue: item._sum?.price || 0,
-      }));
+      }))
 
       // Get low stock products (use quoted identifiers to match Prisma table/columns)
-      const lowStockProducts = await prisma.$queryRaw<Array<{
-        id: string;
-        name: string;
-        quantity: number;
-        lowStockMargin: number;
-      }>>`
+      // SECURITY: Using Prisma's tagged template literals - automatically parameterized and safe from SQL injection
+      const lowStockProducts = await prisma.$queryRaw<
+        Array<{
+          id: string
+          name: string
+          quantity: number
+          lowStockMargin: number
+        }>
+      >`
         SELECT "id", "name", "quantity", "lowStockMargin" as "lowStockMargin"
         FROM "Product"
         WHERE "deletedAt" IS NULL
           AND "quantity" <= "lowStockMargin"
         ORDER BY "quantity" ASC
         LIMIT 10
-      `;
+      `
 
       // Get sales trends by day (limited by maxRecords)
-      const salesTrends = await prisma.$queryRaw<Array<{
-        date: string;
-        totalSales: bigint;
-        totalRevenue: number;
-      }>>`
+      const salesTrends = await prisma.$queryRaw<
+        Array<{
+          date: string
+          totalSales: bigint
+          totalRevenue: number
+        }>
+      >`
         SELECT 
           DATE("createdAt") as date,
           COUNT(*)::bigint as "totalSales",
@@ -156,19 +164,22 @@ export class SalesAnalyticsService {
         GROUP BY DATE("createdAt")
         ORDER BY date ASC
         LIMIT ${maxRecords}
-      `;
+      `
 
       const formattedTrends = salesTrends.map(trend => ({
         date: trend.date,
         totalSales: Number(trend.totalSales),
         totalRevenue: trend.totalRevenue || 0,
-      }));
+      }))
 
       // Get deshelving insights
-      const deshelvingAnalytics = await DeshelvingService.getDeshelvingAnalytics(daysBack);
-      
+      const deshelvingAnalytics =
+        await DeshelvingService.getDeshelvingAnalytics(daysBack)
+
       // Format deshelving data for AI insights
-      const topDeshelvingReasons = Object.entries(deshelvingAnalytics.reasonBreakdown)
+      const topDeshelvingReasons = Object.entries(
+        deshelvingAnalytics.reasonBreakdown
+      )
         .filter(([, data]) => data.quantity > 0)
         .sort(([, a], [, b]) => b.quantity - a.quantity)
         .slice(0, 5)
@@ -177,7 +188,7 @@ export class SalesAnalyticsService {
           quantity: data.quantity,
           value: data.value,
           count: data.count,
-        }));
+        }))
 
       // Get high-risk products based on deshelving frequency and value
       const highRiskProducts = deshelvingAnalytics.topAffectedProducts
@@ -187,14 +198,14 @@ export class SalesAnalyticsService {
           productName: product.productName,
           deshelvingCount: product.totalQuantityDeshelved,
           totalLoss: product.totalValueLost,
-        }));
+        }))
 
       const deshelvingInsights = {
         totalQuantityDeshelved: deshelvingAnalytics.totalQuantityDeshelved,
         totalValueLost: deshelvingAnalytics.totalValueLost,
         topDeshelvingReasons,
         highRiskProducts,
-      };
+      }
 
       return {
         totalSales,
@@ -204,13 +215,16 @@ export class SalesAnalyticsService {
         lowStockProducts,
         salesTrends: formattedTrends,
         deshelvingInsights,
-      };
+      }
     } catch (error) {
-      logger.error({
-        error: error instanceof Error ? error.message : 'Unknown error',
-        daysBack,
-      }, 'Failed to get sales analytics');
-      
+      logger.error(
+        {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          daysBack,
+        },
+        'Failed to get sales analytics'
+      )
+
       // Return empty analytics on error
       return {
         totalSales: 0,
@@ -225,26 +239,31 @@ export class SalesAnalyticsService {
           topDeshelvingReasons: [],
           highRiskProducts: [],
         },
-      };
+      }
     }
   }
 
   /**
    * Get detailed product performance metrics
    */
-  static async getProductPerformance(daysBack: number = 30, maxRecords: number = 1000): Promise<ProductPerformance[]> {
+  static async getProductPerformance(
+    daysBack: number = 30,
+    maxRecords: number = 1000
+  ): Promise<ProductPerformance[]> {
     try {
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - daysBack);
+      const startDate = new Date()
+      startDate.setDate(startDate.getDate() - daysBack)
 
-      const productPerformance = await prisma.$queryRaw<Array<{
-        productId: string;
-        productName: string;
-        totalQuantitySold: bigint;
-        totalRevenue: number;
-        averageSellingPrice: number;
-        lastSaleDate: Date | null;
-      }>>`
+      const productPerformance = await prisma.$queryRaw<
+        Array<{
+          productId: string
+          productName: string
+          totalQuantitySold: bigint
+          totalRevenue: number
+          averageSellingPrice: number
+          lastSaleDate: Date | null
+        }>
+      >`
         SELECT 
           p."id" as "productId",
           p."name" as "productName",
@@ -263,9 +282,9 @@ export class SalesAnalyticsService {
         GROUP BY p."id", p."name"
         ORDER BY "totalQuantitySold" DESC
         LIMIT ${maxRecords}
-      `;
+      `
 
-      const now = new Date();
+      const now = new Date()
       return productPerformance.map(item => ({
         productId: item.productId,
         productName: item.productName,
@@ -273,16 +292,22 @@ export class SalesAnalyticsService {
         totalRevenue: item.totalRevenue || 0,
         averageSellingPrice: item.averageSellingPrice || 0,
         lastSaleDate: item.lastSaleDate,
-        daysWithoutSale: item.lastSaleDate 
-          ? Math.floor((now.getTime() - item.lastSaleDate.getTime()) / (1000 * 60 * 60 * 24))
+        daysWithoutSale: item.lastSaleDate
+          ? Math.floor(
+              (now.getTime() - item.lastSaleDate.getTime()) /
+                (1000 * 60 * 60 * 24)
+            )
           : Infinity,
-      }));
+      }))
     } catch (error) {
-      logger.error({
-        error: error instanceof Error ? error.message : 'Unknown error',
-        daysBack,
-      }, 'Failed to get product performance');
-      return [];
+      logger.error(
+        {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          daysBack,
+        },
+        'Failed to get product performance'
+      )
+      return []
     }
   }
 
@@ -307,66 +332,86 @@ export class SalesAnalyticsService {
           name: 'asc',
         },
         take: maxRecords,
-      });
+      })
     } catch (error) {
-      logger.error({
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }, 'Failed to get current inventory');
-      return [];
+      logger.error(
+        {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+        'Failed to get current inventory'
+      )
+      return []
     }
   }
 
   /**
    * Format data for AI insights consumption with data quality assessment
    */
-  static formatForAI(analytics: SalesAnalytics, productPerformance: ProductPerformance[], inventory: any[]) {
+  static formatForAI(
+    analytics: SalesAnalytics,
+    productPerformance: ProductPerformance[],
+    inventory: any[]
+  ) {
     // Assess data quality and completeness
     const dataQuality = {
       hasSalesData: analytics.totalSales > 0,
       hasProductData: inventory.length > 0,
       hasPerformanceData: productPerformance.length > 0,
       hasRecentSales: analytics.salesTrends.length > 0,
-      hasDeshelvingData: analytics.deshelvingInsights && analytics.deshelvingInsights.totalQuantityDeshelved > 0,
+      hasDeshelvingData:
+        analytics.deshelvingInsights &&
+        analytics.deshelvingInsights.totalQuantityDeshelved > 0,
       dataPoints: {
         salesCount: analytics.totalSales,
         productCount: inventory.length,
         performanceRecords: productPerformance.length,
         trendDays: analytics.salesTrends.length,
-      }
-    };
+      },
+    }
 
     return {
-      salesData: JSON.stringify({
-        dataQuality,
-        summary: {
-          totalSales: analytics.totalSales,
-          totalRevenue: analytics.totalRevenue,
-          averageOrderValue: analytics.averageOrderValue,
+      salesData: JSON.stringify(
+        {
+          dataQuality,
+          summary: {
+            totalSales: analytics.totalSales,
+            totalRevenue: analytics.totalRevenue,
+            averageOrderValue: analytics.averageOrderValue,
+          },
+          topProducts: analytics.topSellingProducts,
+          trends: analytics.salesTrends,
+          productPerformance: productPerformance.slice(0, 20), // Top 20 products
+          deshelvingInsights: analytics.deshelvingInsights,
+          isEmpty: analytics.totalSales === 0 && inventory.length === 0,
+          isLimitedData: analytics.totalSales < 5 && inventory.length < 10,
         },
-        topProducts: analytics.topSellingProducts,
-        trends: analytics.salesTrends,
-        productPerformance: productPerformance.slice(0, 20), // Top 20 products
-        deshelvingInsights: analytics.deshelvingInsights,
-        isEmpty: analytics.totalSales === 0 && inventory.length === 0,
-        isLimitedData: analytics.totalSales < 5 && inventory.length < 10,
-      }, null, 2),
-      currentInventory: JSON.stringify({
-        products: inventory.map(item => ({
-          id: item.id,
-          name: item.name,
-          currentStock: item.quantity,
-          lowStockThreshold: item.lowStockMargin,
-          price: item.price,
-          category: item.category,
-          isLowStock: item.quantity <= item.lowStockMargin,
-        })),
-        summary: {
-          totalProducts: inventory.length,
-          lowStockProducts: inventory.filter(item => item.quantity <= item.lowStockMargin).length,
-          outOfStockProducts: inventory.filter(item => item.quantity === 0).length,
-          categories: [...new Set(inventory.map(item => item.category))],
-        }
-      }, null, 2),
-    };
+        null,
+        2
+      ),
+      currentInventory: JSON.stringify(
+        {
+          products: inventory.map(item => ({
+            id: item.id,
+            name: item.name,
+            currentStock: item.quantity,
+            lowStockThreshold: item.lowStockMargin,
+            price: item.price,
+            category: item.category,
+            isLowStock: item.quantity <= item.lowStockMargin,
+          })),
+          summary: {
+            totalProducts: inventory.length,
+            lowStockProducts: inventory.filter(
+              item => item.quantity <= item.lowStockMargin
+            ).length,
+            outOfStockProducts: inventory.filter(item => item.quantity === 0)
+              .length,
+            categories: [...new Set(inventory.map(item => item.category))],
+          },
+        },
+        null,
+        2
+      ),
+    }
   }
 }

@@ -2,7 +2,7 @@ services:
   backup:
     image: alpine:latest
     container_name: ${COMPOSE_PROJECT_NAME:-salespider}-backup
-    
+
     environment:
       PGBACKREST_REPO1_TYPE: ${PGBACKREST_REPO1_TYPE:-none}
       PGBACKREST_REPO1_PATH: ${PGBACKREST_REPO1_PATH:-/var/lib/pgbackrest}
@@ -11,12 +11,14 @@ services:
       PGBACKREST_REPO1_S3_REGION: ${AWS_REGION:-}
       PGBACKREST_REPO1_S3_KEY: ${AWS_ACCESS_KEY_ID:-}
       PGBACKREST_REPO1_S3_KEY_SECRET: ${AWS_SECRET_ACCESS_KEY:-}
+      # Azure Blob Storage - Uncomment if using PGBACKREST_REPO1_TYPE=azure
       # PGBACKREST_REPO1_AZURE_ACCOUNT: ${AZURE_STORAGE_ACCOUNT:-}
       # PGBACKREST_REPO1_AZURE_KEY: ${AZURE_STORAGE_KEY:-}
       # PGBACKREST_REPO1_AZURE_CONTAINER: ${AZURE_STORAGE_CONTAINER:-}
+      # Google Cloud Storage - Uncomment if using PGBACKREST_REPO1_TYPE=gcs
       # PGBACKREST_REPO1_GCS_BUCKET: ${GCS_BUCKET:-}
       # PGBACKREST_REPO1_GCS_KEY: ${GCS_KEY:-}
-      PGHOST: ${POSTGRES_HOST:-postgres}
+      PGHOST: postgres
       PGPORT: ${POSTGRES_PORT:-5432}
       PGUSER: ${POSTGRES_USER:-postgres}
       PGPASSWORD: ${POSTGRES_PASSWORD}
@@ -26,7 +28,7 @@ services:
       BACKUP_SCHEDULE_DIFF: ${BACKUP_SCHEDULE_DIFF:-0 2 * * 1-6}
       BACKUP_RETENTION_FULL: ${BACKUP_RETENTION_FULL:-8}
       BACKUP_RETENTION_DIFF: ${BACKUP_RETENTION_DIFF:-14}
-      
+
       # pgBackRest Performance & Logging
       PGBACKREST_LOG_LEVEL_CONSOLE: ${PGBACKREST_LOG_LEVEL_CONSOLE:-info}
       PGBACKREST_LOG_LEVEL_FILE: ${PGBACKREST_LOG_LEVEL_FILE:-debug}
@@ -35,7 +37,7 @@ services:
       PGBACKREST_PROCESS_MAX: ${PGBACKREST_PROCESS_MAX:-4}
       PGBACKREST_CONFIG: /pgbackrest-config/pgbackrest.conf
       POSTGRES_DATA_PATH: /var/lib/postgresql/data
-    
+
     volumes:
       - backup-data:/var/lib/pgbackrest
       - backup-logs:/var/log/pgbackrest
@@ -43,18 +45,24 @@ services:
       - postgres-data:/var/lib/postgresql/data
       - ../scripts/backup:/scripts:ro
       - pgbackrest-config:/pgbackrest-config:ro
-    
-    command: ["sh", "/scripts/start-pgbackrest.sh"]
-    
+
+    command: ['sh', '/scripts/start-pgbackrest.sh']
+
     healthcheck:
-      test: ["CMD", "sh", "-c", "pgbackrest --stanza=${PGBACKREST_STANZA:-salespider} info"]
+      test:
+        [
+          'CMD',
+          'sh',
+          '-c',
+          'pgbackrest --stanza=${PGBACKREST_STANZA:-salespider} info',
+        ]
       interval: 60s
       timeout: 30s
       retries: 3
       start_period: 120s
-    
+
     restart: unless-stopped
-    
+
     deploy:
       resources:
         limits:
@@ -63,13 +71,13 @@ services:
         reservations:
           memory: ${BACKUP_MEMORY_RESERVATION:-256M}
           cpus: '${BACKUP_CPU_RESERVATION:-0.25}'
-    
+
     logging:
       driver: json-file
       options:
-        max-size: "10m"
-        max-file: "3"
-    
+        max-size: '10m'
+        max-file: '3'
+
     networks:
       - salespider-net
 

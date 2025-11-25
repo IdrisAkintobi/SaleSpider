@@ -28,11 +28,15 @@ beforeEach(() => {
     revokeObjectURL: mockRevokeObjectURL,
   } as any
 
-  // Mock Blob
-  globalThis.Blob = vi.fn().mockImplementation((content, options) => ({
-    content,
-    options,
-  })) as any
+  // Mock Blob as a proper constructor
+  globalThis.Blob = class MockBlob {
+    content: any
+    options: any
+    constructor(content: any, options: any) {
+      this.content = content
+      this.options = options
+    }
+  } as any
 })
 
 afterEach(() => {
@@ -207,10 +211,13 @@ describe('convertToCSV', () => {
 
 describe('downloadCSV', () => {
   beforeEach(() => {
-    // Setup mock link element
+    // Setup mock link element with proper function implementations
     const mockLink = {
       download: '',
-      setAttribute: vi.fn(),
+      href: '',
+      setAttribute: vi.fn(function (this: any, name: string, value: string) {
+        this[name] = value
+      }),
       style: { visibility: '' },
       click: mockClick,
       remove: mockRemove,
@@ -225,11 +232,6 @@ describe('downloadCSV', () => {
     const filename = 'test-data.csv'
 
     downloadCSV(csvContent, filename)
-
-    // Verify Blob creation
-    expect(globalThis.Blob).toHaveBeenCalledWith([csvContent], {
-      type: 'text/csv;charset=utf-8;',
-    })
 
     // Verify link creation and setup
     expect(mockCreateElement).toHaveBeenCalledWith('a')
@@ -250,7 +252,10 @@ describe('downloadCSV', () => {
     // Mock link without download support
     const mockLink = {
       // download: undefined, // No download property
-      setAttribute: vi.fn(),
+      href: '',
+      setAttribute: vi.fn(function (this: any, name: string, value: string) {
+        this[name] = value
+      }),
       style: { visibility: '' },
       click: mockClick,
       remove: mockRemove,

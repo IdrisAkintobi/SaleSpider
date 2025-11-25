@@ -1,12 +1,8 @@
-"use client";
+'use client'
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-} from "@/components/ui/card";
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -14,86 +10,98 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { VirtualTable } from "@/components/ui/virtual-table";
+} from '@/components/ui/select'
+import { VirtualTable } from '@/components/ui/virtual-table'
 import {
   useAuditLogs,
   useRefreshAuditLogs,
   type AuditLog,
   type AuditLogFilters,
-} from "@/hooks/use-audit-logs";
-import { useToast } from "@/hooks/use-toast";
-import { useTranslation } from "@/lib/i18n";
-import { useRenderTime, usePagePerformance, useSlowRenderDetector } from "@/hooks/use-performance";
-import { ChevronLeft, ChevronRight, Eye, Filter, RefreshCw, Search, Shield } from "lucide-react";
-import { useState } from "react";
+} from '@/hooks/use-audit-logs'
+import { useToast } from '@/hooks/use-toast'
+import { useTranslation } from '@/lib/i18n'
+import {
+  useRenderTime,
+  usePagePerformance,
+  useSlowRenderDetector,
+} from '@/hooks/use-performance'
+import {
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Filter,
+  RefreshCw,
+  Search,
+  Shield,
+} from 'lucide-react'
+import { useState } from 'react'
 
 const entityTypeLabels: Record<string, { label: string; color: string }> = {
   USER: {
-    label: "User",
-    color: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
+    label: 'User',
+    color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
   },
   PRODUCT: {
-    label: "Product",
+    label: 'Product',
     color:
-      "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
+      'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
   },
   DESHELVING: {
-    label: "Deshelving",
+    label: 'Deshelving',
     color:
-      "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400",
+      'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400',
   },
-};
+}
 
 const actionLabels: Record<string, { label: string; color: string }> = {
   CREATE: {
-    label: "Create",
+    label: 'Create',
     color:
-      "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
+      'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
   },
   UPDATE: {
-    label: "Update",
-    color: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
+    label: 'Update',
+    color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
   },
   DELETE: {
-    label: "Delete",
-    color: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
+    label: 'Delete',
+    color: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
   },
   RESTORE: {
-    label: "Restore",
+    label: 'Restore',
     color:
-      "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400",
+      'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400',
   },
   DESHELVE: {
-    label: "Deshelve",
+    label: 'Deshelve',
     color:
-      "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400",
+      'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400',
   },
-};
+}
 
 // Helper functions
 const formatTimestamp = (timestamp: string) => {
-  return new Date(timestamp).toLocaleDateString();
-};
+  return new Date(timestamp).toLocaleDateString()
+}
 
 const formatJsonData = (data: any) => {
-  if (!data) return "N/A";
-  return JSON.stringify(data, null, 2);
-};
+  if (!data) return 'N/A'
+  return JSON.stringify(data, null, 2)
+}
 
 // Extracted component - now outside parent
 interface AuditLogRowProps {
-  readonly log: AuditLog;
-  readonly t: (key: string) => string;
+  readonly log: AuditLog
+  readonly t: (key: string) => string
 }
 
 function AuditLogRow({ log, t }: AuditLogRowProps) {
@@ -101,7 +109,7 @@ function AuditLogRow({ log, t }: AuditLogRowProps) {
     <div
       key={log.id}
       className="flex items-center border-b border-border p-4 hover:bg-muted/50 transition-colors"
-      style={{ height: "80px" }}
+      style={{ height: '80px' }}
     >
       <div className="flex-1 min-w-0 grid grid-cols-6 gap-4 items-center">
         <div className="font-mono text-sm text-muted-foreground">
@@ -112,7 +120,7 @@ function AuditLogRow({ log, t }: AuditLogRowProps) {
           <Badge
             className={
               entityTypeLabels[log.entityType]?.color ||
-              "bg-gray-100 text-gray-800"
+              'bg-gray-100 text-gray-800'
             }
           >
             {entityTypeLabels[log.entityType]?.label || log.entityType}
@@ -122,7 +130,7 @@ function AuditLogRow({ log, t }: AuditLogRowProps) {
         <div className="flex items-center gap-2">
           <Badge
             className={
-              actionLabels[log.action]?.color || "bg-gray-100 text-gray-800"
+              actionLabels[log.action]?.color || 'bg-gray-100 text-gray-800'
             }
           >
             {actionLabels[log.action]?.label || log.action}
@@ -132,7 +140,7 @@ function AuditLogRow({ log, t }: AuditLogRowProps) {
         <div className="font-mono text-sm truncate">{log.entityId}</div>
 
         <div className="text-sm text-muted-foreground truncate">
-          {log.userEmail || "System"}
+          {log.userEmail || 'System'}
         </div>
 
         <div className="flex justify-end">
@@ -144,51 +152,63 @@ function AuditLogRow({ log, t }: AuditLogRowProps) {
             </DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[80vh] overflow-auto">
               <DialogHeader>
-                <DialogTitle>{t("auditLogDetails")}</DialogTitle>
+                <DialogTitle>{t('auditLogDetails')}</DialogTitle>
                 <DialogDescription>
-                  {log.entityType} {log.action} -{" "}
+                  {log.entityType} {log.action} -{' '}
                   {new Date(log.timestamp).toLocaleString()}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-sm font-medium">{t("entityId")}</Label>
+                    <Label className="text-sm font-medium">
+                      {t('entityId')}
+                    </Label>
                     <p className="font-mono text-sm mt-1">{log.entityId}</p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium">{t("user")}</Label>
-                    <p className="text-sm mt-1">{log.userEmail || t("system")}</p>
+                    <Label className="text-sm font-medium">{t('user')}</Label>
+                    <p className="text-sm mt-1">
+                      {log.userEmail || t('system')}
+                    </p>
                   </div>
                 </div>
                 {log.changes && (
                   <div>
-                    <Label className="text-sm font-medium">{t("changes")}</Label>
-                    <pre className="bg-muted p-3 rounded-md text-xs overflow-auto mt-1">
+                    <Label className="text-sm font-medium">
+                      {t('changes')}
+                    </Label>
+                    <pre className="bg-muted p-3 rounded-md text-xs overflow-auto mt-1 whitespace-pre-wrap break-words">
                       {formatJsonData(log.changes)}
                     </pre>
                   </div>
                 )}
                 {log.oldValues && (
                   <div>
-                    <Label className="text-sm font-medium">{t("oldValues")}</Label>
-                    <pre className="bg-muted p-3 rounded-md text-xs overflow-auto mt-1">
+                    <Label className="text-sm font-medium">
+                      {t('oldValues')}
+                    </Label>
+                    <pre className="bg-muted p-3 rounded-md text-xs overflow-auto mt-1 whitespace-pre-wrap break-words">
                       {formatJsonData(log.oldValues)}
                     </pre>
                   </div>
                 )}
                 {log.newValues && (
                   <div>
-                    <Label className="text-sm font-medium">{t("newValues")}</Label>
-                    <pre className="bg-muted p-3 rounded-md text-xs overflow-auto mt-1">
+                    <Label className="text-sm font-medium">
+                      {t('newValues')}
+                    </Label>
+                    <pre className="bg-muted p-3 rounded-md text-xs overflow-auto mt-1 whitespace-pre-wrap break-words">
                       {formatJsonData(log.newValues)}
                     </pre>
                   </div>
                 )}
                 {log.metadata && (
                   <div>
-                    <Label className="text-sm font-medium">{t("metadata")}</Label>
-                    <pre className="bg-muted p-3 rounded-md text-xs overflow-auto mt-1">
+                    <Label className="text-sm font-medium">
+                      {t('metadata')}
+                    </Label>
+                    <pre className="bg-muted p-3 rounded-md text-xs overflow-auto mt-1 whitespace-pre-wrap break-words">
                       {formatJsonData(log.metadata)}
                     </pre>
                   </div>
@@ -199,83 +219,83 @@ function AuditLogRow({ log, t }: AuditLogRowProps) {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 export function AuditLogTable() {
-  const [page, setPage] = useState(1);
-  const [limit] = useState(50);
+  const [page, setPage] = useState(1)
+  const [limit] = useState(50)
   const [filters, setFilters] = useState<AuditLogFilters>({
-    entityType: "all",
-    action: "all",
-    userEmail: "",
-    startDate: "",
-    endDate: "",
-  });
-  const [showFilters, setShowFilters] = useState(false);
-  const { toast } = useToast();
-  const t = useTranslation();
+    entityType: 'all',
+    action: 'all',
+    userEmail: '',
+    startDate: '',
+    endDate: '',
+  })
+  const [showFilters, setShowFilters] = useState(false)
+  const { toast } = useToast()
+  const t = useTranslation()
 
-  useRenderTime("AuditLogTable");
-  usePagePerformance("Audit Logs Page");
-  const performanceStats = useSlowRenderDetector(16);
+  useRenderTime('AuditLogTable')
+  usePagePerformance('Audit Logs Page')
+  const performanceStats = useSlowRenderDetector(16)
 
   if (
-    process.env.NODE_ENV === "development" &&
+    process.env.NODE_ENV === 'development' &&
     performanceStats.slowRenderPercentage > 10
   ) {
     console.warn(
       `AuditLogTable: ${performanceStats.slowRenderPercentage.toFixed(
         1
       )}% slow renders`
-    );
+    )
   }
   // Transform filters for API call (convert "all" to empty string)
   const apiFilters = {
     ...filters,
-    entityType: filters.entityType === "all" ? "" : filters.entityType,
-    action: filters.action === "all" ? "" : filters.action,
-  };
+    entityType: filters.entityType === 'all' ? '' : filters.entityType,
+    action: filters.action === 'all' ? '' : filters.action,
+  }
 
   const { data, isLoading, error, refetch } = useAuditLogs({
     page,
     limit,
     ...apiFilters,
-  });
+  })
 
-  const refreshMutation = useRefreshAuditLogs();
+  const refreshMutation = useRefreshAuditLogs()
 
   const handleFilterChange = (key: string, value: string) => {
-    setFilters((prev: AuditLogFilters) => ({ ...prev, [key]: value }));
-    setPage(1);
-  };
+    setFilters((prev: AuditLogFilters) => ({ ...prev, [key]: value }))
+    setPage(1)
+  }
 
   const applyFilters = () => {
-    setPage(1);
-    refetch();
-  };
+    setPage(1)
+    refetch()
+  }
 
   const clearFilters = () => {
     setFilters({
-      entityType: "all",
-      action: "all",
-      userEmail: "",
-      startDate: "",
-      endDate: "",
-    });
-    setPage(1);
-  };
+      entityType: 'all',
+      action: 'all',
+      userEmail: '',
+      startDate: '',
+      endDate: '',
+    })
+    setPage(1)
+  }
 
   if (error) {
     toast({
-      title: t("error"),
-      description: t("failedToLoadAuditLogs"),
-      variant: "destructive",
-    });
+      title: t('error'),
+      description: t('failedToLoadAuditLogs'),
+      variant: 'destructive',
+    })
   }
 
-  const auditLogs = data?.auditLogs || [];
-  const shouldUseVirtualScrolling = auditLogs.length > 50;
+  const auditLogs = data?.auditLogs || []
+  const shouldUseVirtualScrolling = auditLogs.length > 50
 
   if (isLoading && !data) {
     return (
@@ -283,11 +303,11 @@ export function AuditLogTable() {
         <CardContent className="p-6">
           <div className="flex items-center justify-center">
             <RefreshCw className="h-6 w-6 animate-spin mr-2" />
-            {t("loadingAuditLogs")}...
+            {t('loadingAuditLogs')}...
           </div>
         </CardContent>
       </Card>
-    );
+    )
   }
 
   return (
@@ -303,7 +323,7 @@ export function AuditLogTable() {
                 onClick={() => setShowFilters(!showFilters)}
               >
                 <Filter className="h-4 w-4 mr-2" />
-                {t("filters")}
+                {t('filters')}
               </Button>
               <Button
                 variant="outline"
@@ -312,7 +332,7 @@ export function AuditLogTable() {
                 disabled={refreshMutation.isPending}
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
-                {t("refresh")}
+                {t('refresh')}
               </Button>
             </div>
           </div>
@@ -322,88 +342,88 @@ export function AuditLogTable() {
           <CardContent className="border-t">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <div>
-                <Label htmlFor="entityType">{t("entityType")}</Label>
+                <Label htmlFor="entityType">{t('entityType')}</Label>
                 <Select
                   value={filters.entityType}
-                  onValueChange={(value) =>
-                    handleFilterChange("entityType", value)
+                  onValueChange={value =>
+                    handleFilterChange('entityType', value)
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={t("allTypes")} />
+                    <SelectValue placeholder={t('allTypes')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">{t("allTypes")}</SelectItem>
-                    <SelectItem value="USER">{t("user")}</SelectItem>
-                    <SelectItem value="PRODUCT">{t("product")}</SelectItem>
-                    <SelectItem value="DESHELVING">{t("deshelving")}</SelectItem>
+                    <SelectItem value="all">{t('allTypes')}</SelectItem>
+                    <SelectItem value="USER">{t('user')}</SelectItem>
+                    <SelectItem value="PRODUCT">{t('product')}</SelectItem>
+                    <SelectItem value="DESHELVING">
+                      {t('deshelving')}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label htmlFor="action">{t("action")}</Label>
+                <Label htmlFor="action">{t('action')}</Label>
                 <Select
                   value={filters.action}
-                  onValueChange={(value) => handleFilterChange("action", value)}
+                  onValueChange={value => handleFilterChange('action', value)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={t("allActions")} />
+                    <SelectValue placeholder={t('allActions')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">{t("allActions")}</SelectItem>
-                    <SelectItem value="CREATE">{t("create")}</SelectItem>
-                    <SelectItem value="UPDATE">{t("update")}</SelectItem>
-                    <SelectItem value="DELETE">{t("delete")}</SelectItem>
-                    <SelectItem value="RESTORE">{t("restore")}</SelectItem>
-                    <SelectItem value="DESHELVE">{t("deshelve")}</SelectItem>
+                    <SelectItem value="all">{t('allActions')}</SelectItem>
+                    <SelectItem value="CREATE">{t('create')}</SelectItem>
+                    <SelectItem value="UPDATE">{t('update')}</SelectItem>
+                    <SelectItem value="DELETE">{t('delete')}</SelectItem>
+                    <SelectItem value="RESTORE">{t('restore')}</SelectItem>
+                    <SelectItem value="DESHELVE">{t('deshelve')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label htmlFor="userEmail">{t("userEmail")}</Label>
+                <Label htmlFor="userEmail">{t('userEmail')}</Label>
                 <Input
                   id="userEmail"
-                  placeholder={t("searchByEmail")}
+                  placeholder={t('searchByEmail')}
                   value={filters.userEmail}
-                  onChange={(e) =>
-                    handleFilterChange("userEmail", e.target.value)
+                  onChange={e =>
+                    handleFilterChange('userEmail', e.target.value)
                   }
                 />
               </div>
 
               <div>
-                <Label htmlFor="startDate">{t("startDate")}</Label>
+                <Label htmlFor="startDate">{t('startDate')}</Label>
                 <Input
                   id="startDate"
                   type="date"
                   value={filters.startDate}
-                  onChange={(e) =>
-                    handleFilterChange("startDate", e.target.value)
+                  onChange={e =>
+                    handleFilterChange('startDate', e.target.value)
                   }
                 />
               </div>
 
               <div>
-                <Label htmlFor="endDate">{t("endDate")}</Label>
+                <Label htmlFor="endDate">{t('endDate')}</Label>
                 <Input
                   id="endDate"
                   type="date"
                   value={filters.endDate}
-                  onChange={(e) =>
-                    handleFilterChange("endDate", e.target.value)
-                  }
+                  onChange={e => handleFilterChange('endDate', e.target.value)}
                 />
               </div>
 
               <div className="flex items-end gap-2">
                 <Button onClick={applyFilters} className="flex-1">
                   <Search className="h-4 w-4 mr-2" />
-                  {t("apply")}
+                  {t('apply')}
                 </Button>
                 <Button variant="outline" onClick={clearFilters}>
-                  {t("clear")}
+                  {t('clear')}
                 </Button>
               </div>
             </div>
@@ -415,12 +435,12 @@ export function AuditLogTable() {
         <CardContent className="p-0">
           <div className="border-b border-border bg-muted/50 p-4">
             <div className="grid grid-cols-6 gap-4 text-sm font-medium text-muted-foreground">
-              <div>{t("date")}</div>
-              <div>{t("entity")}</div>
-              <div>{t("action")}</div>
-              <div>{t("entityId")}</div>
-              <div>{t("user")}</div>
-              <div className="text-right">{t("details")}</div>
+              <div>{t('date')}</div>
+              <div>{t('entity')}</div>
+              <div>{t('action')}</div>
+              <div>{t('entityId')}</div>
+              <div>{t('user')}</div>
+              <div className="text-right">{t('details')}</div>
             </div>
           </div>
 
@@ -443,9 +463,9 @@ export function AuditLogTable() {
           {(!auditLogs || auditLogs.length === 0) && !isLoading && (
             <div className="text-center py-8 text-muted-foreground">
               <Shield className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>{t("noAuditLogsFound")}</p>
+              <p>{t('noAuditLogsFound')}</p>
               {Object.values(filters).some(Boolean) && (
-                <p className="text-sm mt-1">{t("tryAdjustingFilters")}</p>
+                <p className="text-sm mt-1">{t('tryAdjustingFilters')}</p>
               )}
             </div>
           )}
@@ -458,13 +478,14 @@ export function AuditLogTable() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="text-sm text-muted-foreground">
-                {t("showingEntries")} {(data.pagination.page - 1) * data.pagination.limit + 1}{" "}
-                {t("to")}{" "}
+                {t('showingEntries')}{' '}
+                {(data.pagination.page - 1) * data.pagination.limit + 1}{' '}
+                {t('to')}{' '}
                 {Math.min(
                   data.pagination.page * data.pagination.limit,
                   data.pagination.totalCount
-                )}{" "}
-                {t("of")} {data.pagination.totalCount} {t("entries")}
+                )}{' '}
+                {t('of')} {data.pagination.totalCount} {t('entries')}
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -474,10 +495,11 @@ export function AuditLogTable() {
                   disabled={!data.pagination.hasPrev || isLoading}
                 >
                   <ChevronLeft className="h-4 w-4" />
-                  {t("previous")}
+                  {t('previous')}
                 </Button>
                 <span className="text-sm font-medium">
-                  {t("page")} {data.pagination.page} {t("of")} {data.pagination.totalPages}
+                  {t('page')} {data.pagination.page} {t('of')}{' '}
+                  {data.pagination.totalPages}
                 </span>
                 <Button
                   variant="outline"
@@ -485,7 +507,7 @@ export function AuditLogTable() {
                   onClick={() => setPage(page + 1)}
                   disabled={!data.pagination.hasNext || isLoading}
                 >
-                  {t("next")}
+                  {t('next')}
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -494,5 +516,5 @@ export function AuditLogTable() {
         </Card>
       )}
     </div>
-  );
+  )
 }

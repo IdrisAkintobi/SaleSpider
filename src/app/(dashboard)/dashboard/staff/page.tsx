@@ -15,10 +15,11 @@ import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { useAuth } from '@/contexts/auth-context'
 import { useToast } from '@/hooks/use-toast'
-import { useSales } from '@/hooks/use-sales'
+
 import { useStaff, useUpdateUserStatus } from '@/hooks/use-staff'
-import type { User, Sale, Role, UserStatus } from '@/lib/types'
-import { Search, ArrowUp, ArrowDown, Pencil } from 'lucide-react'
+import type { User, Role, UserStatus } from '@/lib/types'
+import { ArrowUp, ArrowDown, Pencil, Unlock } from 'lucide-react'
+import { SearchInput } from '@/components/shared/search-input'
 import React, { useMemo, useState } from 'react'
 import { AddStaffDialog } from './add-staff-dialog'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -33,11 +34,8 @@ import { useTableControls } from '@/hooks/use-table-controls'
 import { GenericTable } from '@/components/ui/generic-table'
 import { StaffTableSkeleton } from '@/components/dashboard/staff/staff-table-skeleton'
 import { useTranslation } from '@/lib/i18n'
-
-interface StaffPerformance extends User {
-  totalSalesValue: number
-  numberOfSales: number
-}
+import { useIsAccountLocked, useUnlockAccount } from '@/hooks/use-rate-limit'
+import { fetchJson } from '@/lib/fetch-utils'
 
 // Permission check helpers
 function canEditStaff(
@@ -50,16 +48,65 @@ function canEditStaff(
   return false
 }
 
+// Staff Actions Component
+function StaffActions({
+  staff,
+  canEdit,
+  onEdit,
+}: Readonly<{
+  staff: User
+  canEdit: boolean
+  onEdit: () => void
+}>) {
+  const t = useTranslation()
+  const { toast } = useToast()
+  const isLocked = useIsAccountLocked(staff.email)
+  const unlockAccount = useUnlockAccount()
+
+  const handleUnlock = async () => {
+    try {
+      await unlockAccount.mutateAsync(staff.email)
+      toast({
+        title: t('success'),
+        description: `Account unlocked for ${staff.name}`,
+      })
+    } catch (error) {
+      toast({
+        title: t('error'),
+        description:
+          error instanceof Error ? error.message : 'Failed to unlock account',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  return (
+    <div className="text-right space-x-2">
+      {isLocked && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleUnlock}
+          disabled={unlockAccount.isPending}
+        >
+          <Unlock className="mr-2 h-3 w-3" />
+          {unlockAccount.isPending ? t('unlocking') : t('unlock')}
+        </Button>
+      )}
+      <Button variant="ghost" size="sm" onClick={onEdit} disabled={!canEdit}>
+        <Pencil className="mr-2 h-3 w-3" /> {t('edit')}
+      </Button>
+    </div>
+  )
+}
+
 // API function
 async function editUser(update: Partial<User> & { id: string }) {
-  const res = await fetch('/api/users', {
+  return fetchJson('/api/users', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(update),
   })
-  if (!res.ok)
-    throw new Error((await res.json()).message || 'Failed to update user')
-  return res.json()
 }
 
 // Form data extraction helper
@@ -92,13 +139,13 @@ function extractFormUpdate(
 
 // Cell renderer helper
 function renderStaffCell(
-  staff: StaffPerformance,
+  staff: User,
   columnKey: string,
   canEdit: boolean,
   userIsManager: boolean,
   t: (key: string) => string,
-  handleStatusChange: (staff: StaffPerformance, checked: boolean) => void,
-  setEditStaff: (staff: StaffPerformance) => void
+  handleStatusChange: (staff: User, checked: boolean) => void,
+  setEditStaff: (staff: User) => void
 ): React.ReactNode {
   switch (columnKey) {
     case 'name':
@@ -111,10 +158,6 @@ function renderStaffCell(
           {t(staff.role.toLowerCase())}
         </Badge>
       )
-    case 'totalSalesValue':
-      return `$${staff.totalSalesValue.toFixed(2)}`
-    case 'numberOfSales':
-      return staff.numberOfSales
     case 'status':
       return (
         <>
@@ -130,16 +173,11 @@ function renderStaffCell(
       )
     case 'actions':
       return (
-        <div className="text-right space-x-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setEditStaff(staff)}
-            disabled={!canEdit}
-          >
-            <Pencil className="mr-2 h-3 w-3" /> {t('edit')}
-          </Button>
-        </div>
+        <StaffActions
+          staff={staff}
+          canEdit={canEdit}
+          onEdit={() => setEditStaff(staff)}
+        />
       )
     default:
       return null
@@ -147,10 +185,7 @@ function renderStaffCell(
 }
 
 // Filter staff helper
-function filterStaffBySearch(
-  staff: StaffPerformance,
-  searchTerm: string
-): boolean {
+function filterStaffBySearch(staff: User, searchTerm: string): boolean {
   const lowerSearch = searchTerm.toLowerCase()
   return (
     staff.name.toLowerCase().includes(lowerSearch) ||
@@ -214,7 +249,7 @@ export default function StaffPage() {
 
   const [searchTerm, setSearchTerm] = useState('')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [editStaff, setEditStaff] = useState<StaffPerformance | null>(null)
+  const [editStaff, setEditStaff] = useState<User | null>(null)
 
   // Use custom hooks for data fetching
   const { data, isLoading: isLoadingUsers } = useStaff(
@@ -231,32 +266,12 @@ export default function StaffPage() {
   const total = data?.total || 0
   const updateStatusMutation = useUpdateUserStatus()
 
-  // Add after useStaff and before staffList
-  const { data: salesData } = useSales()
-  const sales = useMemo(() => salesData?.data ?? [], [salesData])
-
-  // Combine users and sales data to create performance data
-  const staffList: StaffPerformance[] = useMemo(() => {
-    return users.map((user: User) => {
-      const userSales = sales.filter((sale: Sale) => sale.cashierId === user.id)
-      const totalSalesValue = userSales.reduce(
-        (sum: number, sale: Sale) => sum + sale.totalAmount,
-        0
-      )
-      return {
-        ...user,
-        totalSalesValue,
-        numberOfSales: userSales.length,
-      }
-    })
-  }, [users, sales])
+  // Use users directly as staff list (no need for sales data)
+  const staffList: User[] = users
 
   const isLoading = isLoadingUsers
 
-  const handleStatusChange = (
-    staffMember: StaffPerformance,
-    newStatus: boolean
-  ) => {
+  const handleStatusChange = (staffMember: User, newStatus: boolean) => {
     const status: UserStatus = newStatus ? 'ACTIVE' : 'INACTIVE'
 
     // Use the mutation with toast handling
@@ -283,9 +298,15 @@ export default function StaffPage() {
   const filteredStaff = useMemo(
     () =>
       staffList
-        .filter(staff => filterStaffBySearch(staff, searchTerm))
+        .filter(staff => {
+          // Managers should only see cashiers
+          if (currentUser?.role === 'MANAGER' && staff.role !== 'CASHIER') {
+            return false
+          }
+          return filterStaffBySearch(staff, searchTerm)
+        })
         .sort((a, b) => a.name.localeCompare(b.name)),
-    [staffList, searchTerm]
+    [staffList, searchTerm, currentUser?.role]
   )
 
   // Replace the editMutation definition inside the component with:
@@ -317,16 +338,14 @@ export default function StaffPage() {
           title={t('staff_management')}
           description={t('staff_management_description')}
         />
-        <div className="mb-4">
-          <Input
+        <div className="mb-4 max-w-sm">
+          <SearchInput
             placeholder="Search staff by name, username, or role..."
             value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="max-w-sm"
-            icon={<Search className="h-4 w-4 text-muted-foreground" />}
+            onChange={setSearchTerm}
           />
         </div>
-        <StaffTableSkeleton userIsManager={userIsManager} />
+        <StaffTableSkeleton />
       </>
     )
   }
@@ -346,13 +365,11 @@ export default function StaffPage() {
           )
         }
       />
-      <div className="mb-4">
-        <Input
-          placeholder={t('search_staff')}
+      <div className="mb-4 max-w-sm">
+        <SearchInput
+          placeholderKey="search_staff"
           value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          className="max-w-sm"
-          icon={<Search className="h-4 w-4 text-muted-foreground" />}
+          onChange={setSearchTerm}
         />
       </div>
       <Card className="shadow-lg">
@@ -396,8 +413,6 @@ export default function StaffPage() {
                 sortable: true,
                 onSort: () => handleSort('role'),
               },
-              { key: 'totalSalesValue', label: t('total_sales') },
-              { key: 'numberOfSales', label: t('number_of_orders') },
               {
                 key: 'status',
                 label: createSortableHeader(

@@ -40,11 +40,13 @@
 		-X-Powered-By
 	}
 
-	# CORS headers for API access
+	# CORS headers for API access - restricted to configured origins
+	# Supports multiple origins from ALLOWED_ORIGINS environment variable
 	header {
-		Access-Control-Allow-Origin "*"
+		Access-Control-Allow-Origin "{$ALLOWED_ORIGINS}"
 		Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS, PATCH"
 		Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+		Access-Control-Allow-Credentials "true"
 		Access-Control-Max-Age "86400"
 	}
 
@@ -84,9 +86,10 @@
 	}
 
 	header {
-		Access-Control-Allow-Origin "*"
+		Access-Control-Allow-Origin "{$ALLOWED_ORIGINS}"
 		Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS, PATCH"
 		Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+		Access-Control-Allow-Credentials "true"
 	}
 
 	@options method OPTIONS
@@ -111,11 +114,12 @@
 		header_up X-Real-IP {remote_host}
 	}
 
-	# Permissive CORS for development
+	# CORS for development and local network access
 	header {
-		Access-Control-Allow-Origin "*"
-		Access-Control-Allow-Methods "*"
-		Access-Control-Allow-Headers "*"
+		Access-Control-Allow-Origin "{$ALLOWED_ORIGINS}"
+		Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+		Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+		Access-Control-Allow-Credentials "true"
 	}
 
 	@options method OPTIONS

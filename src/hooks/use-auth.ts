@@ -3,21 +3,26 @@ import type { User } from '@/lib/types'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { useEffect, useCallback } from 'react'
+import { fetchJson, safeJsonParse } from '@/lib/fetch-utils'
 
 // Fetch current user session
 async function fetchUserSession(): Promise<User | null> {
   const res = await fetch('/api/auth/session')
   if (res.ok) {
-    const { user } = await res.json()
+    const { user } = await safeJsonParse<{ user: User }>(res)
     return user
   }
   if (res.status === 401) {
     // Gracefully handle unauthorized (logged out)
     return null
   }
-  // For other errors, throw
-  const error = await res.json().catch(() => ({}))
-  throw new Error(error.message || 'Failed to fetch session')
+  // For other errors, throw with safe parsing
+  try {
+    const error = await safeJsonParse<{ message?: string }>(res)
+    throw new Error(error.message || 'Failed to fetch session')
+  } catch {
+    throw new Error('Failed to fetch session')
+  }
 }
 
 // Login function
@@ -25,32 +30,21 @@ async function loginUser(credentials: {
   username: string
   password: string
 }): Promise<User> {
-  const response = await fetch('/api/auth/login', {
+  const res = await fetchJson<{ user: User }>('/api/auth/login', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(credentials),
   })
-
-  if (!response.ok) {
-    const errorData = await response.json()
-    throw new Error(errorData.message ?? 'Invalid credentials')
-  }
-
-  const res = await response.json()
   return res.user
 }
 
 // Logout function
 async function logoutUser(): Promise<void> {
-  const response = await fetch('/api/auth/logout', {
+  await fetchJson('/api/auth/logout', {
     method: 'POST',
   })
-
-  if (!response.ok) {
-    throw new Error('Failed to logout')
-  }
 }
 
 export function useAuth() {
@@ -75,16 +69,18 @@ export function useAuth() {
   // Login mutation
   const loginMutation = useMutation({
     mutationFn: loginUser,
-    onSuccess: user => {
+    onSuccess: (user: User) => {
       // Update the session query with the new user
       queryClient.setQueryData(['auth', 'session'], user)
+      // Clear all cached queries to prevent stale data after login
+      queryClient.invalidateQueries()
       toast({
         title: 'Login Successful',
         description: `Welcome back, ${user.name}!`,
       })
       router.push('/dashboard/overview')
     },
-    onError: error => {
+    onError: (error: Error) => {
       toast({
         title: 'Login Failed',
         description: error.message || 'Invalid credentials',
@@ -99,15 +95,15 @@ export function useAuth() {
     onSuccess: () => {
       // Clear the session query
       queryClient.setQueryData(['auth', 'session'], null)
-      // Invalidate all queries to clear cached data
-      queryClient.invalidateQueries()
+      // Remove all queries without refetching (prevents 401 errors after logout)
+      queryClient.clear()
       toast({
         title: 'Logged Out',
         description: 'You have been successfully logged out.',
       })
       router.push('/login')
     },
-    onError: error => {
+    onError: (error: Error) => {
       toast({
         title: 'Error',
         description: error.message || 'Failed to logout. Please try again.',
@@ -116,13 +112,10 @@ export function useAuth() {
     },
   })
 
-  // Login function
-  const login = useCallback(
-    (username: string, password: string) => {
-      loginMutation.mutate({ username, password })
-    },
-    [loginMutation]
-  )
+  // Login function - use mutate directly to avoid stale closure
+  const login = (username: string, password: string) => {
+    loginMutation.mutate({ username, password })
+  }
 
   // Logout function
   const logout = useCallback(() => {

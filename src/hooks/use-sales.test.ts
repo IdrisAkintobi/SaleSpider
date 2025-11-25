@@ -82,7 +82,7 @@ describe('useSales', () => {
   it('fetches sales data successfully', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => mockSalesResponse,
+      text: async () => JSON.stringify(mockSalesResponse),
     })
 
     const { result } = renderHook(() => useSales(), { wrapper })
@@ -98,7 +98,7 @@ describe('useSales', () => {
   it('builds correct query parameters', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => mockSalesResponse,
+      text: async () => JSON.stringify(mockSalesResponse),
     })
 
     const params: UseSalesParams = {
@@ -125,7 +125,7 @@ describe('useSales', () => {
   it('excludes "all" values from query parameters', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => mockSalesResponse,
+      text: async () => JSON.stringify(mockSalesResponse),
     })
 
     const params: UseSalesParams = {
@@ -144,7 +144,7 @@ describe('useSales', () => {
     const errorMessage = 'Failed to fetch sales'
     mockFetch.mockResolvedValueOnce({
       ok: false,
-      json: async () => ({ message: errorMessage }),
+      text: async () => JSON.stringify({ message: errorMessage }),
     })
 
     const { result } = renderHook(() => useSales(), { wrapper })
@@ -200,7 +200,7 @@ describe('useCreateSale', () => {
 
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => newSale,
+      text: async () => JSON.stringify(newSale),
     })
 
     const { result } = renderHook(() => useCreateSale(), { wrapper })
@@ -240,7 +240,7 @@ describe('useCreateSale', () => {
     const errorMessage = 'Failed to record sale'
     mockFetch.mockResolvedValueOnce({
       ok: false,
-      json: async () => ({ message: errorMessage }),
+      text: async () => JSON.stringify({ message: errorMessage }),
     })
 
     const { result } = renderHook(() => useCreateSale(), { wrapper })

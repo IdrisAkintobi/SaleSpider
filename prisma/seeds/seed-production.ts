@@ -51,6 +51,18 @@ async function seedSuperAdmin() {
     )
   }
 
+  // Verify table exists before querying
+  try {
+    await prisma.$queryRaw`SELECT 1 FROM "User" LIMIT 1`
+  } catch (error: any) {
+    if (error.code === 'P2010' && error.meta?.code === '42P01') {
+      throw new Error(
+        'User table does not exist. Please ensure migrations have been applied.'
+      )
+    }
+    throw error
+  }
+
   // Check if super admin exists
   const existingAdmin = await prisma.$queryRaw<Array<{ id: string }>>`
     SELECT id FROM "User" WHERE email = ${superAdminEmail} LIMIT 1
@@ -123,6 +135,18 @@ function getSettingsConfig() {
  * Seed default application settings
  */
 async function seedDefaultSettings() {
+  // Verify table exists before querying
+  try {
+    await prisma.$queryRaw`SELECT 1 FROM "AppSettings" LIMIT 1`
+  } catch (error: any) {
+    if (error.code === 'P2010' && error.meta?.code === '42P01') {
+      throw new Error(
+        'AppSettings table does not exist. Please ensure migrations have been applied.'
+      )
+    }
+    throw error
+  }
+
   // Check if settings exist
   const existingSettings = await prisma.$queryRaw<Array<{ id: string }>>`
     SELECT id FROM "AppSettings" LIMIT 1
@@ -211,7 +235,9 @@ async function seedProduction() {
 }
 
 // Run the seed
-seedProduction().catch(error => {
+try {
+  await seedProduction()
+} catch (error) {
   console.error(error)
   process.exit(1)
-})
+}

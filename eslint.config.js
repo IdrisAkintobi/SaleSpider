@@ -22,6 +22,9 @@ const eslintConfig = [
       '*.config.ts',
       'next-env.d.ts',
       'prisma/seeds-dist/**/*',
+      'docs/.vitepress/cache/**/*',
+      'docs/.vitepress/dist/**/*',
+      'docs/node_modules/**/*',
     ],
   },
   {

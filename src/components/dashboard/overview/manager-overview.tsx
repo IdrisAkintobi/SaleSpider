@@ -44,6 +44,7 @@ import {
 import { useFormatCurrency } from '@/lib/currency'
 import { useTranslation } from '@/lib/i18n'
 import { RecentSalesSkeleton } from './recent-sales-skeleton'
+import { fetchJson } from '@/lib/fetch-utils'
 
 interface DailySalesData {
   name: string
@@ -62,13 +63,8 @@ interface ManagerOverviewProps {
 }
 
 async function fetchProductsData() {
-  const res = await fetch('/api/products')
-  if (!res.ok) {
-    const error = await res.json()
-    throw new Error(error.message || 'Failed to fetch products')
-  }
-  const data = await res.json()
-  return data.products as Product[]
+  const data = await fetchJson<{ products: Product[] }>('/api/products')
+  return data.products
 }
 
 // Helper: Calculate stats from data

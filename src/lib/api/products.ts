@@ -1,11 +1,12 @@
-import type { Product } from "@/lib/types";
-import { PAGE_SIZE } from "@/lib/constants";
+import type { Product } from '@/lib/types'
+import { PAGE_SIZE } from '@/lib/constants'
+import { fetchJson } from '@/lib/fetch-utils'
 
 export interface GetProductsResponse {
-  products: Product[];
-  totalCount: number;
-  totalPages: number;
-  hasMore: boolean;
+  products: Product[]
+  totalCount: number
+  totalPages: number
+  hasMore: boolean
 }
 
 export async function getProducts(
@@ -14,24 +15,19 @@ export async function getProducts(
   search?: string,
   signal?: AbortSignal
 ): Promise<GetProductsResponse> {
-  const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
-  if (search?.trim()) params.set("search", search.trim());
+  const params = new URLSearchParams({
+    page: String(page),
+    pageSize: String(pageSize),
+  })
+  if (search?.trim()) params.set('search', search.trim())
 
-  const res = await fetch(`/api/products?${params.toString()}`, { signal });
-  if (!res.ok) {
-    let message = "Failed to fetch products";
-    try {
-      const error = await res.json();
-      if (error?.message) message = error.message;
-    } catch {}
-    throw new Error(message);
-  }
-
-  const data = await res.json();
+  const data = await fetchJson<any>(`/api/products?${params.toString()}`, {
+    signal,
+  })
   return {
     products: data.products,
     totalCount: data.totalCount,
     totalPages: data.totalPages,
     hasMore: page < data.totalPages,
-  };
+  }
 }

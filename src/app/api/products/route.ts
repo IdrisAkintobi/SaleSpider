@@ -1,10 +1,10 @@
+import { handleException, jsonError, jsonOk } from '@/lib/api-response'
+import { AuditTrailService } from '@/lib/audit-trail'
+import { createChildLogger } from '@/lib/logger'
+import { prisma } from '@/lib/prisma'
 import { Product } from '@/lib/types'
 import { Prisma, ProductCategory, Role } from '@prisma/client'
-import { prisma } from '@/lib/prisma'
 import { NextRequest } from 'next/server'
-import { createChildLogger } from '@/lib/logger'
-import { AuditTrailService } from '@/lib/audit-trail'
-import { jsonOk, jsonError, handleException } from '@/lib/api-response'
 
 const logger = createChildLogger('api:products')
 
@@ -122,12 +122,33 @@ export async function POST(req: NextRequest) {
     if (
       !name ||
       !description ||
-      !price ||
+      price === undefined ||
+      price === null ||
       !category ||
-      !lowStockMargin ||
-      !quantity
+      lowStockMargin === undefined ||
+      lowStockMargin === null ||
+      quantity === undefined ||
+      quantity === null
     ) {
       return jsonError('Missing required fields', 400, { code: 'BAD_REQUEST' })
+    }
+
+    // Normalize GTIN: convert empty string to null to allow multiple products without GTIN
+    const normalizedGtin = gtin?.trim() || null
+
+    // Check if a product with the same GTIN already exists (only if GTIN is provided)
+    if (normalizedGtin) {
+      const existingProduct = await prisma.product.findUnique({
+        where: { gtin: normalizedGtin },
+      })
+
+      if (existingProduct) {
+        return jsonError(
+          `A product with GTIN ${normalizedGtin} already exists: ${existingProduct.name}`,
+          409,
+          { code: 'DUPLICATE_GTIN' }
+        )
+      }
     }
 
     const newProduct = await prisma.product.create({
@@ -139,7 +160,7 @@ export async function POST(req: NextRequest) {
         lowStockMargin,
         quantity,
         imageUrl,
-        gtin,
+        gtin: normalizedGtin,
       },
     })
 
@@ -206,6 +227,9 @@ function productSearchWhere(
     ? {
         OR: [
           {
+            id: searchQuery, // Exact match for ID
+          },
+          {
             name: {
               contains: searchQuery,
               mode: 'insensitive',
@@ -213,6 +237,12 @@ function productSearchWhere(
           },
           {
             description: {
+              contains: searchQuery,
+              mode: 'insensitive',
+            },
+          },
+          {
+            gtin: {
               contains: searchQuery,
               mode: 'insensitive',
             },

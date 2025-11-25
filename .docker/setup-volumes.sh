@@ -16,12 +16,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # Load environment variables from project root
-if [ -f "$PROJECT_ROOT/.env" ]; then
+if [[ -f "$PROJECT_ROOT/.env" ]]; then
     set -a
     source "$PROJECT_ROOT/.env"
     set +a
     echo -e "${GREEN}Loaded environment from $PROJECT_ROOT/.env${NC}"
-elif [ -f .env ]; then
+elif [[ -f .env ]]; then
     set -a
     source .env
     set +a
@@ -61,7 +61,7 @@ mkdir -p "${DATA_PATH}/logs/backup"
 mkdir -p "${DATA_PATH}/ssl"
 
 # Backup volumes
-mkdir -p "${BACKUP_PATH}/pgBackRest"
+mkdir -p "${BACKUP_PATH}/pgbackrest"
 
 echo -e "${GREEN}✓ Created all required directories${NC}"
 
@@ -81,7 +81,7 @@ echo "  - ${DATA_PATH}/logs"
 echo "  - ${DATA_PATH}/logs/backup"
 echo "  - ${DATA_PATH}/ssl"
 echo "  - ${BACKUP_PATH}/postgres"
-echo "  - ${BACKUP_PATH}/pgBackRest"
+echo "  - ${BACKUP_PATH}/pgbackrest"
 
 echo ""
 echo -e "${GREEN}✓ Volume setup complete!${NC}"

@@ -37,6 +37,7 @@ Enhancement suggestions are welcome! Please provide:
 ### Branch Naming
 
 Use descriptive branch names:
+
 - `feat/add-new-feature`
 - `fix/resolve-bug-description`
 - `docs/update-documentation`
@@ -45,6 +46,7 @@ Use descriptive branch names:
 ### Commit Messages
 
 Follow conventional commit format:
+
 - `feat:` for new features
 - `fix:` for bug fixes
 - `docs:` for documentation changes
@@ -78,6 +80,7 @@ Example: `feat: add dark mode toggle to settings page`
 ## 🏗️ Project Structure
 
 Familiarize yourself with the project structure:
+
 - `src/app/` - Next.js app directory
 - `src/components/` - React components
 - `src/lib/` - Utility functions and libraries
@@ -87,15 +90,17 @@ Familiarize yourself with the project structure:
 ## ✅ Definition of Done
 
 Before submitting your PR, ensure:
-- [ ] Code follows project conventions
-- [ ] Tests are written and passing
-- [ ] Documentation is updated
-- [ ] No linting errors
-- [ ] PR description is clear and complete
+
+- ✅ Code follows project conventions
+- ✅ Tests are written and passing
+- ✅ Documentation is updated
+- ✅ No linting errors
+- ✅ PR description is clear and complete
 
 ## 🙋‍♀️ Getting Help
 
 If you need help:
+
 - Check existing documentation
 - Look through existing issues and discussions
 - Create a new issue with the "question" label
