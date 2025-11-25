@@ -319,12 +319,26 @@ cat /var/log/pgbackrest/main-backup.log
 - Disk space full
 - Permission denied
 - Database connection failed
+- Log file permission errors
 
 **Solutions:**
 
 - Free up disk space
 - Check file permissions
 - Verify database is running
+- Restart backup service: `docker-compose restart backup`
+
+**Permission Denied on Log Files:**
+
+If you see permission errors, restart the backup service:
+
+```bash
+# Restart the backup service
+docker-compose restart backup
+
+# Verify logs are working
+docker-compose logs -f backup
+```
 
 ### Restore Fails
 

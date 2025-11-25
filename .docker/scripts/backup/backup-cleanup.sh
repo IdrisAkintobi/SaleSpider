@@ -12,7 +12,12 @@ STANZA="${PGBACKREST_STANZA:-salespider}"
 
 # Logging function
 log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+    local msg="[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+    echo "$msg"
+    # Only use tee if log file is writable
+    if [ -w "$LOG_FILE" ] || [ -w "$(dirname "$LOG_FILE")" ]; then
+        echo "$msg" >> "$LOG_FILE" 2>/dev/null || true
+    fi
 }
 
 # Error handling
@@ -41,17 +46,17 @@ log "Retention policy: Keep $RETENTION_FULL full backups, $RETENTION_DIFF differ
 
 # List current backups before cleanup
 log "Current backups before cleanup:"
-pgbackrest --stanza=$STANZA info | tee -a "$LOG_FILE"
+/usr/bin/pgbackrest --stanza=$STANZA info >> "$LOG_FILE" 2>&1 || true
 
 # Perform cleanup - pgBackRest handles retention automatically based on config
 log "Executing expire..."
-pgbackrest --stanza=$STANZA expire
+/usr/bin/pgbackrest --stanza=$STANZA expire
 
 log "Backup cleanup completed successfully"
 
 # List remaining backups
 log "Remaining backups after cleanup:"
-pgbackrest --stanza=$STANZA info | tee -a "$LOG_FILE"
+/usr/bin/pgbackrest --stanza=$STANZA info >> "$LOG_FILE" 2>&1 || true
 
 # Send success notification
 if [ -n "$WEBHOOK_URL" ]; then

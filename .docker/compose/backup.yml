@@ -2,7 +2,6 @@ services:
   backup:
     image: alpine:latest
     container_name: ${COMPOSE_PROJECT_NAME:-salespider}-backup
-    # Run as root initially to fix permissions, then switch to postgres user
 
     environment:
       PGBACKREST_REPO1_TYPE: ${PGBACKREST_REPO1_TYPE:-none}
@@ -12,9 +11,11 @@ services:
       PGBACKREST_REPO1_S3_REGION: ${AWS_REGION:-}
       PGBACKREST_REPO1_S3_KEY: ${AWS_ACCESS_KEY_ID:-}
       PGBACKREST_REPO1_S3_KEY_SECRET: ${AWS_SECRET_ACCESS_KEY:-}
+      # Azure Blob Storage - Uncomment if using PGBACKREST_REPO1_TYPE=azure
       # PGBACKREST_REPO1_AZURE_ACCOUNT: ${AZURE_STORAGE_ACCOUNT:-}
       # PGBACKREST_REPO1_AZURE_KEY: ${AZURE_STORAGE_KEY:-}
       # PGBACKREST_REPO1_AZURE_CONTAINER: ${AZURE_STORAGE_CONTAINER:-}
+      # Google Cloud Storage - Uncomment if using PGBACKREST_REPO1_TYPE=gcs
       # PGBACKREST_REPO1_GCS_BUCKET: ${GCS_BUCKET:-}
       # PGBACKREST_REPO1_GCS_KEY: ${GCS_KEY:-}
       PGHOST: postgres

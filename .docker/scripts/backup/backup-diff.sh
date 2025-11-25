@@ -11,7 +11,12 @@ TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
 # Logging function
 log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+    local msg="[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+    echo "$msg"
+    # Only use tee if log file is writable
+    if [ -w "$LOG_FILE" ] || [ -w "$(dirname "$LOG_FILE")" ]; then
+        echo "$msg" >> "$LOG_FILE" 2>/dev/null || true
+    fi
 }
 
 # Error handling
@@ -41,7 +46,7 @@ log "Starting pgBackRest differential backup..."
 log "Executing pgbackrest backup --type=diff..."
 start_time=$(date +%s)
 
-pgbackrest --stanza=$STANZA --type=diff backup
+/usr/bin/pgbackrest --stanza=$STANZA --type=diff backup
 
 end_time=$(date +%s)
 duration=$((end_time - start_time))
