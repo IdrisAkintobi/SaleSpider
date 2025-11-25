@@ -288,4 +288,3 @@ Use tools like:
 - [Project Structure](/development/structure)
 - [Architecture Overview](/development/architecture)
 - [Contributing Guidelines](/development/contributing)
-- [Testing Guide](/development/testing)
