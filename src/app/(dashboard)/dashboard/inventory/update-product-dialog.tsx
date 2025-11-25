@@ -178,7 +178,7 @@ export function UpdateProductDialog({
             error={errors.gtin?.message}
             disabled={!!(product.gtin && product.gtin.trim())}
             placeholder={
-              product.gtin && product.gtin.trim()
+              product.gtin?.trim()
                 ? 'GTIN cannot be changed once set'
                 : 'Enter GTIN'
             }

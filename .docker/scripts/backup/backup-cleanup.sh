@@ -15,9 +15,10 @@ log() {
     local msg="[$(date '+%Y-%m-%d %H:%M:%S')] $1"
     echo "$msg"
     # Only use tee if log file is writable
-    if [ -w "$LOG_FILE" ] || [ -w "$(dirname "$LOG_FILE")" ]; then
+    if [[ -w "$LOG_FILE" ]] || [[ -w "$(dirname "$LOG_FILE")" ]]; then
         echo "$msg" >> "$LOG_FILE" 2>/dev/null || true
     fi
+    return 0
 }
 
 # Error handling
@@ -26,7 +27,7 @@ handle_error() {
     log "ERROR: Backup cleanup failed with exit code $exit_code"
     
     # Send notification if webhook is configured
-    if [ -n "$WEBHOOK_URL" ]; then
+    if [[ -n "$WEBHOOK_URL" ]]; then
         curl -s -X POST "$WEBHOOK_URL" \
             -H "Content-Type: application/json" \
             -d "{\"status\":\"error\",\"type\":\"backup_cleanup\",\"message\":\"Backup cleanup failed\",\"exit_code\":$exit_code}" \
@@ -59,7 +60,7 @@ log "Remaining backups after cleanup:"
 /usr/bin/pgbackrest --stanza=$STANZA info >> "$LOG_FILE" 2>&1 || true
 
 # Send success notification
-if [ -n "$WEBHOOK_URL" ]; then
+if [[ -n "$WEBHOOK_URL" ]]; then
     curl -s -X POST "$WEBHOOK_URL" \
         -H "Content-Type: application/json" \
         -d "{\"status\":\"success\",\"type\":\"backup_cleanup\",\"message\":\"Backup cleanup completed\",\"retention_full\":$RETENTION_FULL,\"retention_diff\":$RETENTION_DIFF}" \
