@@ -73,9 +73,9 @@ This will:
 - Create Docker volumes
 - Start all services
 - Run database migrations
-- Seed initial data
+- **Seed initial data (required for application to function)**
 
-**Deployment takes 2-5 minutes.** You'll see progress messages.
+**Deployment takes 2-5 minutes.** The process automatically sets up the database and creates your admin account.
 
 ### Step 5: Access SaleSpider
 

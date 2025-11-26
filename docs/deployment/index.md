@@ -134,14 +134,14 @@ cp .env.cloud.example .env
 # 2. Configure your settings
 nano .env
 
-# 3. Run database migrations
-npm install
-npx prisma migrate deploy
-npm run seed:prod
-
-# 4. Deploy to your platform
+# 3. Deploy to your platform
+# Make sure to use "npm run start:prod" as your start command
 vercel --prod  # or railway up, or render deploy
 ```
+
+::: tip
+Most platforms automatically run migrations and seeding with `npm run start:prod`. Vercel requires manual seeding. See the [Cloud Platforms Guide](/deployment/cloud-platforms) for details.
+:::
 
 [Read more about cloud platform deployment →](#option-3-cloud-platform-deployment)
 

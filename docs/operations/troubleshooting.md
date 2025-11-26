@@ -462,24 +462,43 @@ make health
 - Login fails
 - "Invalid credentials"
 - Session expires immediately
+- No users exist in database
 
 **Solutions:**
 
-1. **Verify credentials:**
-   - Check username/email
-   - Reset password if needed
+1. **Check if database was seeded:**
 
-2. **Check JWT configuration:**
+   ```bash
+   # Check if super admin exists
+   docker-compose exec postgres psql -U postgres -d salespider -c \
+     "SELECT email, role FROM \"User\" WHERE role = 'SUPER_ADMIN';"
+   ```
+
+   If no results, seed the database:
+
+   ```bash
+   # Self-hosted
+   docker-compose exec app npm run seed
+
+   # Cloud/production
+   npm run seed:prod
+   ```
+
+2. **Verify credentials:**
+   - Check username/email matches SUPER_ADMIN_EMAIL in .env
+   - Check password matches SUPER_ADMIN_PASSWORD in .env
+
+3. **Check JWT configuration:**
 
    ```bash
    docker-compose exec app env | grep JWT
    ```
 
-3. **Clear browser cache:**
+4. **Clear browser cache:**
    - Clear cookies
    - Try incognito mode
 
-4. **Check logs:**
+5. **Check logs:**
    ```bash
    make logs SERVICE=app | grep auth
    ```

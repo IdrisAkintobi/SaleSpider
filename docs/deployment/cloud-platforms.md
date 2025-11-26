@@ -12,6 +12,10 @@ Cloud platform deployment provides:
 - Global CDN
 - Zero-downtime deployments
 
+::: tip Automatic Setup
+Most platforms automatically run migrations and seeding when using `npm run start:prod`. Vercel requires manual seeding (see below).
+:::
+
 ## Supported Platforms
 
 - **Vercel** - Best for Next.js applications
@@ -61,6 +65,16 @@ Cloud platform deployment provides:
    - Wait for build to complete
    - Access your app at the provided URL
 
+   ::: warning Manual Seeding Required
+   Vercel requires one-time manual seeding after first deployment:
+
+   ```bash
+   export DATABASE_URL="postgresql://..."
+   npm run seed:prod
+   ```
+
+   :::
+
 ### Custom Domain
 
 1. Go to Project Settings → Domains
@@ -108,11 +122,12 @@ Vercel automatically deploys:
 
    ```
    Build Command: npm run build
-   Start Command: npm start
+   Start Command: npm run start:prod
    ```
 
 5. **Deploy**
    - Railway automatically builds and deploys
+   - Migrations and seeding run automatically on startup
    - Access via generated railway.app domain
 
 ### Custom Domain
@@ -142,8 +157,8 @@ Vercel automatically deploys:
    ```
    Name: salespider
    Environment: Node
-   Build Command: npm install && npm run build
-   Start Command: npm start
+   Build Command: npm run build
+   Start Command: npm run start:prod
    ```
 
 3. **Set Environment Variables**
@@ -212,7 +227,17 @@ Vercel automatically deploys:
      GOOGLE_GENAI_API_KEY="your-api-key"
    ```
 
-5. **Deploy**
+5. **Configure Start Command**
+
+   Create or update `fly.toml`:
+
+   ```toml
+   [processes]
+   app = "npm run start:prod"
+   ```
+
+6. **Deploy**
+
    ```bash
    fly deploy
    ```
@@ -245,7 +270,7 @@ fly postgres attach <postgres-app-name>
    ```
    Type: Web Service
    Build Command: npm run build
-   Run Command: npm start
+   Run Command: npm run start:prod
    HTTP Port: 3000
    ```
 

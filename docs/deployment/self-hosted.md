@@ -70,10 +70,8 @@ docker-compose up -d
 ### 4. Initialize Database
 
 ```bash
-# Run migrations
+# Run migrations and seed data
 docker-compose exec app npx prisma migrate deploy
-
-# Seed initial data
 docker-compose exec app npm run seed
 ```
 
