@@ -15,4 +15,8 @@ npx tsc --noEmit
 echo "🧪 Running tests..."
 npm test
 
+# Run build
+echo "🏗️  Running build..."
+npm run build
+
 echo "✅ All pre-push checks passed!"
