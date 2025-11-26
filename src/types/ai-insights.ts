@@ -4,7 +4,6 @@ export interface AIInsightsData {
     totalRevenue: number
     averageOrderValue: number
     topSellingProducts: Array<{
-      productId: string
       productName: string
       totalQuantitySold: number
       totalRevenue: number
