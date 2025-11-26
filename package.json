@@ -30,6 +30,7 @@
     "build": "next build --turbopack",
     "build:webpack": "next build",
     "start": "next start",
+    "start:prod": "npx prisma migrate deploy && npx tsx prisma/seeds/seed-production.ts && next start",
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
