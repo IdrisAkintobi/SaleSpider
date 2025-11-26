@@ -1,7 +1,7 @@
 {
   "name": "salespider",
   "description": "Salespider is a store inventory, sales, and staff management system",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "license": "MIT",
   "repository": {
