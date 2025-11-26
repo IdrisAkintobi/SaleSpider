@@ -1,5 +1,7 @@
--- CreateTable
-CREATE TABLE "AppSettings" (
+-- CreateTable: AppSettings
+-- Manages application-wide configuration and preferences
+
+CREATE TABLE "public"."AppSettings" (
     "id" TEXT NOT NULL,
     "appName" TEXT NOT NULL DEFAULT 'SaleSpider',
     "appLogo" TEXT,
@@ -15,6 +17,8 @@ CREATE TABLE "AppSettings" (
     "language" TEXT NOT NULL DEFAULT 'en',
     "theme" TEXT NOT NULL DEFAULT 'light',
     "maintenanceMode" BOOLEAN NOT NULL DEFAULT false,
+    "showDeletedProducts" BOOLEAN NOT NULL DEFAULT false,
+    "enabledPaymentMethods" "public"."PaymentMode"[] DEFAULT ARRAY['CASH', 'CARD', 'BANK_TRANSFER', 'CRYPTO', 'OTHER']::"public"."PaymentMode"[],
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
