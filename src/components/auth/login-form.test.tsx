@@ -1,5 +1,5 @@
 import * as AuthContext from "@/contexts/auth-context";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LoginForm } from "./login-form";
@@ -190,16 +190,163 @@ describe("LoginForm", () => {
 
     // Click toggle to show password
     await user.click(toggleButton);
-    expect(passwordInput).toHaveAttribute("type", "text");
-    expect(
-      screen.getByRole("button", { name: "Hide password" })
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(passwordInput).toHaveAttribute("type", "text");
+      expect(
+        screen.getByRole("button", { name: "Hide password" })
+      ).toBeInTheDocument();
+    });
 
     // Click toggle to hide password again
     await user.click(screen.getByRole("button", { name: "Hide password" }));
-    expect(passwordInput).toHaveAttribute("type", "password");
-    expect(
-      screen.getByRole("button", { name: "Show password" })
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(passwordInput).toHaveAttribute("type", "password");
+      expect(
+        screen.getByRole("button", { name: "Show password" })
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("calls login function with valid credentials on form submit", async () => {
+    render(<LoginForm />);
+    const user = userEvent.setup();
+
+    const emailInput = screen.getByLabelText("Email");
+    const passwordInput = screen.getByLabelText("Password");
+
+    await user.type(emailInput, "testuser@example.com");
+    await user.type(passwordInput, "password123");
+
+    // Submit the form directly
+    const form = screen
+      .getByRole("button", { name: /log in/i })
+      .closest("form");
+    fireEvent.submit(form!);
+
+    // Wait for form submission and validation to complete
+    await waitFor(() => {
+      expect(mockLogin).toHaveBeenCalledWith(
+        "testuser@example.com",
+        "password123"
+      );
+    });
+  });
+
+  it("displays email validation error for invalid email", async () => {
+    render(<LoginForm />);
+    const user = userEvent.setup();
+
+    const emailInput = screen.getByLabelText("Email");
+    const passwordInput = screen.getByLabelText("Password");
+
+    await user.type(emailInput, "invalid-email");
+    await user.type(passwordInput, "password123");
+
+    // Submit the form directly
+    const form = screen
+      .getByRole("button", { name: /log in/i })
+      .closest("form");
+    fireEvent.submit(form!);
+
+    await waitFor(
+      () => {
+        expect(
+          screen.getByText("Please enter a valid email address")
+        ).toBeInTheDocument();
+      },
+      { timeout: 3000 }
+    );
+    expect(mockLogin).not.toHaveBeenCalled();
+  });
+
+  it("displays email validation error when email is empty", async () => {
+    render(<LoginForm />);
+    const user = userEvent.setup();
+
+    const passwordInput = screen.getByLabelText("Password");
+
+    await user.type(passwordInput, "password123");
+
+    // Submit the form directly
+    const form = screen
+      .getByRole("button", { name: /log in/i })
+      .closest("form");
+    fireEvent.submit(form!);
+
+    await waitFor(
+      () => {
+        expect(screen.getByText("Email is required")).toBeInTheDocument();
+      },
+      { timeout: 3000 }
+    );
+    expect(mockLogin).not.toHaveBeenCalled();
+  });
+
+  it("displays password validation error when password is empty", async () => {
+    render(<LoginForm />);
+    const user = userEvent.setup();
+
+    const emailInput = screen.getByLabelText("Email");
+
+    await user.type(emailInput, "testuser@example.com");
+
+    // Submit the form directly
+    const form = screen
+      .getByRole("button", { name: /log in/i })
+      .closest("form");
+    fireEvent.submit(form!);
+
+    await waitFor(
+      () => {
+        expect(screen.getByText("Password is required")).toBeInTheDocument();
+      },
+      { timeout: 3000 }
+    );
+    expect(mockLogin).not.toHaveBeenCalled();
+  });
+
+  it("displays both email and password errors when both are invalid", async () => {
+    render(<LoginForm />);
+
+    // Submit the form directly without typing anything
+    const form = screen
+      .getByRole("button", { name: /log in/i })
+      .closest("form");
+    fireEvent.submit(form!);
+
+    await waitFor(
+      () => {
+        expect(screen.getByText("Email is required")).toBeInTheDocument();
+        expect(screen.getByText("Password is required")).toBeInTheDocument();
+      },
+      { timeout: 3000 }
+    );
+    expect(mockLogin).not.toHaveBeenCalled();
+  });
+
+  it("applies error styling to inputs when validation fails", async () => {
+    render(<LoginForm />);
+    const user = userEvent.setup();
+
+    const emailInput = screen.getByLabelText("Email");
+
+    await user.type(emailInput, "invalid-email");
+
+    // Submit the form directly
+    const form = screen
+      .getByRole("button", { name: /log in/i })
+      .closest("form");
+    fireEvent.submit(form!);
+
+    await waitFor(
+      () => {
+        expect(
+          screen.getByText("Please enter a valid email address")
+        ).toBeInTheDocument();
+      },
+      { timeout: 3000 }
+    );
+
+    expect(emailInput).toHaveClass("border-destructive");
   });
 });

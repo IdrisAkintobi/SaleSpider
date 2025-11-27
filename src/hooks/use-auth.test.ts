@@ -1,7 +1,14 @@
-import type { User } from "@/lib/types";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  createDelayedResponse,
+  createMockEmptyResponse,
+  createMockUserResponse,
+  mockInactiveUser,
+  mockManagerUser,
+  mockSuperAdminUser,
+  mockUser,
+} from "@/test/test-utils/mock-data";
+import { createQueryWrapper } from "@/test/test-utils/query-client";
 import { renderHook, waitFor } from "@testing-library/react";
-import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useAuth } from "./use-auth";
 
@@ -25,76 +32,12 @@ vi.mock("@/hooks/use-toast", () => ({
 const mockFetch = vi.fn();
 globalThis.fetch = mockFetch;
 
-const createTestQueryClient = () => {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-      },
-      mutations: {
-        retry: false,
-      },
-    },
-  });
-};
-
-const wrapper = ({ children }: { children: React.ReactNode }) => {
-  const queryClient = createTestQueryClient();
-  return React.createElement(
-    QueryClientProvider,
-    { client: queryClient },
-    children
-  );
-};
-
-const mockUserDate = new Date("2025-11-27T12:00:00.000Z");
-
-const mockUser: User = {
-  id: "user1",
-  name: "John Doe",
-  email: "john@example.com",
-  role: "CASHIER",
-  status: "ACTIVE",
-  createdAt: mockUserDate,
-  updatedAt: mockUserDate,
-  deletedAt: null,
-};
-
-const mockManagerUser: User = {
-  id: "user2",
-  name: "Jane Manager",
-  email: "jane@example.com",
-  role: "MANAGER",
-  status: "ACTIVE",
-  createdAt: mockUserDate,
-  updatedAt: mockUserDate,
-  deletedAt: null,
-};
-
-// Helper function to create delayed responses
-const createDelayedResponse = (responseData: unknown, delay: number) => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      resolve(responseData);
-    }, delay);
-  });
-};
-
-// Helper to create mock response with user data
-const createMockUserResponse = (user: User) => ({
-  ok: true,
-  text: async () => JSON.stringify({ user }),
-});
-
-// Helper to create mock empty response
-const createMockEmptyResponse = () => ({
-  ok: true,
-  text: async () => JSON.stringify({}),
-});
-
 describe("useAuth", () => {
+  let wrapper: ReturnType<typeof createQueryWrapper>;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    wrapper = createQueryWrapper(); // Create fresh wrapper for each test
   });
 
   afterEach(() => {
@@ -408,14 +351,9 @@ describe("useAuth", () => {
     });
 
     it("identifies super admin as manager", async () => {
-      const superAdminUser: User = {
-        ...mockUser,
-        role: "SUPER_ADMIN",
-      };
-
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        text: async () => JSON.stringify({ user: superAdminUser }),
+        text: async () => JSON.stringify({ user: mockSuperAdminUser }),
       });
 
       const { result } = renderHook(() => useAuth(), { wrapper });
@@ -428,14 +366,9 @@ describe("useAuth", () => {
 
   describe("inactive user handling", () => {
     it("logs out inactive user automatically", async () => {
-      const inactiveUser: User = {
-        ...mockUser,
-        status: "INACTIVE",
-      };
-
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        text: async () => JSON.stringify({ user: inactiveUser }),
+        text: async () => JSON.stringify({ user: mockInactiveUser }),
       });
 
       const { result } = renderHook(() => useAuth(), { wrapper });

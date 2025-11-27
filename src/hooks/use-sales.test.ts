@@ -1,9 +1,9 @@
-import { PaymentMode, Sale } from "@/lib/types";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { PaymentMode } from "@/lib/types";
 import { renderHook, waitFor } from "@testing-library/react";
-import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useCreateSale, useSales, type UseSalesParams } from "./use-sales";
+import { createQueryWrapper } from "@/test/test-utils/query-client";
+import { mockSalesResponse } from "@/test/test-utils/mock-data";
 
 // Mock fetch globally
 const mockFetch = vi.fn();
@@ -19,60 +19,12 @@ vi.mock("@/lib/query-invalidation", () => ({
   },
 }));
 
-const createTestQueryClient = () => {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-      },
-      mutations: {
-        retry: false,
-      },
-    },
-  });
-};
-
-const wrapper = ({ children }: { children: React.ReactNode }) => {
-  const queryClient = createTestQueryClient();
-  return React.createElement(
-    QueryClientProvider,
-    { client: queryClient },
-    children
-  );
-};
-
-const mockSales: Sale[] = [
-  {
-    id: "1",
-    totalAmount: 100.5,
-    paymentMode: "CASH" as PaymentMode,
-    cashierId: "cashier1",
-    cashierName: "John Doe",
-    subtotal: 90.5,
-    vatAmount: 10,
-    vatPercentage: 11,
-    timestamp: Date.now(),
-    items: [
-      {
-        productId: "product1",
-        productName: "Test Product",
-        price: 50.25,
-        quantity: 2,
-      },
-    ],
-  },
-];
-
-const mockSalesResponse = {
-  data: mockSales,
-  total: 1,
-  paymentMethodTotals: { CASH: 100.5 },
-  totalSalesValue: 100.5,
-};
-
 describe("useSales", () => {
+  let wrapper: ReturnType<typeof createQueryWrapper>;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    wrapper = createQueryWrapper(); // Create fresh wrapper for each test
   });
 
   afterEach(() => {
@@ -223,8 +175,11 @@ describe("useSales", () => {
 });
 
 describe("useCreateSale", () => {
+  let wrapper: ReturnType<typeof createQueryWrapper>;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    wrapper = createQueryWrapper(); // Create fresh wrapper for each test
   });
 
   afterEach(() => {

@@ -1,16 +1,7 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { useSales } from "@/hooks/use-sales";
 import { useSalesMonthly } from "@/hooks/use-sales-monthly";
 import { useSalesStats } from "@/hooks/use-sales-stats";
@@ -43,6 +34,7 @@ import { useEffect, useMemo, useState } from "react";
 import { PerformanceChart } from "./performance-chart";
 import { PerformanceChartSkeleton } from "./performance-chart-skeleton";
 import { RecentSalesSkeleton } from "./recent-sales-skeleton";
+import { RecentSalesTable } from "./recent-sales-table";
 import { StatsCard } from "./stats-card";
 import { StatsCardSkeleton } from "./stats-card-skeleton";
 
@@ -401,34 +393,12 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
     }
 
     return (
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>{t("order_id")}</TableHead>
-            <TableHead>{t("cashier")}</TableHead>
-            <TableHead>{t("amount")}</TableHead>
-            <TableHead>{t("date")}</TableHead>
-            <TableHead>{t("status")}</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {recentSales.map(sale => (
-            <TableRow key={sale.id}>
-              <TableCell className="font-medium">
-                {sale.id.substring(0, 8)}...
-              </TableCell>
-              <TableCell>{sale.cashierName}</TableCell>
-              <TableCell>{formatCurrency(sale.totalAmount)}</TableCell>
-              <TableCell>
-                {new Date(sale.timestamp).toLocaleDateString()}
-              </TableCell>
-              <TableCell>
-                <Badge variant="default">{t("completed")}</Badge>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <RecentSalesTable
+        sales={recentSales}
+        formatCurrency={formatCurrency}
+        t={t}
+        showCashier={true}
+      />
     );
   };
 

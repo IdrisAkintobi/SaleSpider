@@ -1,16 +1,7 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { useAuth } from "@/contexts/auth-context";
 import type { Sale } from "@/lib/types";
 import { DollarSign, ShoppingCart, TrendingUp } from "lucide-react";
@@ -19,6 +10,7 @@ import { useMemo } from "react";
 import { StatsCard } from "./stats-card";
 import { StatsCardSkeleton } from "./stats-card-skeleton";
 import { RecentSalesSkeleton } from "./recent-sales-skeleton";
+import { RecentSalesTable } from "./recent-sales-table";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { useFormatCurrency } from "@/lib/currency";
@@ -143,41 +135,12 @@ export function CashierOverview() {
             }
 
             return (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("order_id")}</TableHead>
-                    <TableHead>{t("amount")}</TableHead>
-                    <TableHead>{t("payment_mode")}</TableHead>
-                    <TableHead>{t("date")}</TableHead>
-                    <TableHead>{t("status")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recentSales.map(sale => (
-                    <TableRow key={sale.id}>
-                      <TableCell className="font-medium">
-                        {sale.id.substring(0, 8)}...
-                      </TableCell>
-                      <TableCell>{formatCurrency(sale.totalAmount)}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{sale.paymentMode}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(sale.timestamp).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="default"
-                          className="bg-green-500 hover:bg-green-600 text-white"
-                        >
-                          {t("completed")}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <RecentSalesTable
+                sales={recentSales}
+                formatCurrency={formatCurrency}
+                t={t}
+                showCashier={false}
+              />
             );
           })()}
         </CardContent>

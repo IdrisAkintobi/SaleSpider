@@ -1,35 +1,20 @@
 import { NextRequest } from "next/server";
-import { Role } from "@prisma/client";
 import { createChildLogger } from "@/lib/logger";
 import { SalesAnalyticsService } from "@/lib/sales-analytics";
-import { jsonOk, jsonError, handleException } from "@/lib/api-response";
+import { jsonOk, handleException } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { getInventoryRecommendations } from "@/ai/flows/inventory-recommendations";
+import { requireManagerOrAdmin } from "@/lib/api-middleware";
 
 const logger = createChildLogger("api:ai:insights");
 
 export async function GET(req: NextRequest) {
   const startTime = Date.now();
 
-  // Get user info from middleware
-  const userId = req.headers.get("X-User-Id");
-
-  if (!userId) {
-    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
-  }
+  const { error, userId, user } = await requireManagerOrAdmin(req);
+  if (error) return error;
 
   try {
-    // Verify user has manager or super admin role
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { role: true, email: true },
-    });
-
-    if (!user || user.role === Role.CASHIER) {
-      logger.warn({ userId }, "Unauthorized access to AI insights");
-      return jsonError("Forbidden", 403, { code: "FORBIDDEN" });
-    }
-
     // Get query parameters - limit to 7 days max to avoid overloading
     const url = new URL(req.url);
     const daysBack = Math.min(
@@ -46,7 +31,7 @@ export async function GET(req: NextRequest) {
     logger.info(
       {
         userId,
-        userEmail: user.email,
+        userEmail: user?.email,
         daysBack,
         storeName,
         language,
@@ -134,7 +119,7 @@ export async function GET(req: NextRequest) {
     logger.info(
       {
         userId,
-        userEmail: user.email,
+        userEmail: user?.email,
         duration: `${duration}ms`,
         dataPoints: {
           salesCount: analytics.totalSales,
@@ -158,23 +143,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  // Allow custom parameters for AI insights generation
-  const userId = req.headers.get("X-User-Id");
-
-  if (!userId) {
-    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
-  }
+  const { error, userId, user } = await requireManagerOrAdmin(req);
+  if (error) return error;
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { role: true, email: true },
-    });
-
-    if (!user || user.role === Role.CASHIER) {
-      return jsonError("Forbidden", 403, { code: "FORBIDDEN" });
-    }
-
     const body = await req.json();
     const { daysBack = 7, includeDetailedAnalysis = false } = body;
     const limitedDaysBack = Math.min(daysBack, 7); // Limit to 7 days max
@@ -187,7 +159,7 @@ export async function POST(req: NextRequest) {
     logger.info(
       {
         userId,
-        userEmail: user.email,
+        userEmail: user?.email,
         daysBack,
         storeName,
         includeDetailedAnalysis,

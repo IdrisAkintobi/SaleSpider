@@ -3,22 +3,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "./auth-context";
 import * as useAuthHook from "@/hooks/use-auth";
-import { User } from "@/lib/types";
+import { createTestQueryClient } from "@/test/test-utils/query-client";
+import { mockUser, mockManagerUser } from "@/test/test-utils/mock-data";
 
 // Mock the useAuth hook
 vi.mock("@/hooks/use-auth");
 
 const mockUseAuth = vi.mocked(useAuthHook.useAuth);
-
-const createTestQueryClient = () => {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-      },
-    },
-  });
-};
 
 const TestComponent = () => {
   const auth = useAuth();
@@ -40,22 +31,6 @@ const TestComponent = () => {
       </button>
     </div>
   );
-};
-
-const mockUser: User = {
-  id: "1",
-  email: "test@example.com",
-  name: "Test User",
-  role: "CASHIER",
-  status: "ACTIVE",
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  deletedAt: null,
-};
-
-const mockManager: User = {
-  ...mockUser,
-  role: "MANAGER",
 };
 
 describe("AuthProvider", () => {
@@ -118,7 +93,7 @@ describe("AuthProvider", () => {
 
     renderWithProviders(<TestComponent />);
 
-    expect(screen.getByTestId("user-name")).toHaveTextContent("Test User");
+    expect(screen.getByTestId("user-name")).toHaveTextContent("John Doe");
     expect(screen.getByTestId("user-role")).toHaveTextContent("CASHIER");
     expect(screen.getByTestId("is-cashier")).toHaveTextContent("true");
     expect(screen.getByTestId("is-manager")).toHaveTextContent("false");
@@ -127,14 +102,14 @@ describe("AuthProvider", () => {
 
   it("provides auth context with manager data", async () => {
     setupMockAuth({
-      user: mockManager,
+      user: mockManagerUser,
       userIsCashier: false,
       userIsManager: true,
     });
 
     renderWithProviders(<TestComponent />);
 
-    expect(screen.getByTestId("user-name")).toHaveTextContent("Test User");
+    expect(screen.getByTestId("user-name")).toHaveTextContent("Jane Manager");
     expect(screen.getByTestId("user-role")).toHaveTextContent("MANAGER");
     expect(screen.getByTestId("is-cashier")).toHaveTextContent("false");
     expect(screen.getByTestId("is-manager")).toHaveTextContent("true");
