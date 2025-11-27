@@ -1,49 +1,49 @@
-import { render, screen } from '@testing-library/react'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   PaymentMethodSelect,
   CashierSelect,
   DateRangeQuickSelect,
   type PaymentOption,
   type Cashier,
-} from './filters'
+} from "./filters";
 
 const mockT = (key: string) => {
   const translations: Record<string, string> = {
-    filter_by_payment_method: 'Filter by Payment Method',
-    all_payment_methods: 'All Payment Methods',
-    filter_by_cashier: 'Filter by Cashier',
-    all_cashiers: 'All Cashiers',
-    filter_by_date: 'Filter by Date',
-    all_time: 'All Time',
-    today: 'Today',
-    this_week: 'This Week',
-    this_month: 'This Month',
-  }
-  return translations[key] || key
-}
+    filter_by_payment_method: "Filter by Payment Method",
+    all_payment_methods: "All Payment Methods",
+    filter_by_cashier: "Filter by Cashier",
+    all_cashiers: "All Cashiers",
+    filter_by_date: "Filter by Date",
+    all_time: "All Time",
+    today: "Today",
+    this_week: "This Week",
+    this_month: "This Month",
+  };
+  return translations[key] || key;
+};
 
-describe('Filter Components', () => {
+describe("Filter Components", () => {
   const mockPaymentOptions: PaymentOption[] = [
-    { enum: 'CASH', label: 'Cash' },
-    { enum: 'CARD', label: 'Credit Card' },
-    { enum: 'MOBILE_MONEY', label: 'Mobile Money' },
-  ]
+    { enum: "CASH", label: "Cash" },
+    { enum: "CARD", label: "Credit Card" },
+    { enum: "MOBILE_MONEY", label: "Mobile Money" },
+  ];
 
   const mockCashiers: Cashier[] = [
-    { id: 'cashier1', name: 'John Doe' },
-    { id: 'cashier2', name: 'Jane Smith' },
-    { id: 'cashier3', name: 'Bob Johnson' },
-  ]
+    { id: "cashier1", name: "John Doe" },
+    { id: "cashier2", name: "Jane Smith" },
+    { id: "cashier3", name: "Bob Johnson" },
+  ];
 
-  const mockOnChange = vi.fn()
+  const mockOnChange = vi.fn();
 
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
-  describe('PaymentMethodSelect', () => {
-    it('renders with correct structure', () => {
+  describe("PaymentMethodSelect", () => {
+    it("renders with correct structure", () => {
       render(
         <PaymentMethodSelect
           value=""
@@ -51,14 +51,14 @@ describe('Filter Components', () => {
           options={mockPaymentOptions}
           t={mockT}
         />
-      )
+      );
 
-      const trigger = screen.getByRole('combobox')
-      expect(trigger).toBeInTheDocument()
-      expect(trigger).toHaveAttribute('aria-expanded', 'false')
-    })
+      const trigger = screen.getByRole("combobox");
+      expect(trigger).toBeInTheDocument();
+      expect(trigger).toHaveAttribute("aria-expanded", "false");
+    });
 
-    it('displays selected payment method label', () => {
+    it("displays selected payment method label", () => {
       render(
         <PaymentMethodSelect
           value="CARD"
@@ -66,12 +66,12 @@ describe('Filter Components', () => {
           options={mockPaymentOptions}
           t={mockT}
         />
-      )
+      );
 
-      expect(screen.getByText('Credit Card')).toBeInTheDocument()
-    })
+      expect(screen.getByText("Credit Card")).toBeInTheDocument();
+    });
 
-    it('handles empty options array', () => {
+    it("handles empty options array", () => {
       render(
         <PaymentMethodSelect
           value=""
@@ -79,13 +79,13 @@ describe('Filter Components', () => {
           options={[]}
           t={mockT}
         />
-      )
+      );
 
-      const trigger = screen.getByRole('combobox')
-      expect(trigger).toBeInTheDocument()
-    })
+      const trigger = screen.getByRole("combobox");
+      expect(trigger).toBeInTheDocument();
+    });
 
-    it('calls onChange when value changes', async () => {
+    it("calls onChange when value changes", async () => {
       const { rerender } = render(
         <PaymentMethodSelect
           value=""
@@ -93,7 +93,7 @@ describe('Filter Components', () => {
           options={mockPaymentOptions}
           t={mockT}
         />
-      )
+      );
 
       // Simulate value change by re-rendering with new value
       rerender(
@@ -103,14 +103,14 @@ describe('Filter Components', () => {
           options={mockPaymentOptions}
           t={mockT}
         />
-      )
+      );
 
-      expect(screen.getByText('Cash')).toBeInTheDocument()
-    })
-  })
+      expect(screen.getByText("Cash")).toBeInTheDocument();
+    });
+  });
 
-  describe('CashierSelect', () => {
-    it('renders when show is true', () => {
+  describe("CashierSelect", () => {
+    it("renders when show is true", () => {
       render(
         <CashierSelect
           show={true}
@@ -119,13 +119,13 @@ describe('Filter Components', () => {
           cashiers={mockCashiers}
           t={mockT}
         />
-      )
+      );
 
-      const trigger = screen.getByRole('combobox')
-      expect(trigger).toBeInTheDocument()
-    })
+      const trigger = screen.getByRole("combobox");
+      expect(trigger).toBeInTheDocument();
+    });
 
-    it('does not render when show is false', () => {
+    it("does not render when show is false", () => {
       const { container } = render(
         <CashierSelect
           show={false}
@@ -134,12 +134,12 @@ describe('Filter Components', () => {
           cashiers={mockCashiers}
           t={mockT}
         />
-      )
+      );
 
-      expect(container.firstChild).toBeNull()
-    })
+      expect(container.firstChild).toBeNull();
+    });
 
-    it('displays selected cashier name', () => {
+    it("displays selected cashier name", () => {
       render(
         <CashierSelect
           show={true}
@@ -148,12 +148,12 @@ describe('Filter Components', () => {
           cashiers={mockCashiers}
           t={mockT}
         />
-      )
+      );
 
-      expect(screen.getByText('Jane Smith')).toBeInTheDocument()
-    })
+      expect(screen.getByText("Jane Smith")).toBeInTheDocument();
+    });
 
-    it('handles empty cashiers array', () => {
+    it("handles empty cashiers array", () => {
       render(
         <CashierSelect
           show={true}
@@ -162,79 +162,79 @@ describe('Filter Components', () => {
           cashiers={[]}
           t={mockT}
         />
-      )
+      );
 
-      const trigger = screen.getByRole('combobox')
-      expect(trigger).toBeInTheDocument()
-    })
-  })
+      const trigger = screen.getByRole("combobox");
+      expect(trigger).toBeInTheDocument();
+    });
+  });
 
-  describe('DateRangeQuickSelect', () => {
-    it('renders with correct structure', () => {
+  describe("DateRangeQuickSelect", () => {
+    it("renders with correct structure", () => {
       render(
         <DateRangeQuickSelect value="" onChange={mockOnChange} t={mockT} />
-      )
+      );
 
-      const trigger = screen.getByRole('combobox')
-      expect(trigger).toBeInTheDocument()
-      expect(trigger).toHaveAttribute('aria-expanded', 'false')
-    })
+      const trigger = screen.getByRole("combobox");
+      expect(trigger).toBeInTheDocument();
+      expect(trigger).toHaveAttribute("aria-expanded", "false");
+    });
 
-    it('displays selected date range label', () => {
+    it("displays selected date range label", () => {
       render(
         <DateRangeQuickSelect value="week" onChange={mockOnChange} t={mockT} />
-      )
+      );
 
-      expect(screen.getByText('This Week')).toBeInTheDocument()
-    })
+      expect(screen.getByText("This Week")).toBeInTheDocument();
+    });
 
-    it('has correct CSS classes', () => {
+    it("has correct CSS classes", () => {
       render(
         <DateRangeQuickSelect value="" onChange={mockOnChange} t={mockT} />
-      )
+      );
 
-      const trigger = screen.getByRole('combobox')
-      expect(trigger).toHaveClass('w-full', 'lg:w-[140px]')
-    })
-  })
+      const trigger = screen.getByRole("combobox");
+      expect(trigger).toHaveClass("w-full", "lg:w-[140px]");
+    });
+  });
 
-  describe('Component Props', () => {
-    it('payment select accepts all required props', () => {
+  describe("Component Props", () => {
+    it("payment select accepts all required props", () => {
       const props = {
-        value: 'CASH',
+        value: "CASH",
         onChange: mockOnChange,
         options: mockPaymentOptions,
         t: mockT,
-      }
+      };
 
-      expect(() => render(<PaymentMethodSelect {...props} />)).not.toThrow()
-    })
+      expect(() => render(<PaymentMethodSelect {...props} />)).not.toThrow();
+    });
 
-    it('cashier select accepts all required props', () => {
+    it("cashier select accepts all required props", () => {
       const props = {
         show: true,
-        value: 'cashier1',
+        value: "cashier1",
         onChange: mockOnChange,
         cashiers: mockCashiers,
         t: mockT,
-      }
+      };
 
-      expect(() => render(<CashierSelect {...props} />)).not.toThrow()
-    })
+      expect(() => render(<CashierSelect {...props} />)).not.toThrow();
+    });
 
-    it('date range select accepts all required props', () => {
+    it("date range select accepts all required props", () => {
       const props = {
-        value: 'today',
+        value: "today",
         onChange: mockOnChange,
         t: mockT,
-      }
+      };
 
-      expect(() => render(<DateRangeQuickSelect {...props} />)).not.toThrow()
-    })
-  })
+      expect(() => render(<DateRangeQuickSelect {...props} />)).not.toThrow();
+    });
+  });
 
-  describe('Integration', () => {
-    it('all components render together without conflicts', () => {
+  describe("Integration", () => {
+    it("all components render together without conflicts", () => {
       render(
         <div>
           <PaymentMethodSelect
@@ -256,11 +256,11 @@ describe('Filter Components', () => {
             t={mockT}
           />
         </div>
-      )
+      );
 
-      expect(screen.getByText('Cash')).toBeInTheDocument()
-      expect(screen.getByText('John Doe')).toBeInTheDocument()
-      expect(screen.getByText('Today')).toBeInTheDocument()
-    })
-  })
-})
+      expect(screen.getByText("Cash")).toBeInTheDocument();
+      expect(screen.getByText("John Doe")).toBeInTheDocument();
+      expect(screen.getByText("Today")).toBeInTheDocument();
+    });
+  });
+});

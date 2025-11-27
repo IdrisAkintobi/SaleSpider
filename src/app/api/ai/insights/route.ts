@@ -1,21 +1,21 @@
-import { NextRequest } from 'next/server'
-import { Role } from '@prisma/client'
-import { createChildLogger } from '@/lib/logger'
-import { SalesAnalyticsService } from '@/lib/sales-analytics'
-import { jsonOk, jsonError, handleException } from '@/lib/api-response'
-import { prisma } from '@/lib/prisma'
-import { getInventoryRecommendations } from '@/ai/flows/inventory-recommendations'
+import { NextRequest } from "next/server";
+import { Role } from "@prisma/client";
+import { createChildLogger } from "@/lib/logger";
+import { SalesAnalyticsService } from "@/lib/sales-analytics";
+import { jsonOk, jsonError, handleException } from "@/lib/api-response";
+import { prisma } from "@/lib/prisma";
+import { getInventoryRecommendations } from "@/ai/flows/inventory-recommendations";
 
-const logger = createChildLogger('api:ai:insights')
+const logger = createChildLogger("api:ai:insights");
 
 export async function GET(req: NextRequest) {
-  const startTime = Date.now()
+  const startTime = Date.now();
 
   // Get user info from middleware
-  const userId = req.headers.get('X-User-Id')
+  const userId = req.headers.get("X-User-Id");
 
   if (!userId) {
-    return jsonError('Unauthorized', 401, { code: 'UNAUTHORIZED' })
+    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
   }
 
   try {
@@ -23,25 +23,25 @@ export async function GET(req: NextRequest) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { role: true, email: true },
-    })
+    });
 
     if (!user || user.role === Role.CASHIER) {
-      logger.warn({ userId }, 'Unauthorized access to AI insights')
-      return jsonError('Forbidden', 403, { code: 'FORBIDDEN' })
+      logger.warn({ userId }, "Unauthorized access to AI insights");
+      return jsonError("Forbidden", 403, { code: "FORBIDDEN" });
     }
 
     // Get query parameters - limit to 7 days max to avoid overloading
-    const url = new URL(req.url)
+    const url = new URL(req.url);
     const daysBack = Math.min(
-      Number.parseInt(url.searchParams.get('daysBack') ?? '7', 10),
+      Number.parseInt(url.searchParams.get("daysBack") ?? "7", 10),
       7
-    )
+    );
 
     // Get current language setting and store name from app settings
-    const settings = await prisma.appSettings.findFirst()
-    const language = settings?.language ?? 'en'
+    const settings = await prisma.appSettings.findFirst();
+    const language = settings?.language ?? "en";
     const storeName =
-      url.searchParams.get('storeName') ?? settings?.appName ?? 'Your Store'
+      url.searchParams.get("storeName") ?? settings?.appName ?? "Your Store";
 
     logger.info(
       {
@@ -51,23 +51,23 @@ export async function GET(req: NextRequest) {
         storeName,
         language,
       },
-      'Generating AI insights'
-    )
+      "Generating AI insights"
+    );
 
     // Get fresh data directly from database (no caching) - limited to 1000 records max
-    const maxRecords = 1000
+    const maxRecords = 1000;
     const [analytics, productPerformance, inventory] = await Promise.all([
       SalesAnalyticsService.getSalesAnalytics(daysBack, maxRecords),
       SalesAnalyticsService.getProductPerformance(daysBack, maxRecords),
       SalesAnalyticsService.getCurrentInventory(maxRecords),
-    ])
+    ]);
 
     // Format data for AI consumption
     const aiInputData = SalesAnalyticsService.formatForAI(
       analytics,
       productPerformance,
       inventory
-    )
+    );
 
     // Generate AI recommendations
     const aiRecommendations = await getInventoryRecommendations({
@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
       currentInventory: aiInputData.currentInventory,
       storeName,
       language,
-    })
+    });
 
     // Assess data completeness for better user feedback
     const dataAssessment = {
@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
           (productPerformance.length > 0 ? 20 : 0) +
           (analytics.salesTrends.length > 0 ? 20 : 0)
       ),
-    }
+    };
 
     // Prepare response
     const response = {
@@ -128,9 +128,9 @@ export async function GET(req: NextRequest) {
           ).length,
         },
       },
-    }
+    };
 
-    const duration = Date.now() - startTime
+    const duration = Date.now() - startTime;
     logger.info(
       {
         userId,
@@ -142,47 +142,47 @@ export async function GET(req: NextRequest) {
           lowStockCount: analytics.lowStockProducts.length,
         },
       },
-      'AI insights generated successfully'
-    )
+      "AI insights generated successfully"
+    );
 
-    return jsonOk(response)
+    return jsonOk(response);
   } catch (error) {
-    const duration = Date.now() - startTime
+    const duration = Date.now() - startTime;
     // Contextual log, actual error handling centralized
     logger.error(
       { userId, duration: `${duration}ms` },
-      'Failed to generate AI insights'
-    )
-    return handleException(error, 'Failed to generate AI insights', 500)
+      "Failed to generate AI insights"
+    );
+    return handleException(error, "Failed to generate AI insights", 500);
   }
 }
 
 export async function POST(req: NextRequest) {
   // Allow custom parameters for AI insights generation
-  const userId = req.headers.get('X-User-Id')
+  const userId = req.headers.get("X-User-Id");
 
   if (!userId) {
-    return jsonError('Unauthorized', 401, { code: 'UNAUTHORIZED' })
+    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
   }
 
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { role: true, email: true },
-    })
+    });
 
     if (!user || user.role === Role.CASHIER) {
-      return jsonError('Forbidden', 403, { code: 'FORBIDDEN' })
+      return jsonError("Forbidden", 403, { code: "FORBIDDEN" });
     }
 
-    const body = await req.json()
-    const { daysBack = 7, includeDetailedAnalysis = false } = body
-    const limitedDaysBack = Math.min(daysBack, 7) // Limit to 7 days max
+    const body = await req.json();
+    const { daysBack = 7, includeDetailedAnalysis = false } = body;
+    const limitedDaysBack = Math.min(daysBack, 7); // Limit to 7 days max
 
     // Get current language setting and store name from app settings
-    const settings = await prisma.appSettings.findFirst()
-    const language = settings?.language ?? 'en'
-    const storeName = body.storeName ?? settings?.appName ?? 'Sale Spider'
+    const settings = await prisma.appSettings.findFirst();
+    const language = settings?.language ?? "en";
+    const storeName = body.storeName ?? settings?.appName ?? "Sale Spider";
 
     logger.info(
       {
@@ -193,29 +193,29 @@ export async function POST(req: NextRequest) {
         includeDetailedAnalysis,
         language,
       },
-      'Generating custom AI insights'
-    )
+      "Generating custom AI insights"
+    );
 
     // Get fresh data with custom parameters - limited to 1000 records max
-    const maxRecords = 1000
+    const maxRecords = 1000;
     const [analytics, productPerformance, inventory] = await Promise.all([
       SalesAnalyticsService.getSalesAnalytics(limitedDaysBack, maxRecords),
       SalesAnalyticsService.getProductPerformance(limitedDaysBack, maxRecords),
       SalesAnalyticsService.getCurrentInventory(maxRecords),
-    ])
+    ]);
 
     const aiInputData = SalesAnalyticsService.formatForAI(
       analytics,
       productPerformance,
       inventory
-    )
+    );
 
     const aiRecommendations = await getInventoryRecommendations({
       salesData: aiInputData.salesData,
       currentInventory: aiInputData.currentInventory,
       storeName,
       language,
-    })
+    });
 
     const response = {
       analytics,
@@ -241,10 +241,10 @@ export async function POST(req: NextRequest) {
           includeDetailedAnalysis,
         },
       },
-    }
+    };
 
-    return jsonOk(response)
+    return jsonOk(response);
   } catch (error) {
-    return handleException(error, 'Failed to generate AI insights', 500)
+    return handleException(error, "Failed to generate AI insights", 500);
   }
 }

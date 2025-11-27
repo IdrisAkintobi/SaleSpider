@@ -4,23 +4,23 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from './select'
-import { Button } from './button'
+} from "./select";
+import { Button } from "./button";
 import {
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-} from 'lucide-react'
-import { useTranslation } from '@/lib/i18n'
+} from "lucide-react";
+import { useTranslation } from "@/lib/i18n";
 
 interface TablePaginationProps {
-  page: number
-  pageSize: number
-  total: number
-  onPageChange: (page: number) => void
-  onPageSizeChange: (size: number) => void
-  pageSizeOptions?: number[]
+  page: number;
+  pageSize: number;
+  total: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
+  pageSizeOptions?: number[];
 }
 
 export function TablePagination({
@@ -31,8 +31,8 @@ export function TablePagination({
   onPageSizeChange,
   pageSizeOptions = [10, 20, 50, 100],
 }: TablePaginationProps) {
-  const totalPages = Math.max(1, Math.ceil(total / pageSize))
-  const t = useTranslation()
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const t = useTranslation();
 
   return (
     <div className="flex items-center justify-between gap-4 py-2">
@@ -54,7 +54,7 @@ export function TablePagination({
           <ChevronLeft className="w-4 h-4" />
         </Button>
         <span className="text-sm">
-          {t('page')} {page} {t('of')} {totalPages}
+          {t("page")} {page} {t("of")} {totalPages}
         </span>
         <Button
           variant="ghost"
@@ -74,7 +74,7 @@ export function TablePagination({
         </Button>
       </div>
       <div className="flex items-center gap-2 mr-4">
-        <span className="text-sm">{t('rows_per_page')}:</span>
+        <span className="text-sm">{t("rows_per_page")}:</span>
         <Select
           value={String(pageSize)}
           onValueChange={v => onPageSizeChange(Number(v))}
@@ -92,5 +92,5 @@ export function TablePagination({
         </Select>
       </div>
     </div>
-  )
+  );
 }

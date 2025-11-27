@@ -1,12 +1,12 @@
 // app/api/auth/session/route.ts
+import { clearAuthToken } from "@/app/api/auth/lib/cookie-handler";
+import { createChildLogger } from "@/lib/logger";
+import { prisma } from "@/lib/prisma";
 import { jwtVerify } from "jose";
 import { JWTExpired } from "jose/errors";
 import { NextRequest, NextResponse } from "next/server";
-import { clearAuthToken } from "@/app/api/auth/lib/cookie-handler";
-import { prisma } from "@/lib/prisma";
-import { createChildLogger } from "@/lib/logger";
 
-const logger = createChildLogger('api:auth:session');
+const logger = createChildLogger("api:auth:session");
 
 // Function to get session
 export async function GET(req: NextRequest) {
@@ -17,10 +17,13 @@ export async function GET(req: NextRequest) {
 
     if (authToken) {
       const userFromToken = await validateAuthToken(authToken);
-      const userId = typeof userFromToken.id === 'string' ? userFromToken.id : String(userFromToken.id);
+      const userId =
+        typeof userFromToken.id === "string"
+          ? userFromToken.id
+          : String(userFromToken.id);
       // Fetch user from DB to check status
       const dbUser = await prisma.user.findUnique({ where: { id: userId } });
-      if (!dbUser || dbUser.status !== "ACTIVE") {
+      if (dbUser?.status !== "ACTIVE") {
         const response = NextResponse.json(
           { message: "Account inactive or not found" },
           { status: 401 }
@@ -33,7 +36,10 @@ export async function GET(req: NextRequest) {
     }
   } catch (error) {
     if (!(error instanceof JWTExpired)) {
-      logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Session API error');
+      logger.error(
+        { error: error instanceof Error ? error.message : "Unknown error" },
+        "Session API error"
+      );
     }
   }
   const response = NextResponse.json(

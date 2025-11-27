@@ -27,7 +27,9 @@ export async function verifyToken(token: string): Promise<AuthUser | null> {
 /**
  * Get user from request headers (set by middleware)
  */
-export async function getCurrentUser(request: NextRequest): Promise<AuthUser | null> {
+export async function getCurrentUser(
+  request: NextRequest
+): Promise<AuthUser | null> {
   const userId = request.headers.get("X-User-Id");
   if (!userId) {
     return null;
@@ -56,15 +58,16 @@ export async function getCurrentUser(request: NextRequest): Promise<AuthUser | n
  */
 export function hasRole(user: AuthUser | null, requiredRole: string): boolean {
   if (!user) return false;
-  
+
   const roleHierarchy = {
-    "SUPER_ADMIN": 3,
-    "MANAGER": 2,
-    "CASHIER": 1,
+    SUPER_ADMIN: 3,
+    MANAGER: 2,
+    CASHIER: 1,
   };
 
   const userLevel = roleHierarchy[user.role as keyof typeof roleHierarchy] || 0;
-  const requiredLevel = roleHierarchy[requiredRole as keyof typeof roleHierarchy] || 0;
+  const requiredLevel =
+    roleHierarchy[requiredRole as keyof typeof roleHierarchy] || 0;
 
   return userLevel >= requiredLevel;
 }
@@ -88,4 +91,4 @@ export function isManager(user: AuthUser | null): boolean {
  */
 export function isCashier(user: AuthUser | null): boolean {
   return hasRole(user, "CASHIER");
-} 
+}

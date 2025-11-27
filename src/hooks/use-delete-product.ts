@@ -1,18 +1,18 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useToast } from '@/hooks/use-toast'
-import { fetchJson } from '@/lib/fetch-utils'
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { fetchJson } from "@/lib/fetch-utils";
 
 interface DeleteProductResponse {
-  message: string
-  productId: string
+  message: string;
+  productId: string;
 }
 
 async function deleteProduct(
   productId: string
 ): Promise<DeleteProductResponse> {
   return fetchJson<DeleteProductResponse>(`/api/products/${productId}`, {
-    method: 'DELETE',
-  })
+    method: "DELETE",
+  });
 }
 
 async function restoreProduct(
@@ -21,57 +21,57 @@ async function restoreProduct(
   return fetchJson<DeleteProductResponse>(
     `/api/products/${productId}/restore`,
     {
-      method: 'POST',
+      method: "POST",
     }
-  )
+  );
 }
 
 export function useDeleteProduct() {
-  const queryClient = useQueryClient()
-  const { toast } = useToast()
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   return useMutation({
     mutationFn: deleteProduct,
     onSuccess: data => {
       // Invalidate and refetch products
-      queryClient.invalidateQueries({ queryKey: ['products'] })
+      queryClient.invalidateQueries({ queryKey: ["products"] });
 
       toast({
-        title: 'Product Deleted',
+        title: "Product Deleted",
         description: data.message,
-      })
+      });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Delete Failed',
+        title: "Delete Failed",
         description: error.message,
-        variant: 'destructive',
-      })
+        variant: "destructive",
+      });
     },
-  })
+  });
 }
 
 export function useRestoreProduct() {
-  const queryClient = useQueryClient()
-  const { toast } = useToast()
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   return useMutation({
     mutationFn: restoreProduct,
     onSuccess: data => {
       // Invalidate and refetch products
-      queryClient.invalidateQueries({ queryKey: ['products'] })
+      queryClient.invalidateQueries({ queryKey: ["products"] });
 
       toast({
-        title: 'Product Restored',
+        title: "Product Restored",
         description: data.message,
-      })
+      });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Restore Failed',
+        title: "Restore Failed",
         description: error.message,
-        variant: 'destructive',
-      })
+        variant: "destructive",
+      });
     },
-  })
+  });
 }

@@ -1,5 +1,5 @@
-import { Card, CardContent } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -7,28 +7,28 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { useTranslation } from '@/lib/i18n'
+} from "@/components/ui/table";
+import { useTranslation } from "@/lib/i18n";
 
 interface StaffTableSkeletonProps {
-  rows?: number
+  rows?: number;
 }
 
 export function StaffTableSkeleton({
   rows = 10,
 }: Readonly<StaffTableSkeletonProps>) {
-  const t = useTranslation()
+  const t = useTranslation();
   return (
     <Card className="shadow-lg">
       <CardContent className="p-0">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{t('name')}</TableHead>
-              <TableHead>{t('username')}</TableHead>
-              <TableHead>{t('role')}</TableHead>
-              <TableHead>{t('status')}</TableHead>
-              <TableHead className="text-right">{t('actions')}</TableHead>
+              <TableHead>{t("name")}</TableHead>
+              <TableHead>{t("username")}</TableHead>
+              <TableHead>{t("role")}</TableHead>
+              <TableHead>{t("status")}</TableHead>
+              <TableHead className="text-right">{t("actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -58,5 +58,5 @@ export function StaffTableSkeleton({
         </Table>
       </CardContent>
     </Card>
-  )
+  );
 }

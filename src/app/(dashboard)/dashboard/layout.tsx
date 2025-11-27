@@ -1,29 +1,32 @@
-'use client'
+"use client";
 
-import { DashboardHeader } from '@/components/dashboard/header'
-import { SidebarNav } from '@/components/dashboard/sidebar-nav'
-import { SidebarToggle } from '@/components/dashboard/sidebar-toggle'
-import { Logo } from '@/components/shared/logo'
-import { SidebarProvider, useSidebarCollapse } from '@/contexts/sidebar-context'
-import type { PropsWithChildren } from 'react'
+import { DashboardHeader } from "@/components/dashboard/header";
+import { SidebarNav } from "@/components/dashboard/sidebar-nav";
+import { SidebarToggle } from "@/components/dashboard/sidebar-toggle";
+import { Logo } from "@/components/shared/logo";
+import {
+  SidebarProvider,
+  useSidebarCollapse,
+} from "@/contexts/sidebar-context";
+import type { PropsWithChildren } from "react";
 
 export default function DashboardLayout({ children }: PropsWithChildren) {
   return (
     <SidebarProvider>
       <DashboardLayoutContent>{children}</DashboardLayoutContent>
     </SidebarProvider>
-  )
+  );
 }
 
 function DashboardLayoutContent({ children }: PropsWithChildren) {
-  const { isCollapsed } = useSidebarCollapse()
+  const { isCollapsed } = useSidebarCollapse();
 
   return (
     <div className="flex min-h-screen w-full">
       <CollapsibleSidebar />
       <div
         className={`flex flex-col flex-1 transition-all duration-300 ${
-          isCollapsed ? 'md:ml-16' : 'md:ml-[220px] lg:ml-[280px]'
+          isCollapsed ? "md:ml-16" : "md:ml-[220px] lg:ml-[280px]"
         }`}
       >
         <DashboardHeader />
@@ -32,16 +35,16 @@ function DashboardLayoutContent({ children }: PropsWithChildren) {
         </main>
       </div>
     </div>
-  )
+  );
 }
 
 function CollapsibleSidebar() {
-  const { isCollapsed } = useSidebarCollapse()
+  const { isCollapsed } = useSidebarCollapse();
 
   return (
     <aside
       className={`hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:block fixed left-0 top-0 h-screen group transition-all duration-300 z-40 ${
-        isCollapsed ? 'w-16' : 'w-[220px] lg:w-[280px]'
+        isCollapsed ? "w-16" : "w-[220px] lg:w-[280px]"
       }`}
       data-theme="sidebar"
       data-debug="sidebar-container"
@@ -68,7 +71,7 @@ function CollapsibleSidebar() {
         <div className="sticky bottom-0 p-4 border-t border-sidebar-border bg-sidebar">
           <p
             className={`text-xs text-sidebar-foreground/70 transition-opacity duration-300 ${
-              isCollapsed ? 'opacity-0' : 'opacity-100'
+              isCollapsed ? "opacity-0" : "opacity-100"
             }`}
           >
             © {new Date().getFullYear()} Salespider
@@ -76,5 +79,5 @@ function CollapsibleSidebar() {
         </div>
       </div>
     </aside>
-  )
+  );
 }

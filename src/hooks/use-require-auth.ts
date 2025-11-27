@@ -17,4 +17,4 @@ export function useRequireAuth(redirectTo: string = "/login") {
     isLoading,
     isAuthenticated,
   };
-} 
+}

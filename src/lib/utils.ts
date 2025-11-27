@@ -43,7 +43,7 @@ export async function getMonthlySales(prisma: any, from?: Date, to?: Date) {
   }
 
   return Promise.all(
-    months.map(async (monthStart) => {
+    months.map(async monthStart => {
       const nextMonth = new Date(monthStart);
       nextMonth.setMonth(monthStart.getMonth() + 1);
       const sales = await prisma.sale.aggregate({

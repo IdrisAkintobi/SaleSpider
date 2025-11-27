@@ -1,46 +1,46 @@
-'use client'
+"use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
-import { useSettings } from '@/hooks/use-settings'
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useSettings } from "@/hooks/use-settings";
 import {
   DEFAULT_SETTINGS,
   PAYMENT_MODE_VALUES,
   type PaymentMode,
-} from '@/lib/constants'
-import { applyDynamicStyles } from '@/lib/dynamic-styles'
-import { useThemeSync } from '@/hooks/use-theme-sync'
+} from "@/lib/constants";
+import { applyDynamicStyles } from "@/lib/dynamic-styles";
+import { useThemeSync } from "@/hooks/use-theme-sync";
 
 export interface AppSettings {
-  id: string
-  appName: string
-  appLogo?: string
-  primaryColor: string
-  secondaryColor: string
-  accentColor: string
-  currency: string
-  currencySymbol: string
-  vatPercentage: number
-  timezone: string
-  dateFormat: string
-  timeFormat: string
-  language: string
-  theme: string
-  maintenanceMode: boolean
-  showDeletedProducts: boolean
-  enabledPaymentMethods: PaymentMode[]
-  createdAt: string
-  updatedAt: string
+  id: string;
+  appName: string;
+  appLogo?: string;
+  primaryColor: string;
+  secondaryColor: string;
+  accentColor: string;
+  currency: string;
+  currencySymbol: string;
+  vatPercentage: number;
+  timezone: string;
+  dateFormat: string;
+  timeFormat: string;
+  language: string;
+  theme: string;
+  maintenanceMode: boolean;
+  showDeletedProducts: boolean;
+  enabledPaymentMethods: PaymentMode[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface SettingsContextType {
-  settings: AppSettings | null
-  isLoading: boolean
-  error: Error | null
-  isMaintenanceMode: boolean
+  settings: AppSettings | null;
+  isLoading: boolean;
+  error: Error | null;
+  isMaintenanceMode: boolean;
 }
 
 const defaultSettings: AppSettings = {
-  id: '',
+  id: "",
   appName: process.env.NEXT_PUBLIC_APP_NAME || DEFAULT_SETTINGS.appName,
   appLogo: process.env.NEXT_PUBLIC_APP_LOGO || DEFAULT_SETTINGS.appLogo,
   primaryColor:
@@ -64,13 +64,13 @@ const defaultSettings: AppSettings = {
   language: process.env.NEXT_PUBLIC_LANGUAGE || DEFAULT_SETTINGS.language,
   theme: process.env.NEXT_PUBLIC_THEME || DEFAULT_SETTINGS.theme,
   maintenanceMode:
-    process.env.NEXT_PUBLIC_MAINTENANCE_MODE === 'true' ||
+    process.env.NEXT_PUBLIC_MAINTENANCE_MODE === "true" ||
     DEFAULT_SETTINGS.maintenanceMode,
   showDeletedProducts:
-    process.env.NEXT_PUBLIC_SHOW_DELETED_PRODUCTS === 'true' ||
+    process.env.NEXT_PUBLIC_SHOW_DELETED_PRODUCTS === "true" ||
     DEFAULT_SETTINGS.showDeletedProducts,
   enabledPaymentMethods: process.env.NEXT_PUBLIC_ENABLED_PAYMENT_METHODS
-    ? process.env.NEXT_PUBLIC_ENABLED_PAYMENT_METHODS.split(',')
+    ? process.env.NEXT_PUBLIC_ENABLED_PAYMENT_METHODS.split(",")
         .map(s => s.trim().toUpperCase())
         .filter((v): v is PaymentMode =>
           (PAYMENT_MODE_VALUES as readonly string[]).includes(v)
@@ -78,42 +78,42 @@ const defaultSettings: AppSettings = {
     : [...DEFAULT_SETTINGS.enabledPaymentMethods],
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
-}
+};
 
 const SettingsContext = createContext<SettingsContextType>({
   settings: defaultSettings,
   isLoading: false,
   error: null,
   isMaintenanceMode: defaultSettings.maintenanceMode,
-})
+});
 
 export function SettingsProvider({
   children,
 }: {
-  readonly children: React.ReactNode
+  readonly children: React.ReactNode;
 }) {
-  const { data: settings, isLoading, error } = useSettings()
+  const { data: settings, isLoading, error } = useSettings();
   const [currentSettings, setCurrentSettings] =
-    useState<AppSettings>(defaultSettings)
+    useState<AppSettings>(defaultSettings);
 
   // Sync theme with next-themes
-  useThemeSync(settings || defaultSettings)
+  useThemeSync(settings || defaultSettings);
 
   useEffect(() => {
     if (settings) {
-      setCurrentSettings(settings)
+      setCurrentSettings(settings);
       // Apply dynamic styles when settings change
-      applyDynamicStyles(settings)
+      applyDynamicStyles(settings);
     } else {
       // Apply default styles if no settings are loaded
-      applyDynamicStyles(defaultSettings)
+      applyDynamicStyles(defaultSettings);
     }
-  }, [settings])
+  }, [settings]);
 
   // Apply default styles on mount
   useEffect(() => {
-    applyDynamicStyles(defaultSettings)
-  }, [])
+    applyDynamicStyles(defaultSettings);
+  }, []);
 
   const value: SettingsContextType = useMemo(
     () => ({
@@ -123,16 +123,16 @@ export function SettingsProvider({
       isMaintenanceMode: currentSettings.maintenanceMode,
     }),
     [currentSettings, isLoading, error]
-  )
+  );
 
   return (
     <SettingsContext.Provider value={value}>
       {children}
     </SettingsContext.Provider>
-  )
+  );
 }
 
 export function useSettingsContext() {
   // Always return the context; a default value is provided at creation
-  return useContext(SettingsContext)
+  return useContext(SettingsContext);
 }

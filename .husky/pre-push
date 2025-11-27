@@ -4,17 +4,21 @@ echo "🔍 Running pre-push checks..."
 echo "📝 Running ESLint..."
 npm run lint
 
+# Run formatting
+echo "📝 Running Prettier..."
+npm run format
+
 # Run type checking
 echo "🔍 Running TypeScript check..."
 npx tsc --noEmit
 
-# Run tests
-echo "🧪 Running tests..."
-npm test
-
 # Run build
 echo "🏗️  Running build..."
 npm run build
+
+# Run tests
+echo "🧪 Running tests..."
+npm test
 
 # Run docs build
 echo "📚 Running docs build..."

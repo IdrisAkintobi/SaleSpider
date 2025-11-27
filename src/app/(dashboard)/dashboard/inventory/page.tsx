@@ -1,54 +1,54 @@
-'use client'
-import { PageHeader } from '@/components/shared/page-header'
-import { useAuth } from '@/contexts/auth-context'
-import useDebounce from '@/hooks/use-debounce'
-import type { Product } from '@/lib/types'
-import { useQuery } from '@tanstack/react-query'
-import { useCallback, useState, useEffect, Suspense } from 'react'
-import { AddProductDialog } from './add-product-dialog'
-import { ProductTable, type SortField, type SortOrder } from './product-table'
-import { ProductTableSkeleton } from './product-table-skeleton'
-import { SearchInput } from '@/components/shared/search-input'
-import { UpdateProductDialog } from './update-product-dialog'
-import { ProductDetailsDialog } from './product-details-dialog'
-import { UpdateStockDialog } from './update-stock-dialog'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { useTranslation } from '@/lib/i18n'
-import { fetchJson } from '@/lib/fetch-utils'
-import { useSearchParams, useRouter } from 'next/navigation'
+"use client";
+import { PageHeader } from "@/components/shared/page-header";
+import { SearchInput } from "@/components/shared/search-input";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/auth-context";
+import useDebounce from "@/hooks/use-debounce";
+import { fetchJson } from "@/lib/fetch-utils";
+import { useTranslation } from "@/lib/i18n";
+import type { Product } from "@/lib/types";
+import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { AddProductDialog } from "./add-product-dialog";
+import { ProductDetailsDialog } from "./product-details-dialog";
+import { ProductTable, type SortField, type SortOrder } from "./product-table";
+import { ProductTableSkeleton } from "./product-table-skeleton";
+import { UpdateProductDialog } from "./update-product-dialog";
+import { UpdateStockDialog } from "./update-stock-dialog";
 
 // Define the expected API response structure
 interface ProductsResponse {
-  products: Product[]
-  totalCount: number
+  products: Product[];
+  totalCount: number;
 }
 
 function InventoryPageContent() {
-  const { userIsManager } = useAuth()
-  const t = useTranslation()
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const [searchTerm, setSearchTerm] = useState('')
-  const debouncedSearchTerm = useDebounce(searchTerm, 300)
-  const [page, setPage] = useState(1) // 1-based for TablePagination
-  const [pageSize, setPageSize] = useState(10)
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false)
+  const { userIsManager } = useAuth();
+  const t = useTranslation();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  const [page, setPage] = useState(1); // 1-based for TablePagination
+  const [pageSize, setPageSize] = useState(10);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [isUpdateProductDialogOpen, setIsUpdateProductDialogOpen] =
-    useState(false)
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+    useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedProductForEdit, setSelectedProductForEdit] =
-    useState<Product | null>(null)
-  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
+    useState<Product | null>(null);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [selectedProductForDetails, setSelectedProductForDetails] =
-    useState<Product | null>(null)
-  const [sortField, setSortField] = useState<SortField>('name')
-  const [sortOrder, setSortOrder] = useState<SortOrder>('asc')
+    useState<Product | null>(null);
+  const [sortField, setSortField] = useState<SortField>("name");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
 
   const { data, isLoading, isError, isFetching } = useQuery<ProductsResponse>({
     queryKey: [
-      'products',
+      "products",
       page,
       pageSize,
       debouncedSearchTerm,
@@ -60,102 +60,102 @@ function InventoryPageContent() {
         `/api/products?page=${page}&pageSize=${pageSize}${
           debouncedSearchTerm
             ? `&search=${encodeURIComponent(debouncedSearchTerm)}`
-            : ''
+            : ""
         }&sortField=${sortField}&sortOrder=${sortOrder}`
-      )
+      );
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
-  })
+  });
 
-  const products = data?.products ?? []
-  const total = data?.totalCount ?? 0
+  const products = data?.products ?? [];
+  const total = data?.totalCount ?? 0;
 
   const handleSort = useCallback(
     (field: SortField) => {
       if (sortField === field) {
-        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+        setSortOrder(sortOrder === "asc" ? "desc" : "asc");
       } else {
-        setSortField(field)
-        setSortOrder('asc')
+        setSortField(field);
+        setSortOrder("asc");
       }
-      setPage(1) // Reset to first page when changing sort
+      setPage(1); // Reset to first page when changing sort
     },
     [sortField, sortOrder]
-  )
+  );
 
   const handleSearchChange = useCallback((value: string) => {
-    setSearchTerm(value)
-    setPage(1) // Reset to first page when searching
-  }, [])
+    setSearchTerm(value);
+    setPage(1); // Reset to first page when searching
+  }, []);
 
   const handlePageChange = useCallback((newPage: number) => {
-    setPage(newPage)
-  }, [])
+    setPage(newPage);
+  }, []);
 
   const handlePageSizeChange = useCallback((newSize: number) => {
-    setPageSize(newSize)
-    setPage(1)
-  }, [])
+    setPageSize(newSize);
+    setPage(1);
+  }, []);
 
   const handleOpenUpdateDialog = useCallback((product: Product) => {
-    setSelectedProduct(product)
-    setIsUpdateDialogOpen(true)
-  }, [])
+    setSelectedProduct(product);
+    setIsUpdateDialogOpen(true);
+  }, []);
 
   const handleCloseUpdateDialog = useCallback(() => {
-    setIsUpdateDialogOpen(false)
-    setSelectedProduct(null)
-  }, [])
+    setIsUpdateDialogOpen(false);
+    setSelectedProduct(null);
+  }, []);
 
   const handleOpenUpdateProductDialog = useCallback((product: Product) => {
-    setSelectedProductForEdit(product)
-    setIsUpdateProductDialogOpen(true)
-  }, [])
+    setSelectedProductForEdit(product);
+    setIsUpdateProductDialogOpen(true);
+  }, []);
 
   const handleCloseUpdateProductDialog = useCallback(() => {
-    setIsUpdateProductDialogOpen(false)
-    setSelectedProductForEdit(null)
-  }, [])
+    setIsUpdateProductDialogOpen(false);
+    setSelectedProductForEdit(null);
+  }, []);
 
   const handleOpenDetailsDialog = useCallback((product: Product) => {
-    setSelectedProductForDetails(product)
-    setIsDetailsDialogOpen(true)
-  }, [])
+    setSelectedProductForDetails(product);
+    setIsDetailsDialogOpen(true);
+  }, []);
 
   const handleCloseDetailsDialog = useCallback(() => {
-    setIsDetailsDialogOpen(false)
-    setSelectedProductForDetails(null)
-  }, [])
+    setIsDetailsDialogOpen(false);
+    setSelectedProductForDetails(null);
+  }, []);
 
   // Handle productName from URL (from low stock notification)
   useEffect(() => {
-    const productNameParam = searchParams.get('productName')
+    const productNameParam = searchParams.get("productName");
     if (productNameParam && productNameParam !== searchTerm) {
-      setSearchTerm(productNameParam)
+      setSearchTerm(productNameParam);
       // Clear the param after setting search
-      const params = new URLSearchParams(searchParams.toString())
-      params.delete('productName')
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("productName");
       router.replace(`/dashboard/inventory?${params.toString()}`, {
         scroll: false,
-      })
+      });
     }
-  }, [searchParams, searchTerm, router])
+  }, [searchParams, searchTerm, router]);
 
   // Record New Sale button for cashiers
-  const recordSaleAction = !userIsManager ? (
+  const recordSaleAction = userIsManager ? null : (
     <Button size="lg" asChild>
-      <Link href="/dashboard/record-sale">{t('record_sale')}</Link>
+      <Link href="/dashboard/record-sale">{t("record_sale")}</Link>
     </Button>
-  ) : null
+  );
 
-  if (isError) return <div>Error loading products.</div>
+  if (isError) return <div>Error loading products.</div>;
 
   return (
     <>
       <PageHeader
-        title={t('inventory')}
-        description={t('inventory_management_description')}
+        title={t("inventory")}
+        description={t("inventory_management_description")}
         actions={
           <>
             {recordSaleAction}
@@ -163,7 +163,7 @@ function InventoryPageContent() {
               <AddProductDialog
                 isOpen={isAddDialogOpen}
                 onOpenChange={setIsAddDialogOpen}
-                triggerButtonProps={{ variant: 'default', size: 'lg' }}
+                triggerButtonProps={{ variant: "default", size: "lg" }}
               />
             )}
           </>
@@ -174,7 +174,7 @@ function InventoryPageContent() {
         value={searchTerm}
         onChange={handleSearchChange}
         isLoading={isFetching}
-        placeholderKey={'search_products_advanced'}
+        placeholderKey={"search_products_advanced"}
       />
 
       {isLoading ? (
@@ -215,7 +215,7 @@ function InventoryPageContent() {
         product={selectedProductForDetails}
       />
     </>
-  )
+  );
 }
 
 export default function InventoryPage() {
@@ -223,20 +223,20 @@ export default function InventoryPage() {
     <Suspense fallback={<InventoryPageSkeleton />}>
       <InventoryPageContent />
     </Suspense>
-  )
+  );
 }
 
 function InventoryPageSkeleton() {
-  const { userIsManager } = useAuth()
-  const t = useTranslation()
+  const { userIsManager } = useAuth();
+  const t = useTranslation();
 
   return (
     <>
       <PageHeader
-        title={t('inventory')}
-        description={t('inventory_management_description')}
+        title={t("inventory")}
+        description={t("inventory_management_description")}
       />
       <ProductTableSkeleton userIsManager={userIsManager} />
     </>
-  )
+  );
 }

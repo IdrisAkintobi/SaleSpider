@@ -1,71 +1,71 @@
-'use client'
+"use client";
 
-import React from 'react'
-import { Button } from '@/components/ui/button'
-import { Printer } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
-import { useFormatCurrency } from '@/lib/currency'
-import { useTranslation } from '@/lib/i18n'
-import type { Sale } from '@/lib/types'
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Printer } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useFormatCurrency } from "@/lib/currency";
+import { useTranslation } from "@/lib/i18n";
+import type { Sale } from "@/lib/types";
 
 interface ReceiptPrinterProps {
-  readonly sale: Sale
-  readonly variant?: 'default' | 'outline' | 'ghost'
-  readonly size?: 'default' | 'sm' | 'lg'
-  readonly className?: string
+  readonly sale: Sale;
+  readonly variant?: "default" | "outline" | "ghost";
+  readonly size?: "default" | "sm" | "lg";
+  readonly className?: string;
 }
 
 // Helper function to create iframe for printing
 const createPrintIframe = (): HTMLIFrameElement => {
-  const iframe = document.createElement('iframe')
-  iframe.style.position = 'absolute'
-  iframe.style.left = '-9999px'
-  iframe.style.width = '1px'
-  iframe.style.height = '1px'
-  return iframe
-}
+  const iframe = document.createElement("iframe");
+  iframe.style.position = "absolute";
+  iframe.style.left = "-9999px";
+  iframe.style.width = "1px";
+  iframe.style.height = "1px";
+  return iframe;
+};
 
 // Helper function to write content to iframe
 const writeToIframe = (iframe: HTMLIFrameElement, content: string): void => {
-  const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document
+  const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
   if (!iframeDoc) {
-    throw new Error('Could not access iframe document')
+    throw new Error("Could not access iframe document");
   }
 
-  iframeDoc.documentElement.innerHTML = content
-}
+  iframeDoc.documentElement.innerHTML = content;
+};
 
 // Helper function to handle print timing
 const handlePrintTiming = (iframe: HTMLIFrameElement): void => {
   iframe.onload = () => {
     setTimeout(() => {
-      iframe.contentWindow?.print()
+      iframe.contentWindow?.print();
 
       // Clean up after printing
       setTimeout(() => {
         if (iframe.parentNode) {
-          document.body.removeChild(iframe)
+          document.body.removeChild(iframe);
         }
-      }, 1000)
-    }, 100)
-  }
-}
+      }, 1000);
+    }, 100);
+  };
+};
 
 export function ReceiptPrinter({
   sale,
-  variant = 'outline',
-  size = 'sm',
-  className = '',
+  variant = "outline",
+  size = "sm",
+  className = "",
 }: ReceiptPrinterProps) {
-  const { toast } = useToast()
-  const formatCurrency = useFormatCurrency()
-  const t = useTranslation()
+  const { toast } = useToast();
+  const formatCurrency = useFormatCurrency();
+  const t = useTranslation();
 
   const generateReceiptContent = () => {
-    const subtotal = sale.subtotal
-    const vatAmount = sale.vatAmount
-    const vatPercentageUsed = sale.vatPercentage
-    const saleDate = new Date(sale.timestamp).toLocaleString()
+    const subtotal = sale.subtotal;
+    const vatAmount = sale.vatAmount;
+    const vatPercentageUsed = sale.vatPercentage;
+    const saleDate = new Date(sale.timestamp).toLocaleString();
 
     return `
 <!DOCTYPE html>
@@ -202,7 +202,7 @@ export function ReceiptPrinter({
     </div>
     `
       )
-      .join('')}
+      .join("")}
   </div>
 
   <div class="totals">
@@ -245,26 +245,26 @@ export function ReceiptPrinter({
     }
   </script>
 </body>
-</html>`
-  }
+</html>`;
+  };
 
   const handlePrintReceipt = () => {
     try {
-      const receiptContent = generateReceiptContent()
-      const iframe = createPrintIframe()
+      const receiptContent = generateReceiptContent();
+      const iframe = createPrintIframe();
 
-      document.body.appendChild(iframe)
-      writeToIframe(iframe, receiptContent)
-      handlePrintTiming(iframe)
+      document.body.appendChild(iframe);
+      writeToIframe(iframe, receiptContent);
+      handlePrintTiming(iframe);
     } catch (error) {
-      console.error('Print error:', error)
+      console.error("Print error:", error);
       toast({
-        title: 'Print Error',
-        description: 'Failed to print receipt',
-        variant: 'destructive',
-      })
+        title: "Print Error",
+        description: "Failed to print receipt",
+        variant: "destructive",
+      });
     }
-  }
+  };
 
   return (
     <Button
@@ -274,7 +274,7 @@ export function ReceiptPrinter({
       className={className}
     >
       <Printer className="mr-2 h-4 w-4" />
-      {t('print_receipt')}
+      {t("print_receipt")}
     </Button>
-  )
+  );
 }

@@ -1,9 +1,9 @@
-import type { ReactNode } from 'react'
+import type { ReactNode } from "react";
 
 interface PageHeaderProps {
-  title: string
-  description?: string
-  actions?: ReactNode
+  title: string;
+  description?: string;
+  actions?: ReactNode;
 }
 
 export function PageHeader({
@@ -27,5 +27,5 @@ export function PageHeader({
         {actions && <div className="mt-4 md:mt-0 flex-shrink-0">{actions}</div>}
       </div>
     </div>
-  )
+  );
 }

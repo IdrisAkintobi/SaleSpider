@@ -14,9 +14,9 @@ interface RecentSalesSkeletonProps {
   readonly rows?: number;
 }
 
-export function RecentSalesSkeleton({ 
-  className, 
-  rows = 5 
+export function RecentSalesSkeleton({
+  className,
+  rows = 5,
 }: RecentSalesSkeletonProps) {
   return (
     <Card className={className}>
@@ -39,7 +39,10 @@ export function RecentSalesSkeleton({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {Array.from({ length: rows }, (_, index) => `skeleton-row-${index}`).map((key) => (
+            {Array.from(
+              { length: rows },
+              (_, index) => `skeleton-row-${index}`
+            ).map(key => (
               <TableRow key={key}>
                 <TableCell>
                   <Skeleton className="h-4 w-[80px]" />
@@ -63,4 +66,4 @@ export function RecentSalesSkeleton({
       </CardContent>
     </Card>
   );
-} 
+}

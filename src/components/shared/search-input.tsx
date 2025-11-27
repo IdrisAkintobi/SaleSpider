@@ -1,24 +1,24 @@
-import { Input } from '@/components/ui/input'
-import { Search, X } from 'lucide-react'
-import { useTranslation } from '@/lib/i18n'
-import { Button } from '@/components/ui/button'
+import { Input } from "@/components/ui/input";
+import { Search, X } from "lucide-react";
+import { useTranslation } from "@/lib/i18n";
+import { Button } from "@/components/ui/button";
 
 interface SearchInputProps {
-  value: string
-  onChange: (value: string) => void
-  isLoading?: boolean
-  placeholderKey?: string // i18n key for placeholder, defaults to 'search'
-  placeholder?: string // Direct placeholder text (overrides placeholderKey)
+  value: string;
+  onChange: (value: string) => void;
+  isLoading?: boolean;
+  placeholderKey?: string; // i18n key for placeholder, defaults to 'search'
+  placeholder?: string; // Direct placeholder text (overrides placeholderKey)
 }
 
 export function SearchInput({
   value,
   onChange,
   isLoading,
-  placeholderKey = 'search',
+  placeholderKey = "search",
   placeholder,
 }: Readonly<SearchInputProps>) {
-  const t = useTranslation()
+  const t = useTranslation();
 
   return (
     <div className="relative">
@@ -35,12 +35,12 @@ export function SearchInput({
           variant="ghost"
           size="icon"
           className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 z-20"
-          onClick={() => onChange('')}
+          onClick={() => onChange("")}
           aria-label="Clear search"
         >
           <X className="h-4 w-4" />
         </Button>
       )}
     </div>
-  )
+  );
 }

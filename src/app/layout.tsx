@@ -16,16 +16,14 @@ export const metadata: Metadata = {
     "A Next.js DApp for sales and inventory management using account abstraction for SaleSpider.",
   icons: {
     icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-      { url: '/icon.svg', type: 'image/svg+xml', sizes: '32x32' },
-      { url: '/favicon.ico', sizes: '32x32' },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/icon.svg", type: "image/svg+xml", sizes: "32x32" },
+      { url: "/favicon.ico", sizes: "32x32" },
     ],
-    apple: [
-      { url: '/apple-icon.svg', type: 'image/svg+xml' },
-    ],
-    shortcut: '/favicon.svg',
+    apple: [{ url: "/apple-icon.svg", type: "image/svg+xml" }],
+    shortcut: "/favicon.svg",
   },
-  manifest: '/manifest.json',
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
@@ -39,9 +37,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
       >
         <Providers>
-          <ThemeProvider 
-            attribute="class" 
-            defaultTheme="system" 
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
             enableSystem
             disableTransitionOnChange={false}
             storageKey="salepider-theme"

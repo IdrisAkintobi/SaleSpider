@@ -18,7 +18,13 @@ export const DEFAULT_SETTINGS = {
   theme: "light",
   maintenanceMode: false,
   showDeletedProducts: false,
-  enabledPaymentMethods: ["CASH", "CARD", "BANK_TRANSFER", "CRYPTO", "OTHER"] as const,
+  enabledPaymentMethods: [
+    "CASH",
+    "CARD",
+    "BANK_TRANSFER",
+    "CRYPTO",
+    "OTHER",
+  ] as const,
 };
 
 export const CURRENCY_OPTIONS = [
@@ -90,7 +96,7 @@ export const THEME_OPTIONS = [
   { value: "light", label: "Light" },
   { value: "dark", label: "Dark" },
   { value: "auto", label: "Auto (System)" },
-] as const; 
+] as const;
 
 // Pagination
 export const PAGE_SIZE = 20;

@@ -1,11 +1,11 @@
-import { ArrowDown, ArrowUp } from 'lucide-react'
+import { ArrowDown, ArrowUp } from "lucide-react";
 
 interface SortableHeaderProps {
-  label: string
-  field: string
-  currentSort?: string
-  order?: 'asc' | 'desc'
-  onSort: (field: string) => void
+  label: string;
+  field: string;
+  currentSort?: string;
+  order?: "asc" | "desc";
+  onSort: (field: string) => void;
 }
 
 export function SortableHeader({
@@ -22,9 +22,9 @@ export function SortableHeader({
       onClick={() => onSort(field)}
       aria-label={`Sort by ${label}`}
     >
-      {label}{' '}
+      {label}{" "}
       {currentSort === field &&
-        (order === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
+        (order === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
     </button>
-  )
+  );
 }

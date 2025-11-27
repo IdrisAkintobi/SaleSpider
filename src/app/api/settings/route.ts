@@ -1,11 +1,11 @@
-import { NextRequest } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { getCurrentUser, isSuperAdmin } from '@/lib/auth'
-import { DEFAULT_SETTINGS, PAYMENT_METHODS } from '@/lib/constants'
-import { createChildLogger } from '@/lib/logger'
-import { jsonOk, jsonError, handleException } from '@/lib/api-response'
+import { handleException, jsonError, jsonOk } from "@/lib/api-response";
+import { getCurrentUser, isSuperAdmin } from "@/lib/auth";
+import { DEFAULT_SETTINGS, PAYMENT_METHODS } from "@/lib/constants";
+import { createChildLogger } from "@/lib/logger";
+import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
 
-const logger = createChildLogger('api:settings')
+const logger = createChildLogger("api:settings");
 
 // Helper: build default settings payload (used in GET and PATCH)
 function buildDefaultSettingsData() {
@@ -28,153 +28,169 @@ function buildDefaultSettingsData() {
     language: process.env.LANGUAGE || DEFAULT_SETTINGS.language,
     theme: process.env.THEME || DEFAULT_SETTINGS.theme,
     maintenanceMode:
-      process.env.MAINTENANCE_MODE === 'true' ||
+      process.env.MAINTENANCE_MODE === "true" ||
       DEFAULT_SETTINGS.maintenanceMode,
     showDeletedProducts:
-      process.env.SHOW_DELETED_PRODUCTS === 'true' ||
+      process.env.SHOW_DELETED_PRODUCTS === "true" ||
       DEFAULT_SETTINGS.showDeletedProducts,
     enabledPaymentMethods: process.env.ENABLED_PAYMENT_METHODS
-      ? process.env.ENABLED_PAYMENT_METHODS.split(',').map(s =>
+      ? process.env.ENABLED_PAYMENT_METHODS.split(",").map(s =>
           s.trim().toUpperCase()
         )
       : [...(DEFAULT_SETTINGS.enabledPaymentMethods as readonly string[])],
-  } as any
+  } as any;
 }
 
 // GET /api/settings
 // Public endpoint - settings needed for login page (app name, logo, theme, etc.)
 export async function GET() {
   try {
-    logger.debug('GET /api/settings start')
+    logger.debug("GET /api/settings start");
 
     // Get settings from database
-    let settings = await prisma.appSettings.findFirst()
+    let settings = await prisma.appSettings.findFirst();
 
     // If no settings exist, create default settings
     settings ??= await (async () => {
-      logger.warn('No settings found, creating defaults')
+      logger.warn("No settings found, creating defaults");
       return prisma.appSettings.create({
         data: buildDefaultSettingsData(),
-      })
-    })()
+      });
+    })();
 
-    logger.debug({ settingsId: settings.id }, 'GET /api/settings success')
-    return jsonOk(settings)
+    logger.debug({ settingsId: settings.id }, "GET /api/settings success");
+    return jsonOk(settings);
   } catch (error) {
-    return handleException(error, 'Failed to fetch settings', 500)
+    return handleException(error, "Failed to fetch settings", 500);
   }
+}
+
+// Helper: validate payment methods
+function validatePaymentMethods(
+  enabledPaymentMethods: unknown,
+  userId: string
+): string[] | NextResponse {
+  const allowed = new Set<string>(PAYMENT_METHODS.map(m => m.enum));
+  const incoming = Array.isArray(enabledPaymentMethods)
+    ? enabledPaymentMethods
+    : [];
+  const normalized = incoming
+    .filter((v): v is string => typeof v === "string")
+    .map(v => v.trim().toUpperCase());
+  const invalid = normalized.filter(v => !allowed.has(v));
+
+  if (invalid.length > 0) {
+    logger.warn(
+      { userId, invalid, normalized },
+      "Invalid payment methods submitted"
+    );
+    return jsonError(`Invalid payment methods: ${invalid.join(", ")}`, 400, {
+      code: "BAD_REQUEST",
+    });
+  }
+
+  logger.debug(
+    { userId, paymentMethods: normalized },
+    "Payment methods validated"
+  );
+  return normalized;
+}
+
+// Helper: get or create settings
+async function getOrCreateSettings() {
+  let settings = await prisma.appSettings.findFirst();
+  settings ??= await prisma.appSettings.create({
+    data: buildDefaultSettingsData(),
+  });
+  return settings;
+}
+
+// Helper: build update data
+function buildUpdateData(body: any, validatedPaymentMethods?: string[]) {
+  const fields = [
+    "appName",
+    "appLogo",
+    "primaryColor",
+    "secondaryColor",
+    "accentColor",
+    "currency",
+    "currencySymbol",
+    "vatPercentage",
+    "timezone",
+    "dateFormat",
+    "timeFormat",
+    "language",
+    "theme",
+    "maintenanceMode",
+    "showDeletedProducts",
+  ];
+
+  const updateData: Record<string, any> = {};
+
+  for (const field of fields) {
+    if (body[field] !== undefined) {
+      updateData[field] = body[field];
+    }
+  }
+
+  if (validatedPaymentMethods !== undefined) {
+    updateData.enabledPaymentMethods = validatedPaymentMethods;
+  }
+
+  return updateData;
 }
 
 // PATCH /api/settings
 export async function PATCH(request: NextRequest) {
   try {
-    const user = await getCurrentUser(request)
+    const user = await getCurrentUser(request);
 
     if (!user) {
-      return jsonError('Unauthorized', 401, { code: 'UNAUTHORIZED' })
+      return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
     }
 
-    // Check if user is super admin
     if (!isSuperAdmin(user)) {
-      return jsonError('Forbidden', 403, { code: 'FORBIDDEN' })
+      return jsonError("Forbidden", 403, { code: "FORBIDDEN" });
     }
 
-    const body = await request.json()
+    const body = await request.json();
     logger.info(
       { userId: user.id, keys: Object.keys(body) },
-      'PATCH /api/settings payload received'
-    )
-    const {
-      appName,
-      appLogo,
-      primaryColor,
-      secondaryColor,
-      accentColor,
-      currency,
-      currencySymbol,
-      vatPercentage,
-      timezone,
-      dateFormat,
-      timeFormat,
-      language,
-      theme,
-      maintenanceMode,
-      showDeletedProducts,
-      enabledPaymentMethods,
-    } = body
+      "PATCH /api/settings payload received"
+    );
 
-    // Validate enabledPaymentMethods if provided
-    let validatedPaymentMethods: string[] | undefined = undefined
-    if (enabledPaymentMethods !== undefined) {
-      const allowed: Set<string> = new Set(PAYMENT_METHODS.map(m => m.enum))
-      const incoming = Array.isArray(enabledPaymentMethods)
-        ? enabledPaymentMethods
-        : []
-      const normalized = incoming
-        .filter((v): v is string => typeof v === 'string')
-        .map(v => v.trim().toUpperCase())
-      const invalid = normalized.filter(v => !allowed.has(v))
-      if (invalid.length > 0) {
-        logger.warn(
-          { userId: user.id, invalid, normalized },
-          'Invalid payment methods submitted'
-        )
-        return jsonError(
-          `Invalid payment methods: ${invalid.join(', ')}`,
-          400,
-          { code: 'BAD_REQUEST' }
-        )
+    // Validate payment methods if provided
+    let validatedPaymentMethods: string[] | undefined;
+    if (body.enabledPaymentMethods !== undefined) {
+      const result = validatePaymentMethods(
+        body.enabledPaymentMethods,
+        user.id
+      );
+      if (result instanceof NextResponse) {
+        return result;
       }
-      logger.debug(
-        { userId: user.id, paymentMethods: normalized },
-        'Payment methods validated'
-      )
-      validatedPaymentMethods = normalized
+      validatedPaymentMethods = result;
     }
 
-    // Get current settings
-    let settings = await prisma.appSettings.findFirst()
+    // Get or create settings
+    const settings = await getOrCreateSettings();
 
-    // If no settings exist, create with defaults
-    settings ??= await prisma.appSettings.create({
-      data: buildDefaultSettingsData(),
-    })
-
-    // Update settings with provided values
+    // Update settings
     const updatedSettings = await prisma.appSettings.update({
       where: { id: settings.id },
-      data: {
-        ...(appName !== undefined && { appName }),
-        ...(appLogo !== undefined && { appLogo }),
-        ...(primaryColor !== undefined && { primaryColor }),
-        ...(secondaryColor !== undefined && { secondaryColor }),
-        ...(accentColor !== undefined && { accentColor }),
-        ...(currency !== undefined && { currency }),
-        ...(currencySymbol !== undefined && { currencySymbol }),
-        ...(vatPercentage !== undefined && { vatPercentage }),
-        ...(timezone !== undefined && { timezone }),
-        ...(dateFormat !== undefined && { dateFormat }),
-        ...(timeFormat !== undefined && { timeFormat }),
-        ...(language !== undefined && { language }),
-        ...(theme !== undefined && { theme }),
-        ...(maintenanceMode !== undefined && { maintenanceMode }),
-        ...(showDeletedProducts !== undefined && { showDeletedProducts }),
-        ...(validatedPaymentMethods !== undefined && {
-          enabledPaymentMethods: validatedPaymentMethods as any,
-        }),
-      },
-    })
+      data: buildUpdateData(body, validatedPaymentMethods),
+    });
 
     logger.info(
       { userId: user.id, settingsId: updatedSettings.id },
-      'PATCH /api/settings success'
-    )
-    return jsonOk(updatedSettings)
+      "PATCH /api/settings success"
+    );
+    return jsonOk(updatedSettings);
   } catch (error) {
     logger.error(
-      { error: error instanceof Error ? error.message : 'Unknown error' },
-      'Failed to update settings'
-    )
-    return handleException(error, 'Failed to update settings', 500)
+      { error: error instanceof Error ? error.message : "Unknown error" },
+      "Failed to update settings"
+    );
+    return handleException(error, "Failed to update settings", 500);
   }
 }

@@ -1,2 +1,2 @@
-import 'dotenv/config'
-import '@/ai/flows/inventory-recommendations.ts';
+import "dotenv/config";
+import "@/ai/flows/inventory-recommendations.ts";

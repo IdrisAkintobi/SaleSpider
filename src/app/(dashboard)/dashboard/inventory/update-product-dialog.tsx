@@ -1,5 +1,5 @@
-import { Button } from '@/components/ui/button'
-import { FormInput } from '@/components/ui/custom-form-input'
+import { Button } from "@/components/ui/button";
+import { FormInput } from "@/components/ui/custom-form-input";
 import {
   Dialog,
   DialogClose,
@@ -8,35 +8,35 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { useProductMutation } from '@/hooks/use-product-mutation'
-import { useCurrencySettings } from '@/lib/currency'
-import type { Product, ProductUpdateInput } from '@/lib/types'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { ProductCategory } from '@prisma/client'
-import { useEffect } from 'react'
-import { SubmitHandler, useForm } from 'react-hook-form'
-import * as z from 'zod'
+} from "@/components/ui/dialog";
+import { useProductMutation } from "@/hooks/use-product-mutation";
+import { useCurrencySettings } from "@/lib/currency";
+import type { Product, ProductUpdateInput } from "@/lib/types";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ProductCategory } from "@prisma/client";
+import { useEffect } from "react";
+import { SubmitHandler, useForm } from "react-hook-form";
+import * as z from "zod";
 
 const updateProductSchema = z.object({
-  name: z.string().min(1, 'Product name is required'),
-  description: z.string().min(10, 'Description must be at least 10 characters'),
-  price: z.number().min(0.01, 'Price must be positive'),
+  name: z.string().min(1, "Product name is required"),
+  description: z.string().min(10, "Description must be at least 10 characters"),
+  price: z.number().min(0.01, "Price must be positive"),
   category: z.nativeEnum(ProductCategory),
   lowStockMargin: z
     .number()
     .int()
-    .min(0, 'Low stock margin cannot be negative'),
-  imageUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+    .min(0, "Low stock margin cannot be negative"),
+  imageUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   gtin: z.string().optional(),
-})
+});
 
-type UpdateProductFormData = z.infer<typeof updateProductSchema>
+type UpdateProductFormData = z.infer<typeof updateProductSchema>;
 
 interface UpdateProductDialogProps {
-  isOpen: boolean
-  onOpenChange: (open: boolean) => void
-  product: Product | null
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  product: Product | null;
 }
 
 export function UpdateProductDialog({
@@ -44,7 +44,7 @@ export function UpdateProductDialog({
   onOpenChange,
   product,
 }: Readonly<UpdateProductDialogProps>) {
-  const { currencySymbol } = useCurrencySettings()
+  const { currencySymbol } = useCurrencySettings();
 
   const {
     register,
@@ -54,7 +54,7 @@ export function UpdateProductDialog({
     formState: { errors },
   } = useForm<UpdateProductFormData>({
     resolver: zodResolver(updateProductSchema),
-  })
+  });
 
   // Reset form when product changes
   useEffect(() => {
@@ -65,55 +65,55 @@ export function UpdateProductDialog({
         price: product.price,
         category: product.category,
         lowStockMargin: product.lowStockMargin,
-        imageUrl: product.imageUrl ?? '',
-        gtin: product.gtin ?? '',
-      })
+        imageUrl: product.imageUrl ?? "",
+        gtin: product.gtin ?? "",
+      });
     }
-  }, [product, reset])
+  }, [product, reset]);
 
   const updateProductMutation = useProductMutation(
-    'Product Updated',
-    'Product details updated successfully.',
-    'Error updating product',
+    "Product Updated",
+    "Product details updated successfully.",
+    "Error updating product",
     onOpenChange
-  )
+  );
 
   const handleProductUpdate: SubmitHandler<
     UpdateProductFormData
   > = updateData => {
     if (product) {
       // Filter out unchanged fields and only include allowed updatable fields
-      const updatedData: ProductUpdateInput = {}
+      const updatedData: ProductUpdateInput = {};
       const keys: (keyof ProductUpdateInput)[] = [
-        'name',
-        'description',
-        'category',
-        'price',
-        'lowStockMargin',
-        'imageUrl',
-        'gtin',
-      ]
+        "name",
+        "description",
+        "category",
+        "price",
+        "lowStockMargin",
+        "imageUrl",
+        "gtin",
+      ];
       for (const key of keys) {
         const newValue = updateData[
           key as keyof UpdateProductFormData
-        ] as ProductUpdateInput[typeof key]
+        ] as ProductUpdateInput[typeof key];
         const oldValue = (product as Pick<Product, keyof ProductUpdateInput>)[
           key
-        ]
+        ];
         if (newValue !== undefined && newValue !== oldValue) {
           // assign only when changed
-          ;(updatedData as any)[key] = newValue
+          (updatedData as any)[key] = newValue;
         }
       }
 
       updateProductMutation.mutate({
         id: product.id,
         data: updatedData,
-      })
+      });
     }
-  }
+  };
 
-  if (!product) return null
+  if (!product) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -179,8 +179,8 @@ export function UpdateProductDialog({
             disabled={!!(product.gtin && product.gtin.trim())}
             placeholder={
               product.gtin?.trim()
-                ? 'GTIN cannot be changed once set'
-                : 'Enter GTIN'
+                ? "GTIN cannot be changed once set"
+                : "Enter GTIN"
             }
           />
 
@@ -192,12 +192,12 @@ export function UpdateProductDialog({
             </DialogClose>
             <Button type="submit" disabled={updateProductMutation.isPending}>
               {updateProductMutation.isPending
-                ? 'Updating...'
-                : 'Update Product'}
+                ? "Updating..."
+                : "Update Product"}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

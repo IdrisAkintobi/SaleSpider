@@ -9,15 +9,22 @@ interface UseIntersectionObserverOptions {
 export function useIntersectionObserver(
   target: Element | null,
   onIntersect: (entry: IntersectionObserverEntry) => void,
-  { root = null, rootMargin = "0px", threshold = 0.1 }: UseIntersectionObserverOptions = {}
+  {
+    root = null,
+    rootMargin = "0px",
+    threshold = 0.1,
+  }: UseIntersectionObserverOptions = {}
 ) {
   useEffect(() => {
     if (!target) return;
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) onIntersect(entry);
-      });
-    }, { root, rootMargin, threshold });
+    const observer = new IntersectionObserver(
+      entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) onIntersect(entry);
+        });
+      },
+      { root, rootMargin, threshold }
+    );
 
     observer.observe(target);
 

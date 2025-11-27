@@ -4,12 +4,18 @@ import { CashierOverview } from "@/components/dashboard/overview/cashier-overvie
 import { ManagerOverview } from "@/components/dashboard/overview/manager-overview";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/contexts/auth-context";
+import { useTranslation } from "@/lib/i18n";
 import { ShoppingCart } from "lucide-react";
 import Link from "next/link";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
-import { useTranslation } from "@/lib/i18n";
 
 export default function OverviewPage() {
   const { user, userIsManager } = useAuth();
@@ -21,13 +27,7 @@ export default function OverviewPage() {
   }
 
   // Create the Record New Sale button for cashiers
-  const recordSaleAction = !userIsManager ? (
-    <Button size="lg" asChild>
-      <Link href="/dashboard/record-sale">
-        <ShoppingCart className="mr-2 h-5 w-5" /> {t("record_sale")}
-      </Link>
-    </Button>
-  ) : (
+  const recordSaleAction = userIsManager ? (
     <Select value={period} onValueChange={setPeriod}>
       <SelectTrigger className="w-[180px]">
         <SelectValue />
@@ -39,6 +39,12 @@ export default function OverviewPage() {
         <SelectItem value="year">{t("this_year")}</SelectItem>
       </SelectContent>
     </Select>
+  ) : (
+    <Button size="lg" asChild>
+      <Link href="/dashboard/record-sale">
+        <ShoppingCart className="mr-2 h-5 w-5" /> {t("record_sale")}
+      </Link>
+    </Button>
   );
 
   return (
@@ -52,7 +58,11 @@ export default function OverviewPage() {
         }
         actions={recordSaleAction}
       />
-      {userIsManager ? <ManagerOverview period={period} /> : <CashierOverview />}
+      {userIsManager ? (
+        <ManagerOverview period={period} />
+      ) : (
+        <CashierOverview />
+      )}
     </>
   );
 }

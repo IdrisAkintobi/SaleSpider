@@ -40,7 +40,9 @@ export function ProductDetailsDialog({
             <DialogTitle className="flex items-center gap-2">
               {t("product_details")}: {product.name}
               {product.deletedAt && (
-                <Badge variant="secondary" className="text-xs">{t("deleted")}</Badge>
+                <Badge variant="secondary" className="text-xs">
+                  {t("deleted")}
+                </Badge>
               )}
             </DialogTitle>
             <DialogDescription>
@@ -50,14 +52,22 @@ export function ProductDetailsDialog({
 
           <div className="grid gap-4 py-2">
             <div className="flex items-start gap-4">
-              <button 
+              <button
                 type="button"
                 className="w-24 h-24 flex-shrink-0 bg-muted rounded-md cursor-pointer hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                onClick={() => setImagePreview(product.imageUrl ?? "https://placehold.co/120x120.png?text=N/A")}
+                onClick={() =>
+                  setImagePreview(
+                    product.imageUrl ??
+                      "https://placehold.co/120x120.png?text=N/A"
+                  )
+                }
                 aria-label={`${t("view_full_image")}: ${product.name}`}
               >
                 <Image
-                  src={product.imageUrl ?? "https://placehold.co/120x120.png?text=N/A"}
+                  src={
+                    product.imageUrl ??
+                    "https://placehold.co/120x120.png?text=N/A"
+                  }
                   alt={product.name}
                   width={96}
                   height={96}
@@ -71,7 +81,9 @@ export function ProductDetailsDialog({
                 <div>{formatCurrency(product.price)}</div>
                 <div className="text-muted-foreground">{t("stock")}</div>
                 <div>{product.quantity}</div>
-                <div className="text-muted-foreground">{t("low_stock_margin")}</div>
+                <div className="text-muted-foreground">
+                  {t("low_stock_margin")}
+                </div>
                 <div>{product.lowStockMargin}</div>
               </div>
             </div>
@@ -93,9 +105,17 @@ export function ProductDetailsDialog({
                 </>
               )}
               <div className="text-muted-foreground">{t("date_updated")}</div>
-              <div>{product.updatedAt ? new Date(product.updatedAt).toLocaleString() : "-"}</div>
+              <div>
+                {product.updatedAt
+                  ? new Date(product.updatedAt).toLocaleString()
+                  : "-"}
+              </div>
               <div className="text-muted-foreground">{t("created_at")}</div>
-              <div>{product.createdAt ? new Date(product.createdAt).toLocaleString() : "-"}</div>
+              <div>
+                {product.createdAt
+                  ? new Date(product.createdAt).toLocaleString()
+                  : "-"}
+              </div>
             </div>
           </div>
         </DialogContent>

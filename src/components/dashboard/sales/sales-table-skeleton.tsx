@@ -62,4 +62,4 @@ export function SalesTableSkeleton({ rows = 10 }: SalesTableSkeletonProps) {
       </CardContent>
     </Card>
   );
-} 
+}

@@ -1,60 +1,68 @@
-import { handleException, jsonError, jsonOk } from '@/lib/api-response'
-import { AuditTrailService } from '@/lib/audit-trail'
-import { createChildLogger } from '@/lib/logger'
-import { prisma } from '@/lib/prisma'
-import { Product } from '@/lib/types'
-import { Prisma, ProductCategory, Role } from '@prisma/client'
-import { NextRequest } from 'next/server'
+import { handleException, jsonError, jsonOk } from "@/lib/api-response";
+import { AuditTrailService } from "@/lib/audit-trail";
+import { createChildLogger } from "@/lib/logger";
+import { prisma } from "@/lib/prisma";
+import { Product } from "@/lib/types";
+import { Prisma, ProductCategory, Role } from "@prisma/client";
+import { NextRequest } from "next/server";
 
-const logger = createChildLogger('api:products')
+const logger = createChildLogger("api:products");
 
 // Function to get products
 export async function GET(req: NextRequest) {
-  const url = new URL(req.url)
-  const page = Number.parseInt(url.searchParams.get('page') ?? '1', 10)
-  const pageSize = Number.parseInt(url.searchParams.get('pageSize') ?? '10', 10)
-  const searchQuery = url.searchParams.get('search') ?? ''
-  const sortField = url.searchParams.get('sortField') ?? 'createdAt'
-  const sortOrder = url.searchParams.get('sortOrder') ?? 'desc'
+  const url = new URL(req.url);
+  const page = Number.parseInt(url.searchParams.get("page") ?? "1", 10);
+  const pageSize = Number.parseInt(
+    url.searchParams.get("pageSize") ?? "10",
+    10
+  );
+  const searchQuery = url.searchParams.get("search") ?? "";
+  const sortField = url.searchParams.get("sortField") ?? "createdAt";
+  const sortOrder = url.searchParams.get("sortOrder") ?? "desc";
 
-  if (isNaN(page) || page < 1 || isNaN(pageSize) || pageSize < 1) {
-    return jsonError('Invalid pagination parameters', 400, {
-      code: 'BAD_REQUEST',
-    })
+  if (
+    Number.isNaN(page) ||
+    page < 1 ||
+    Number.isNaN(pageSize) ||
+    pageSize < 1
+  ) {
+    return jsonError("Invalid pagination parameters", 400, {
+      code: "BAD_REQUEST",
+    });
   }
 
-  const skip = (page - 1) * pageSize
+  const skip = (page - 1) * pageSize;
 
   // Get user info to check role and settings
-  const userId = req.headers.get('X-User-Id')
-  let includeDeleted = false
+  const userId = req.headers.get("X-User-Id");
+  let includeDeleted = false;
 
   if (userId) {
     try {
       const user = await prisma.user.findUnique({
         where: { id: userId },
-      })
+      });
 
       if (user?.role === Role.SUPER_ADMIN) {
         // Get app settings to check if deleted products should be shown
-        const settings = await prisma.appSettings.findFirst()
-        includeDeleted = settings?.showDeletedProducts ?? false
+        const settings = await prisma.appSettings.findFirst();
+        includeDeleted = settings?.showDeletedProducts ?? false;
       }
     } catch (error) {
       logger.warn(
         {
           userId,
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: error instanceof Error ? error.message : "Unknown error",
         },
-        'Failed to check user role or settings'
-      )
+        "Failed to check user role or settings"
+      );
     }
   }
 
   try {
     const orderBy = {
-      [sortField]: sortOrder === 'asc' ? 'asc' : 'desc',
-    }
+      [sortField]: sortOrder === "asc" ? "asc" : "desc",
+    };
 
     const products = await prisma.product.findMany({
       skip,
@@ -64,14 +72,14 @@ export async function GET(req: NextRequest) {
         includeDeleted
       ) as Prisma.ProductWhereInput,
       orderBy: orderBy,
-    })
+    });
 
     const totalProducts = await prisma.product.count({
       where: productSearchWhere(
         searchQuery,
         includeDeleted
       ) as Prisma.ProductWhereInput,
-    })
+    });
 
     return jsonOk({
       products,
@@ -79,32 +87,32 @@ export async function GET(req: NextRequest) {
       page,
       pageSize,
       totalPages: Math.ceil(totalProducts / pageSize),
-    })
+    });
   } catch (error) {
     logger.error(
-      { error: error instanceof Error ? error.message : 'Unknown error' },
-      'Failed to fetch products'
-    )
-    return handleException(error, 'Failed to fetch products', 500)
+      { error: error instanceof Error ? error.message : "Unknown error" },
+      "Failed to fetch products"
+    );
+    return handleException(error, "Failed to fetch products", 500);
   }
 }
 
 // Function to create a product
 export async function POST(req: NextRequest) {
   // Read the custom user ID header set by the middleware
-  const userId = req.headers.get('X-User-Id')
+  const userId = req.headers.get("X-User-Id");
 
   if (!userId) {
     // fallback safety check.
-    return jsonError('Unauthorized', 401, { code: 'UNAUTHORIZED' })
+    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
   }
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-  })
+  });
 
   if (!user || user.role === Role.CASHIER) {
-    return jsonError('Forbidden', 403, { code: 'FORBIDDEN' })
+    return jsonError("Forbidden", 403, { code: "FORBIDDEN" });
   }
 
   try {
@@ -117,7 +125,7 @@ export async function POST(req: NextRequest) {
       quantity,
       imageUrl,
       gtin,
-    } = (await req.json()) as Product
+    } = (await req.json()) as Product;
 
     if (
       !name ||
@@ -130,24 +138,24 @@ export async function POST(req: NextRequest) {
       quantity === undefined ||
       quantity === null
     ) {
-      return jsonError('Missing required fields', 400, { code: 'BAD_REQUEST' })
+      return jsonError("Missing required fields", 400, { code: "BAD_REQUEST" });
     }
 
     // Normalize GTIN: convert empty string to null to allow multiple products without GTIN
-    const normalizedGtin = gtin?.trim() || null
+    const normalizedGtin = gtin?.trim() || null;
 
     // Check if a product with the same GTIN already exists (only if GTIN is provided)
     if (normalizedGtin) {
       const existingProduct = await prisma.product.findUnique({
         where: { gtin: normalizedGtin },
-      })
+      });
 
       if (existingProduct) {
         return jsonError(
           `A product with GTIN ${normalizedGtin} already exists: ${existingProduct.name}`,
           409,
-          { code: 'DUPLICATE_GTIN' }
-        )
+          { code: "DUPLICATE_GTIN" }
+        );
       }
     }
 
@@ -162,11 +170,11 @@ export async function POST(req: NextRequest) {
         imageUrl,
         gtin: normalizedGtin,
       },
-    })
+    });
 
     // Log audit trail for product creation
     await AuditTrailService.logProductChange(
-      'CREATE',
+      "CREATE",
       newProduct.id,
       undefined,
       {
@@ -182,10 +190,10 @@ export async function POST(req: NextRequest) {
       userId,
       user.email,
       {
-        ip: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip'),
-        userAgent: req.headers.get('user-agent'),
+        ip: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip"),
+        userAgent: req.headers.get("user-agent"),
       }
-    )
+    );
 
     logger.info(
       {
@@ -193,16 +201,16 @@ export async function POST(req: NextRequest) {
         name: newProduct.name,
         userId,
       },
-      'Product created successfully'
-    )
+      "Product created successfully"
+    );
 
-    return jsonOk(newProduct, { status: 201 })
+    return jsonOk(newProduct, { status: 201 });
   } catch (error) {
     logger.error(
-      { error: error instanceof Error ? error.message : 'Unknown error' },
-      'Failed to create product'
-    )
-    return handleException(error, 'Failed to create product', 500)
+      { error: error instanceof Error ? error.message : "Unknown error" },
+      "Failed to create product"
+    );
+    return handleException(error, "Failed to create product", 500);
   }
 }
 
@@ -212,16 +220,16 @@ const matchingCategories = (searchQuery?: string) => {
     ? Object.values(ProductCategory).filter(cat =>
         cat.toLowerCase().includes(searchQuery.toLowerCase())
       )
-    : []
-}
+    : [];
+};
 
 // Function to search for products
 function productSearchWhere(
   searchQuery?: string,
   includeDeleted: boolean = false
 ) {
-  const matchCategories = matchingCategories(searchQuery)
-  const deletedAtCondition = includeDeleted ? {} : { deletedAt: null }
+  const matchCategories = matchingCategories(searchQuery);
+  const deletedAtCondition = includeDeleted ? {} : { deletedAt: null };
 
   return searchQuery
     ? {
@@ -232,19 +240,19 @@ function productSearchWhere(
           {
             name: {
               contains: searchQuery,
-              mode: 'insensitive',
+              mode: "insensitive",
             },
           },
           {
             description: {
               contains: searchQuery,
-              mode: 'insensitive',
+              mode: "insensitive",
             },
           },
           {
             gtin: {
               contains: searchQuery,
-              mode: 'insensitive',
+              mode: "insensitive",
             },
           },
           ...(matchCategories.length > 0
@@ -259,5 +267,5 @@ function productSearchWhere(
         ],
         ...deletedAtCondition,
       }
-    : deletedAtCondition
+    : deletedAtCondition;
 }

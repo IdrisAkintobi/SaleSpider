@@ -35,16 +35,19 @@ export async function POST(
     // Restore the product
     await SoftDeleteService.restoreProduct(id, userId);
 
-    logger.info({ 
-      productId: id, 
-      productName: product.name,
-      userId,
-      userRole: user.role
-    }, 'Product restored by super admin');
+    logger.info(
+      {
+        productId: id,
+        productName: product.name,
+        userId,
+        userRole: user.role,
+      },
+      "Product restored by super admin"
+    );
 
-    return jsonOk({ 
+    return jsonOk({
       message: "Product restored successfully",
-      productId: id 
+      productId: id,
     });
   } catch (error) {
     return handleException(error, "Failed to restore product", 500);

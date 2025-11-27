@@ -6,9 +6,26 @@ import { useSettingsContext } from "@/contexts/settings-context";
 import { DEFAULT_SETTINGS } from "./constants";
 
 // List of all dollar currencies
-const DOLLAR_CURRENCIES = [
-  "USD", "CAD", "AUD", "NZD", "SGD", "HKD", "BMD", "BZD", "FJD", "GYD", "JMD", "LRD", "NAD", "SBD", "SRD", "TTD", "TWD", "ZWD"
-];
+const DOLLAR_CURRENCIES = new Set([
+  "USD",
+  "CAD",
+  "AUD",
+  "NZD",
+  "SGD",
+  "HKD",
+  "BMD",
+  "BZD",
+  "FJD",
+  "GYD",
+  "JMD",
+  "LRD",
+  "NAD",
+  "SBD",
+  "SRD",
+  "TTD",
+  "TWD",
+  "ZWD",
+]);
 
 /**
  * Get currency settings from context
@@ -17,7 +34,7 @@ const DOLLAR_CURRENCIES = [
 export function getCurrencySettings() {
   const currency = DEFAULT_SETTINGS.currency;
   let currencySymbol = DEFAULT_SETTINGS.currencySymbol;
-  if (DOLLAR_CURRENCIES.includes(currency)) {
+  if (DOLLAR_CURRENCIES.has(currency)) {
     currencySymbol = "$";
   }
   return {
@@ -33,8 +50,9 @@ export function getCurrencySettings() {
 export function useCurrencySettings() {
   const { settings } = useSettingsContext();
   const currency = settings?.currency ?? DEFAULT_SETTINGS.currency;
-  let currencySymbol = settings?.currencySymbol ?? DEFAULT_SETTINGS.currencySymbol;
-  if (DOLLAR_CURRENCIES.includes(currency)) {
+  let currencySymbol =
+    settings?.currencySymbol ?? DEFAULT_SETTINGS.currencySymbol;
+  if (DOLLAR_CURRENCIES.has(currency)) {
     currencySymbol = "$";
   }
   return {
@@ -46,11 +64,14 @@ export function useCurrencySettings() {
 /**
  * Format currency amount with symbol (always 2 decimal places)
  */
-export function formatCurrency(amount: number, currencySymbol?: string): string {
+export function formatCurrency(
+  amount: number,
+  currencySymbol?: string
+): string {
   const symbol = currencySymbol ?? getCurrencySettings().currencySymbol;
-  return `${symbol}${amount.toLocaleString(undefined, { 
-    minimumFractionDigits: 2, 
-    maximumFractionDigits: 2 
+  return `${symbol}${amount.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   })}`;
 }
 
@@ -59,7 +80,7 @@ export function formatCurrency(amount: number, currencySymbol?: string): string 
  */
 export function useFormatCurrency() {
   const { currencySymbol } = useCurrencySettings();
-  
+
   return (amount: number) => formatCurrency(amount, currencySymbol);
 }
 
@@ -67,8 +88,8 @@ export function useFormatCurrency() {
  * Format currency amount with decimal places
  */
 export function formatCurrencyWithDecimals(
-  amount: number, 
-  currencySymbol?: string, 
+  amount: number,
+  currencySymbol?: string,
   decimals: number = 2
 ): string {
   const symbol = currencySymbol ?? getCurrencySettings().currencySymbol;
@@ -80,6 +101,7 @@ export function formatCurrencyWithDecimals(
  */
 export function useFormatCurrencyWithDecimals(decimals: number = 2) {
   const { currencySymbol } = useCurrencySettings();
-  
-  return (amount: number) => formatCurrencyWithDecimals(amount, currencySymbol, decimals);
-} 
+
+  return (amount: number) =>
+    formatCurrencyWithDecimals(amount, currencySymbol, decimals);
+}

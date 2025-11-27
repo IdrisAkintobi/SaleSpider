@@ -1,54 +1,54 @@
-import { DeshelvingService } from '@/lib/deshelving-service'
-import { createChildLogger } from '@/lib/logger'
-import { prisma } from '@/lib/prisma'
-const logger = createChildLogger('sales-analytics')
+import { DeshelvingService } from "@/lib/deshelving-service";
+import { createChildLogger } from "@/lib/logger";
+import { prisma } from "@/lib/prisma";
+const logger = createChildLogger("sales-analytics");
 
 export interface SalesAnalytics {
-  totalSales: number
-  totalRevenue: number
-  averageOrderValue: number
+  totalSales: number;
+  totalRevenue: number;
+  averageOrderValue: number;
   topSellingProducts: Array<{
-    productName: string
-    totalQuantitySold: number
-    totalRevenue: number
-  }>
+    productName: string;
+    totalQuantitySold: number;
+    totalRevenue: number;
+  }>;
   lowStockProducts: Array<{
-    id: string
-    name: string
-    quantity: number
-    lowStockMargin: number
-  }>
+    id: string;
+    name: string;
+    quantity: number;
+    lowStockMargin: number;
+  }>;
   salesTrends: Array<{
-    date: string
-    totalSales: number
-    totalRevenue: number
-  }>
+    date: string;
+    totalSales: number;
+    totalRevenue: number;
+  }>;
   deshelvingInsights?: {
-    totalQuantityDeshelved: number
-    totalValueLost: number
+    totalQuantityDeshelved: number;
+    totalValueLost: number;
     topDeshelvingReasons: Array<{
-      reason: string
-      quantity: number
-      value: number
-      count: number
-    }>
+      reason: string;
+      quantity: number;
+      value: number;
+      count: number;
+    }>;
     highRiskProducts: Array<{
-      productId: string
-      productName: string
-      deshelvingCount: number // total units deshelved
-      totalLoss: number
-    }>
-  }
+      productId: string;
+      productName: string;
+      deshelvingCount: number; // total units deshelved
+      totalLoss: number;
+    }>;
+  };
 }
 
 export interface ProductPerformance {
-  productId: string
-  productName: string
-  totalQuantitySold: number
-  totalRevenue: number
-  averageSellingPrice: number
-  lastSaleDate: Date | null
-  daysWithoutSale: number
+  productId: string;
+  productName: string;
+  totalQuantitySold: number;
+  totalRevenue: number;
+  averageSellingPrice: number;
+  lastSaleDate: Date | null;
+  daysWithoutSale: number;
 }
 
 export class SalesAnalyticsService {
@@ -60,8 +60,8 @@ export class SalesAnalyticsService {
     maxRecords: number = 1000
   ): Promise<SalesAnalytics> {
     try {
-      const startDate = new Date()
-      startDate.setDate(startDate.getDate() - daysBack)
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - daysBack);
 
       // Get total sales and revenue (limited by maxRecords)
       const salesSummary = await prisma.sale.aggregate({
@@ -77,15 +77,15 @@ export class SalesAnalyticsService {
           totalAmount: true,
         },
         take: maxRecords,
-      })
+      });
 
-      const totalSales = salesSummary._count.id || 0
-      const totalRevenue = salesSummary._sum.totalAmount || 0
-      const averageOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0
+      const totalSales = salesSummary._count.id || 0;
+      const totalRevenue = salesSummary._sum.totalAmount || 0;
+      const averageOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
 
       // Get top selling products
       const topSellingProducts = await prisma.saleItem.groupBy({
-        by: ['productId'],
+        by: ["productId"],
         where: {
           sale: {
             createdAt: {
@@ -99,14 +99,14 @@ export class SalesAnalyticsService {
         },
         orderBy: {
           _sum: {
-            quantity: 'desc',
+            quantity: "desc",
           },
         },
         take: 10,
-      })
+      });
 
       // Get product names for top selling products
-      const productIds = topSellingProducts.map(item => item.productId)
+      const productIds = topSellingProducts.map(item => item.productId);
       const products = await prisma.product.findMany({
         where: {
           id: {
@@ -117,24 +117,24 @@ export class SalesAnalyticsService {
           id: true,
           name: true,
         },
-      })
+      });
 
-      const productMap = new Map(products.map(p => [p.id, p.name]))
+      const productMap = new Map(products.map(p => [p.id, p.name]));
 
       const topSellingWithNames = topSellingProducts.map(item => ({
-        productName: productMap.get(item.productId) || 'Unknown Product',
+        productName: productMap.get(item.productId) || "Unknown Product",
         totalQuantitySold: item._sum?.quantity || 0,
         totalRevenue: item._sum?.price || 0,
-      }))
+      }));
 
       // Get low stock products (use quoted identifiers to match Prisma table/columns)
       // SECURITY: Using Prisma's tagged template literals - automatically parameterized and safe from SQL injection
       const lowStockProducts = await prisma.$queryRaw<
         Array<{
-          id: string
-          name: string
-          quantity: number
-          lowStockMargin: number
+          id: string;
+          name: string;
+          quantity: number;
+          lowStockMargin: number;
         }>
       >`
         SELECT "id", "name", "quantity", "lowStockMargin" as "lowStockMargin"
@@ -143,14 +143,14 @@ export class SalesAnalyticsService {
           AND "quantity" <= "lowStockMargin"
         ORDER BY "quantity" ASC
         LIMIT 10
-      `
+      `;
 
       // Get sales trends by day (limited by maxRecords)
       const salesTrends = await prisma.$queryRaw<
         Array<{
-          date: string
-          totalSales: bigint
-          totalRevenue: number
+          date: string;
+          totalSales: bigint;
+          totalRevenue: number;
         }>
       >`
         SELECT 
@@ -162,17 +162,17 @@ export class SalesAnalyticsService {
         GROUP BY DATE("createdAt")
         ORDER BY date ASC
         LIMIT ${maxRecords}
-      `
+      `;
 
       const formattedTrends = salesTrends.map(trend => ({
         date: trend.date,
         totalSales: Number(trend.totalSales),
         totalRevenue: trend.totalRevenue || 0,
-      }))
+      }));
 
       // Get deshelving insights
       const deshelvingAnalytics =
-        await DeshelvingService.getDeshelvingAnalytics(daysBack)
+        await DeshelvingService.getDeshelvingAnalytics(daysBack);
 
       // Format deshelving data for AI insights
       const topDeshelvingReasons = Object.entries(
@@ -186,7 +186,7 @@ export class SalesAnalyticsService {
           quantity: data.quantity,
           value: data.value,
           count: data.count,
-        }))
+        }));
 
       // Get high-risk products based on deshelving frequency and value
       const highRiskProducts = deshelvingAnalytics.topAffectedProducts
@@ -196,14 +196,14 @@ export class SalesAnalyticsService {
           productName: product.productName,
           deshelvingCount: product.totalQuantityDeshelved,
           totalLoss: product.totalValueLost,
-        }))
+        }));
 
       const deshelvingInsights = {
         totalQuantityDeshelved: deshelvingAnalytics.totalQuantityDeshelved,
         totalValueLost: deshelvingAnalytics.totalValueLost,
         topDeshelvingReasons,
         highRiskProducts,
-      }
+      };
 
       return {
         totalSales,
@@ -213,15 +213,15 @@ export class SalesAnalyticsService {
         lowStockProducts,
         salesTrends: formattedTrends,
         deshelvingInsights,
-      }
+      };
     } catch (error) {
       logger.error(
         {
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: error instanceof Error ? error.message : "Unknown error",
           daysBack,
         },
-        'Failed to get sales analytics'
-      )
+        "Failed to get sales analytics"
+      );
 
       // Return empty analytics on error
       return {
@@ -237,7 +237,7 @@ export class SalesAnalyticsService {
           topDeshelvingReasons: [],
           highRiskProducts: [],
         },
-      }
+      };
     }
   }
 
@@ -249,17 +249,17 @@ export class SalesAnalyticsService {
     maxRecords: number = 1000
   ): Promise<ProductPerformance[]> {
     try {
-      const startDate = new Date()
-      startDate.setDate(startDate.getDate() - daysBack)
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - daysBack);
 
       const productPerformance = await prisma.$queryRaw<
         Array<{
-          productId: string
-          productName: string
-          totalQuantitySold: bigint
-          totalRevenue: number
-          averageSellingPrice: number
-          lastSaleDate: Date | null
+          productId: string;
+          productName: string;
+          totalQuantitySold: bigint;
+          totalRevenue: number;
+          averageSellingPrice: number;
+          lastSaleDate: Date | null;
         }>
       >`
         SELECT 
@@ -280,9 +280,9 @@ export class SalesAnalyticsService {
         GROUP BY p."id", p."name"
         ORDER BY "totalQuantitySold" DESC
         LIMIT ${maxRecords}
-      `
+      `;
 
-      const now = new Date()
+      const now = new Date();
       return productPerformance.map(item => ({
         productId: item.productId,
         productName: item.productName,
@@ -296,16 +296,16 @@ export class SalesAnalyticsService {
                 (1000 * 60 * 60 * 24)
             )
           : Infinity,
-      }))
+      }));
     } catch (error) {
       logger.error(
         {
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: error instanceof Error ? error.message : "Unknown error",
           daysBack,
         },
-        'Failed to get product performance'
-      )
-      return []
+        "Failed to get product performance"
+      );
+      return [];
     }
   }
 
@@ -327,18 +327,18 @@ export class SalesAnalyticsService {
           category: true,
         },
         orderBy: {
-          name: 'asc',
+          name: "asc",
         },
         take: maxRecords,
-      })
+      });
     } catch (error) {
       logger.error(
         {
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: error instanceof Error ? error.message : "Unknown error",
         },
-        'Failed to get current inventory'
-      )
-      return []
+        "Failed to get current inventory"
+      );
+      return [];
     }
   }
 
@@ -365,7 +365,7 @@ export class SalesAnalyticsService {
         performanceRecords: productPerformance.length,
         trendDays: analytics.salesTrends.length,
       },
-    }
+    };
 
     return {
       salesData: JSON.stringify(
@@ -410,6 +410,6 @@ export class SalesAnalyticsService {
         null,
         2
       ),
-    }
+    };
   }
 }
