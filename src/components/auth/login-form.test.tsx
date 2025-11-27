@@ -1,5 +1,5 @@
 import * as AuthContext from "@/contexts/auth-context";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LoginForm } from "./login-form";
@@ -221,7 +221,7 @@ describe("LoginForm", () => {
     const form = screen
       .getByRole("button", { name: /log in/i })
       .closest("form");
-    fireEvent.submit(form!);
+    fireEvent.submit(form as HTMLFormElement);
 
     // Wait for form submission and validation to complete
     await waitFor(() => {
@@ -246,7 +246,7 @@ describe("LoginForm", () => {
     const form = screen
       .getByRole("button", { name: /log in/i })
       .closest("form");
-    fireEvent.submit(form!);
+    fireEvent.submit(form as HTMLFormElement);
 
     await waitFor(
       () => {
@@ -271,7 +271,7 @@ describe("LoginForm", () => {
     const form = screen
       .getByRole("button", { name: /log in/i })
       .closest("form");
-    fireEvent.submit(form!);
+    fireEvent.submit(form as HTMLFormElement);
 
     await waitFor(
       () => {
@@ -294,7 +294,7 @@ describe("LoginForm", () => {
     const form = screen
       .getByRole("button", { name: /log in/i })
       .closest("form");
-    fireEvent.submit(form!);
+    fireEvent.submit(form as HTMLFormElement);
 
     await waitFor(
       () => {
@@ -312,7 +312,7 @@ describe("LoginForm", () => {
     const form = screen
       .getByRole("button", { name: /log in/i })
       .closest("form");
-    fireEvent.submit(form!);
+    fireEvent.submit(form as HTMLFormElement);
 
     await waitFor(
       () => {
@@ -336,7 +336,7 @@ describe("LoginForm", () => {
     const form = screen
       .getByRole("button", { name: /log in/i })
       .closest("form");
-    fireEvent.submit(form!);
+    fireEvent.submit(form as HTMLFormElement);
 
     await waitFor(
       () => {

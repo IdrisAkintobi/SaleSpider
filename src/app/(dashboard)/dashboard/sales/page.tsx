@@ -1,7 +1,6 @@
 "use client";
 
 import { PageHeader } from "@/components/shared/page-header";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,21 +10,13 @@ import { useSales } from "@/hooks/use-sales";
 import { useQuery } from "@tanstack/react-query";
 import { Role } from "@prisma/client";
 import { exportSalesCSV } from "@/lib/csv-export";
-import {
-  CalendarDays,
-  UserCircle,
-  ShoppingCart,
-  Search,
-  Download,
-} from "lucide-react";
-import React, { useMemo, useState, useEffect } from "react";
+import { ShoppingCart, Search, Download } from "lucide-react";
+import { useMemo, useState, useEffect } from "react";
 import type { DateRange } from "react-day-picker";
 import { useTableControls } from "@/hooks/use-table-controls";
-import { GenericTable } from "@/components/ui/generic-table";
+import { SalesTable } from "@/components/dashboard/sales/sales-table";
 import { SalesTableSkeleton } from "@/components/dashboard/sales/sales-table-skeleton";
 import { SalesFilters } from "@/components/dashboard/sales/sales-filters";
-import { SaleDetailDialog } from "@/components/dashboard/sales/sale-detail-dialog";
-import { createSalesTableColumns } from "@/components/dashboard/sales/sales-table-columns";
 import Link from "next/link";
 import { useFormatCurrency } from "@/lib/currency";
 import { useTranslation } from "@/lib/i18n";
@@ -105,7 +96,7 @@ export default function SalesPage() {
 
   // Enabled payment methods from settings
   const enabledPaymentEnums = settings?.enabledPaymentMethods || undefined;
-  const enabledPaymentOptions = React.useMemo(
+  const enabledPaymentOptions = useMemo(
     () =>
       PAYMENT_METHODS.filter(m =>
         enabledPaymentEnums ? enabledPaymentEnums.includes(m.enum) : true
@@ -383,77 +374,19 @@ export default function SalesPage() {
 
       <Card className="shadow-lg">
         <CardContent className="p-0">
-          <GenericTable
-            columns={createSalesTableColumns(t, sort, order, handleSort)}
-            data={sales.map(sale => ({
-              ...sale,
-              itemsCount: sale.items.length,
-            }))}
-            rowKey={row => row.id}
-            renderCell={(sale, col) => {
-              switch (col.key) {
-                case "createdAt":
-                  return (
-                    <div className="flex items-center">
-                      <CalendarDays className="mr-2 h-4 w-4 text-muted-foreground" />
-                      {formatDate(sale.timestamp)}
-                    </div>
-                  );
-                case "cashierName":
-                  return (
-                    <div className="flex items-center">
-                      <UserCircle className="mr-2 h-4 w-4 text-muted-foreground" />
-                      {sale.cashierName}
-                    </div>
-                  );
-                case "itemsCount":
-                  return `${sale.items.length} item${sale.items.length === 1 ? "" : "s"}`;
-                case "totalAmount":
-                  return (
-                    <span className="font-medium">
-                      {formatCurrency(sale.totalAmount)}
-                    </span>
-                  );
-                case "paymentMode":
-                  return <Badge variant="outline">{sale.paymentMode}</Badge>;
-                case "actions":
-                  return (
-                    <div className="text-right">
-                      <SaleDetailDialog
-                        sale={sale}
-                        onOpenChange={() => {}}
-                        formatCurrency={formatCurrency}
-                        formatDate={formatDate}
-                        t={t}
-                      />
-                    </div>
-                  );
-                default: {
-                  const value = (sale as unknown as Record<string, unknown>)[
-                    col.key as string
-                  ];
-                  if (
-                    typeof value === "string" ||
-                    typeof value === "number" ||
-                    typeof value === "boolean"
-                  ) {
-                    return String(value);
-                  }
-                  if (React.isValidElement(value)) {
-                    return value;
-                  }
-                  return null;
-                }
-              }
-            }}
-            emptyMessage="No sales found."
-            paginationProps={{
-              page,
-              pageSize,
-              total,
-              onPageChange: handlePageChange,
-              onPageSizeChange: handlePageSizeChange,
-            }}
+          <SalesTable
+            sales={sales}
+            total={total}
+            page={page}
+            pageSize={pageSize}
+            sort={sort}
+            order={order}
+            formatCurrency={formatCurrency}
+            formatDate={formatDate}
+            handleSort={handleSort}
+            handlePageChange={handlePageChange}
+            handlePageSizeChange={handlePageSizeChange}
+            t={t}
           />
         </CardContent>
       </Card>

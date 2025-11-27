@@ -1,8 +1,8 @@
-import { prisma } from "@/lib/prisma";
-import { NextRequest } from "next/server";
-import { getMonthlySales } from "@/lib/utils";
-import { jsonOk, jsonError, handleException } from "@/lib/api-response";
+import { handleException, jsonError, jsonOk } from "@/lib/api-response";
 import { createChildLogger } from "@/lib/logger";
+import { prisma } from "@/lib/prisma";
+import { getMonthlySales } from "@/lib/utils";
+import { NextRequest } from "next/server";
 
 const logger = createChildLogger("api:sales:stats");
 
@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
       ? new Date(searchParams.get("from")!)
       : undefined;
     const to = searchParams.get("to")
-      ? new Date(searchParams.get("to")!)
+      ? new Date(searchParams.get("to") as string)
       : undefined;
 
     // Total sales value, total orders, average sale value (optionally filtered by date range)
