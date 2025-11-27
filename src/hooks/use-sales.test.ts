@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { renderHook, waitFor } from "@testing-library/react";
+import { PaymentMode, Sale } from "@/lib/types";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { renderHook, waitFor } from "@testing-library/react";
 import React from "react";
-import { useSales, useCreateSale, type UseSalesParams } from "./use-sales";
-import { Sale, PaymentMode } from "@/lib/types";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { useCreateSale, useSales, type UseSalesParams } from "./use-sales";
 
 // Mock fetch globally
 const mockFetch = vi.fn();
@@ -168,6 +168,58 @@ describe("useSales", () => {
 
     expect(result.current.error).toBeInstanceOf(Error);
   });
+
+  it("handles empty response from server", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: async () => "",
+    });
+
+    const { result } = renderHook(() => useSales(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+
+    expect(result.current.error).toBeInstanceOf(Error);
+    expect((result.current.error as Error)?.message).toContain(
+      "Server returned an empty response"
+    );
+  });
+
+  it("handles invalid JSON response from server", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: async () => "invalid json {",
+    });
+
+    const { result } = renderHook(() => useSales(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+
+    expect(result.current.error).toBeInstanceOf(Error);
+    expect((result.current.error as Error)?.message).toContain(
+      "Server returned invalid data"
+    );
+  });
+
+  it("handles error response with plain text", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      text: async () => "Plain text error",
+    });
+
+    const { result } = renderHook(() => useSales(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+
+    expect(result.current.error).toBeInstanceOf(Error);
+    expect((result.current.error as Error)?.message).toBe("Plain text error");
+  });
 });
 
 describe("useCreateSale", () => {
@@ -316,5 +368,59 @@ describe("useCreateSale", () => {
         body: JSON.stringify(saleData),
       });
     });
+  });
+
+  it("handles error response with plain text during create", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      text: async () => "Server error occurred",
+    });
+
+    const { result } = renderHook(() => useCreateSale(), { wrapper });
+
+    const saleData = {
+      cashierId: "cashier1",
+      items: [],
+      totalAmount: 0,
+      paymentMode: "CASH" as PaymentMode,
+    };
+
+    result.current.mutate(saleData);
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+
+    expect(result.current.error).toBeInstanceOf(Error);
+    expect((result.current.error as Error)?.message).toBe(
+      "Server error occurred"
+    );
+  });
+
+  it("handles empty response during create", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: async () => "",
+    });
+
+    const { result } = renderHook(() => useCreateSale(), { wrapper });
+
+    const saleData = {
+      cashierId: "cashier1",
+      items: [],
+      totalAmount: 0,
+      paymentMode: "CASH" as PaymentMode,
+    };
+
+    result.current.mutate(saleData);
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+
+    expect(result.current.error).toBeInstanceOf(Error);
+    expect((result.current.error as Error)?.message).toContain(
+      "Server returned an empty response"
+    );
   });
 });
