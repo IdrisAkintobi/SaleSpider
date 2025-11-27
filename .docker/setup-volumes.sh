@@ -30,16 +30,16 @@ else
     echo -e "${YELLOW}Warning: .env file not found, using defaults${NC}"
 fi
 
-# Set default paths - resolve relative to .docker directory
+# Set default paths - resolve relative to project root
 DATA_PATH=${DATA_PATH:-./data}
 BACKUP_PATH=${BACKUP_PATH:-./data/backups}
 
-# Convert relative paths to absolute if needed
+# Convert relative paths to absolute if needed (relative to project root)
 if [[ "$DATA_PATH" != /* ]]; then
-    DATA_PATH="$SCRIPT_DIR/$DATA_PATH"
+    DATA_PATH="$PROJECT_ROOT/$DATA_PATH"
 fi
 if [[ "$BACKUP_PATH" != /* ]]; then
-    BACKUP_PATH="$SCRIPT_DIR/$BACKUP_PATH"
+    BACKUP_PATH="$PROJECT_ROOT/$BACKUP_PATH"
 fi
 
 # Create directory structure

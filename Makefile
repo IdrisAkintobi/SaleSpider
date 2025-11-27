@@ -151,6 +151,8 @@ restart: ## Restart all services with health checks
 deploy-hosted-db-app: ## Deploy app with hosted database (app + proxy only)
 	@echo "$(GREEN)Starting hosted database deployment...$(NC)"
 	$(call validate_env)
+	@echo "$(CYAN)Setting up required directories...$(NC)"
+	@bash .docker/setup-volumes.sh
 	@echo "$(CYAN)Using hosted database compose file$(NC)"
 	@$(DOCKER_COMPOSE_HOSTED) up -d
 	@echo "$(GREEN)✓ Hosted database deployment complete$(NC)"

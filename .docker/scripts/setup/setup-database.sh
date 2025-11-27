@@ -67,20 +67,6 @@ psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_D
     CREATE EXTENSION IF NOT EXISTS \"pg_stat_statements\";
 " >/dev/null 2>&1 || log "WARNING: Some extensions could not be created (this may be normal)"
 
-# Set up database configuration
-log "Configuring database settings..."
-psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "
-    -- Set timezone
-    SET timezone = 'UTC';
-    
-    -- Configure logging
-    ALTER SYSTEM SET log_statement = 'none';
-    ALTER SYSTEM SET log_min_duration_statement = 1000;
-    
-    -- Reload configuration
-    SELECT pg_reload_conf();
-" >/dev/null 2>&1 || log "WARNING: Some database settings could not be applied"
-
 log "Database setup completed successfully"
 
 # Create a marker file to indicate setup completion
