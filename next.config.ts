@@ -10,8 +10,6 @@ const nextConfig: NextConfig = {
   },
   // Ensure middleware is included in standalone build
   outputFileTracingRoot: process.cwd(),
-  // Optimize font loading to reduce preload warnings
-  optimizeFonts: true,
   webpack: (config, { isServer }) => {
     if (process.env.ANALYZE === 'true' && !isServer) {
       const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
