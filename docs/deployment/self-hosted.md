@@ -119,7 +119,7 @@ services:
   app:
     build: .
     ports:
-      - '3000:3000'
+      - "3000:3000"
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - JWT_SECRET=${JWT_SECRET}
@@ -334,7 +334,7 @@ If port 3000 is already in use:
 services:
   app:
     ports:
-      - '3001:3000' # Change external port
+      - "3001:3000" # Change external port
 ```
 
 ### Out of Disk Space

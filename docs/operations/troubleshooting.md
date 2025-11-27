@@ -148,7 +148,7 @@ make health
    ```yaml
    # In docker-compose.yml
    ports:
-     - '3001:3000'
+     - "3001:3000"
    ```
 
 ### Out of Disk Space

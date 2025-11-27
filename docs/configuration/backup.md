@@ -361,4 +361,4 @@ docker-compose exec postgres pgbackrest restore \
 
 - [Backup & Restore Operations](/operations/backup-restore)
 - [Self-Hosted Deployment](/deployment/self-hosted)
-- [Environment Variables](/ENVIRONMENT_VARIABLES)
+- [Environment Variables](/environment-variables)

@@ -82,7 +82,7 @@ Ready to try SaleSpider?
 
 1. **[Quick Start Guide](/getting-started)** - Get up and running in minutes
 2. **[Deployment Options](/deployment/)** - Choose your deployment method
-3. **[Configuration](/ENVIRONMENT_VARIABLES)** - Customize your setup
+3. **[Configuration](/environment-variables)** - Customize your setup
 4. **[Features](/features/)** - Explore what SaleSpider can do
 
 ## Community & Support
@@ -97,4 +97,4 @@ Ready to try SaleSpider?
 - [Getting Started](/getting-started) - Deploy your first instance
 - [Features Overview](/features/) - Explore capabilities
 - [Deployment Guide](/deployment/) - Choose your deployment method
-- [Configuration](/ENVIRONMENT_VARIABLES) - Customize your setup
+- [Configuration](/environment-variables) - Customize your setup

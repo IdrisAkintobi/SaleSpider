@@ -2,8 +2,8 @@
 layout: home
 
 hero:
-  name: 'SaleSpider'
-  text: 'Smart Inventory & Sales Management'
+  name: "SaleSpider"
+  text: "Smart Inventory & Sales Management"
   tagline: Modern, Next.js-based application for small and medium-sized stores to streamline sales, manage inventory efficiently, and leverage AI-powered insights.
   image:
     src: /images/overview.png

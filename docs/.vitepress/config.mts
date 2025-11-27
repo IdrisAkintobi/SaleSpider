@@ -68,7 +68,7 @@ export default defineConfig({
           items: [
             {
               text: "Environment Variables",
-              link: "/ENVIRONMENT_VARIABLES",
+              link: "/environment-variables",
             },
             { text: "Backup Configuration", link: "/configuration/backup" },
             { text: "Security Settings", link: "/configuration/security" },

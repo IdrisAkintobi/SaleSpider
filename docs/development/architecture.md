@@ -218,9 +218,9 @@ try {
   // Business logic
 } catch (error) {
   if (error instanceof ValidationError) {
-    return { error: 'Invalid input' }
+    return { error: "Invalid input" };
   }
-  return { error: 'Something went wrong' }
+  return { error: "Something went wrong" };
 }
 ```
 
