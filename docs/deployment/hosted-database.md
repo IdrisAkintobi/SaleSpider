@@ -397,4 +397,4 @@ npx prisma migrate deploy
 
 - [Self-Hosted Deployment](/deployment/self-hosted)
 - [Cloud Platforms](/deployment/cloud-platforms)
-- [Environment Variables](/ENVIRONMENT_VARIABLES)
+- [Environment Variables](/environment-variables)

@@ -508,5 +508,5 @@ npm run build && npm start
 
 - [Hosted Database Deployment](/deployment/hosted-database)
 - [Self-Hosted Deployment](/deployment/self-hosted)
-- [Environment Variables](/ENVIRONMENT_VARIABLES)
+- [Environment Variables](/environment-variables)
 - [Deployment Guide](/deployment/)

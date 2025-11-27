@@ -201,7 +201,7 @@ Requires WSL 2 and Docker Desktop.
 
 After choosing your deployment option:
 
-1. **[Configure Environment Variables](/ENVIRONMENT_VARIABLES)** - Set up your configuration
+1. **[Configure Environment Variables](/environment-variables)** - Set up your configuration
 2. **[Set Up Backups](/configuration/backup)** - Protect your data (self-hosted only)
 3. **[Configure Security](/configuration/security)** - Secure your deployment
 4. **[Monitor Your Deployment](/operations/monitoring)** - Keep track of system health

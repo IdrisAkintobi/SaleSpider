@@ -238,7 +238,7 @@ Share your extensions:
 - Create plugins/modules
 - Document your work
 
-[Learn more about Development →](/development/LOCAL-SETUP)
+[Learn more about Development →](/development/local-setup)
 
 ---
 
@@ -248,13 +248,13 @@ Have an idea for a new feature?
 
 - 💡 [Submit Feature Request](https://github.com/IdrisAkintobi/SaleSpider/issues/new?template=feature_request.md)
 - 💬 [Discuss in Community](https://github.com/IdrisAkintobi/SaleSpider/discussions)
-- 🔧 [Contribute Code](/development/CONTRIBUTING)
+- 🔧 [Contribute Code](/development/contributing)
 
 ---
 
 ## Next Steps
 
-- [Getting Started](/GETTING-STARTED) - Deploy SaleSpider
+- [Getting Started](/getting-started) - Deploy SaleSpider
 - [Deployment Options](/deployment/) - Choose your deployment
-- [Configuration](/ENVIRONMENT-VARIABLES) - Customize your setup
-- [Operations](/operations/BACKUP-RESTORE) - Manage your deployment
+- [Configuration](/environment-variables) - Customize your setup
+- [Operations](/operations/backup-restore) - Manage your deployment

@@ -241,5 +241,5 @@ If you see TypeScript errors:
 
 For additional help:
 
-- Check the [Environment Variables](../ENVIRONMENT-VARIABLES.MD) documentation
-- Review the [Settings](../SETTINGS.MD) documentation
+- Check the [Environment Variables](../environment-variables.md) documentation
+- Review the [Security Settings](./security.md) for related configuration

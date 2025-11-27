@@ -284,7 +284,7 @@ Docker health checks run automatically:
 
 ```yaml
 healthcheck:
-  test: ['CMD', 'curl', '-f', 'http://localhost:3000/api/health']
+  test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
   interval: 30s
   timeout: 10s
   retries: 3
