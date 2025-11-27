@@ -366,7 +366,7 @@ GCS_KEY=your-service-account-key
 Best for: GCP-based infrastructure, multi-region backups
 
 For detailed backup configuration, management, and recovery procedures, see:
-📖 **[Backup Guide](BACKUP_GUIDE.md)**
+📖 **[Backup Guide](BACKUP-GUIDE.MD)**
 
 ### Application Settings
 
@@ -388,7 +388,7 @@ ENABLE_REPORTS=true
 ### Complete Configuration Reference
 
 For detailed information about all available environment variables, see:
-📖 **[Environment Variables Reference](ENVIRONMENT_VARIABLES.md)**
+📖 **[Environment Variables Reference](ENVIRONMENT-VARIABLES.MD)**
 
 ---
 
@@ -520,7 +520,7 @@ make deploy
 
 **⚠️ Windows users must use WSL 2 for deployment.**
 
-For complete Windows deployment instructions, see: **[Windows Deployment Guide](WINDOWS_DEPLOYMENT.md)**
+For complete Windows deployment instructions, see: **[Windows Deployment Guide](WINDOWS-DEPLOYMENT.MD)**
 
 **Quick start:**
 
@@ -717,9 +717,9 @@ SKIP_SEED=true  # After initial deployment
 
 ## Related Documentation
 
-- **[Environment Variables Reference](ENVIRONMENT_VARIABLES.md)** - Complete variable reference
-- **[Backup Guide](BACKUP_GUIDE.md)** - Backup configuration and management
-- **[Makefile Guide](MAKEFILE_GUIDE.md)** - Available commands reference
+- **[Environment Variables Reference](ENVIRONMENT-VARIABLES.MD)** - Complete variable reference
+- **[Backup Guide](BACKUP-GUIDE.MD)** - Backup configuration and management
+- **[Makefile Guide](MAKEFILE-GUIDE.MD)** - Available commands reference
 
 ---
 

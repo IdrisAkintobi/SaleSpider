@@ -1079,9 +1079,9 @@ docker compose restart postgres backup
 
 ### Related Documentation
 
-- [Environment Variables Reference](ENVIRONMENT_VARIABLES.md) - Backup-related environment variables
-- [Deployment Guide](DEPLOYMENT_GUIDE.md) - Deployment options for different database types
-- [Makefile Guide](MAKEFILE_GUIDE.md) - Available backup commands
+- [Environment Variables Reference](ENVIRONMENT-VARIABLES.MD) - Backup-related environment variables
+- [Deployment Guide](DEPLOYMENT-GUIDE.MD) - Deployment options for different database types
+- [Makefile Guide](MAKEFILE-GUIDE.MD) - Available backup commands
 
 ---
 
