@@ -6,6 +6,13 @@ export default defineConfig({
   description: 'Smart Inventory & Sales Management for Modern Stores',
   base: process.env.NODE_ENV === 'production' ? '/SaleSpider/' : '/',
 
+  markdown: {
+    languageAlias: {
+      env: 'bash',
+      dotenv: 'bash',
+    },
+  },
+
   head: [
     [
       'link',
