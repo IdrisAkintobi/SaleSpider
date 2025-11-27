@@ -48,25 +48,25 @@ Edit `src/lib/constants.ts` to include your new payment method:
 ```typescript
 // Update PAYMENT_MODE_VALUES array
 export const PAYMENT_MODE_VALUES = [
-  'CASH',
-  'CARD',
-  'BANK_TRANSFER',
-  'CRYPTO',
-  'OTHER',
-  'MOBILE_MONEY', // Add here
-  'STORE_CREDIT', // Add here
-] as const
+  "CASH",
+  "CARD",
+  "BANK_TRANSFER",
+  "CRYPTO",
+  "OTHER",
+  "MOBILE_MONEY", // Add here
+  "STORE_CREDIT", // Add here
+] as const;
 
 // Update PAYMENT_METHODS array with display labels
 export const PAYMENT_METHODS = [
-  { label: 'Cash', enum: 'CASH' as PaymentMode },
-  { label: 'Card', enum: 'CARD' as PaymentMode },
-  { label: 'Bank Transfer', enum: 'BANK_TRANSFER' as PaymentMode },
-  { label: 'Crypto', enum: 'CRYPTO' as PaymentMode },
-  { label: 'Other', enum: 'OTHER' as PaymentMode },
-  { label: 'Mobile Money', enum: 'MOBILE_MONEY' as PaymentMode }, // Add here
-  { label: 'Store Credit', enum: 'STORE_CREDIT' as PaymentMode }, // Add here
-] as const
+  { label: "Cash", enum: "CASH" as PaymentMode },
+  { label: "Card", enum: "CARD" as PaymentMode },
+  { label: "Bank Transfer", enum: "BANK_TRANSFER" as PaymentMode },
+  { label: "Crypto", enum: "CRYPTO" as PaymentMode },
+  { label: "Other", enum: "OTHER" as PaymentMode },
+  { label: "Mobile Money", enum: "MOBILE_MONEY" as PaymentMode }, // Add here
+  { label: "Store Credit", enum: "STORE_CREDIT" as PaymentMode }, // Add here
+] as const;
 ```
 
 ### 3. Create and Run Migration
@@ -142,22 +142,22 @@ enum PaymentMode {
 
 ```typescript
 export const PAYMENT_MODE_VALUES = [
-  'CASH',
-  'CARD',
-  'BANK_TRANSFER',
-  'CRYPTO',
-  'OTHER',
-  'MPESA',
-] as const
+  "CASH",
+  "CARD",
+  "BANK_TRANSFER",
+  "CRYPTO",
+  "OTHER",
+  "MPESA",
+] as const;
 
 export const PAYMENT_METHODS = [
-  { label: 'Cash', enum: 'CASH' as PaymentMode },
-  { label: 'Card', enum: 'CARD' as PaymentMode },
-  { label: 'Bank Transfer', enum: 'BANK_TRANSFER' as PaymentMode },
-  { label: 'Crypto', enum: 'CRYPTO' as PaymentMode },
-  { label: 'Other', enum: 'OTHER' as PaymentMode },
-  { label: 'M-Pesa', enum: 'MPESA' as PaymentMode },
-] as const
+  { label: "Cash", enum: "CASH" as PaymentMode },
+  { label: "Card", enum: "CARD" as PaymentMode },
+  { label: "Bank Transfer", enum: "BANK_TRANSFER" as PaymentMode },
+  { label: "Crypto", enum: "CRYPTO" as PaymentMode },
+  { label: "Other", enum: "OTHER" as PaymentMode },
+  { label: "M-Pesa", enum: "MPESA" as PaymentMode },
+] as const;
 ```
 
 **3. Run migration:**
