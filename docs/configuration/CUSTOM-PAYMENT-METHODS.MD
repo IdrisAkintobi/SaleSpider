@@ -243,4 +243,3 @@ For additional help:
 
 - Check the [Environment Variables](../ENVIRONMENT_VARIABLES.md) documentation
 - Review the [Settings](../SETTINGS.md) documentation
-- See the [Deployment Guide](../DEPLOYMENT_GUIDE.md) for production deployments
