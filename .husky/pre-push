@@ -1,6 +1,3 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
 echo "🔍 Running pre-push checks..."
 
 # Run linting
@@ -18,5 +15,9 @@ npm test
 # Run build
 echo "🏗️  Running build..."
 npm run build
+
+# Run docs build
+echo "📚 Running docs build..."
+npm run docs:build
 
 echo "✅ All pre-push checks passed!"
