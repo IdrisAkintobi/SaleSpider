@@ -41,7 +41,7 @@
     "analyze": "ANALYZE=true npm run build:webpack",
     "seed": "tsx --env-file .env prisma/seeds/index.ts",
     "seed:prod": "npx tsx prisma/seeds/seed-production.ts",
-    "docs:build": "cd docs && npm run docs:build",
+    "docs:build": "(cd docs && npm run docs:build)",
     "prepare": "husky"
   },
   "dependencies": {

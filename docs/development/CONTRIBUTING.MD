@@ -28,7 +28,7 @@ Enhancement suggestions are welcome! Please provide:
 
 1. **Fork the repository** and create your feature branch from `main`
 2. **Install dependencies**: `npm install`
-3. **Set up your development environment** following the [Local Setup Guide](/development/local-setup)
+3. **Set up your development environment** following the [Local Setup Guide](/development/LOCAL-SETUP)
 4. **Make your changes** with clear, focused commits
 5. **Test your changes** thoroughly
 6. **Run linting**: `npm run lint`
@@ -111,7 +111,7 @@ npm run format:check
 
 ## Project Structure
 
-See the [Project Structure](/development/structure) page for a complete overview of the codebase organization.
+See the [Project Structure](/development/STRUCTURE) page for a complete overview of the codebase organization.
 
 ## Definition of Done
 
@@ -150,7 +150,7 @@ Look for issues labeled `good first issue` - these are great for newcomers!
 
 If you need help:
 
-- Check existing [documentation](/getting-started)
+- Check existing [documentation](/GETTING-STARTED)
 - Look through existing issues and discussions
 - Create a new issue with the "question" label
 - Join our community discussions
@@ -221,6 +221,6 @@ Thank you for contributing to SaleSpider! Your efforts help make this project be
 
 ## Related Documentation
 
-- [Local Setup Guide](/development/local-setup)
-- [Project Structure](/development/structure)
-- [Architecture Overview](/development/architecture)
+- [Local Setup Guide](/development/LOCAL-SETUP)
+- [Project Structure](/development/STRUCTURE)
+- [Architecture Overview](/development/ARCHITECTURE)

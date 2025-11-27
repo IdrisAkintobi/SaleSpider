@@ -805,10 +805,10 @@ docker compose config      # Show config
 
 ## Additional Resources
 
-- **Deployment Guide:** [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)
-- **Environment Variables:** [ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md)
-- **Backup Guide:** [BACKUP_GUIDE.md](BACKUP_GUIDE.md)
-- **Makefile Commands:** [MAKEFILE_GUIDE.md](MAKEFILE_GUIDE.md)
+- **Deployment Guide:** [DEPLOYMENT-GUIDE.MD](DEPLOYMENT-GUIDE.MD)
+- **Environment Variables:** [ENVIRONMENT-VARIABLES.MD](ENVIRONMENT-VARIABLES.MD)
+- **Backup Guide:** [BACKUP-GUIDE.MD](BACKUP-GUIDE.MD)
+- **Makefile Commands:** [MAKEFILE-GUIDE.MD](MAKEFILE-GUIDE.MD)
 
 ### External Resources
 

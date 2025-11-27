@@ -43,8 +43,8 @@ docs/
 ├── operations/          # Operations guides
 ├── features/            # Feature documentation
 ├── development/         # Development guides
-├── index.md             # Homepage
-└── getting-started.md   # Getting started guide
+├── INDEX.MD             # Homepage
+└── GETTING-STARTED.MD   # Getting started guide
 ```
 
 ## Writing Documentation
