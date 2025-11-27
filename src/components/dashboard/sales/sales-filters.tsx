@@ -1,46 +1,46 @@
-import { Button } from '@/components/ui/button'
-import { Calendar } from '@/components/ui/calendar'
-import { Input } from '@/components/ui/input'
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover'
-import { cn } from '@/lib/utils'
-import { format } from 'date-fns'
-import { CalendarIcon, Filter } from 'lucide-react'
-import type { DateRange } from 'react-day-picker'
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { CalendarIcon, Filter } from "lucide-react";
+import type { DateRange } from "react-day-picker";
 import {
   CashierSelect,
   DateRangeQuickSelect,
   PaymentMethodSelect,
-} from './filters'
+} from "./filters";
 
 interface SalesFiltersProps {
-  readonly searchTerm: string
-  readonly onSearchChange: (value: string) => void
-  readonly filterPaymentMethod: string
-  readonly onPaymentMethodChange: (value: string) => void
-  readonly filterCashier: string
-  readonly onCashierChange: (value: string) => void
-  readonly filterDateRange: string
-  readonly onDateRangeChange: (value: string) => void
-  readonly dateRange: DateRange | undefined
-  readonly onDateRangeSelect: (range: DateRange | undefined) => void
-  readonly isDatePickerOpen: boolean
-  readonly onDatePickerOpenChange: (open: boolean) => void
-  readonly onClearDateRange: () => void
-  readonly userIsManager: boolean
-  readonly userIsCashier: boolean
+  readonly searchTerm: string;
+  readonly onSearchChange: (value: string) => void;
+  readonly filterPaymentMethod: string;
+  readonly onPaymentMethodChange: (value: string) => void;
+  readonly filterCashier: string;
+  readonly onCashierChange: (value: string) => void;
+  readonly filterDateRange: string;
+  readonly onDateRangeChange: (value: string) => void;
+  readonly dateRange: DateRange | undefined;
+  readonly onDateRangeSelect: (range: DateRange | undefined) => void;
+  readonly isDatePickerOpen: boolean;
+  readonly onDatePickerOpenChange: (open: boolean) => void;
+  readonly onClearDateRange: () => void;
+  readonly userIsManager: boolean;
+  readonly userIsCashier: boolean;
   readonly enabledPaymentOptions: ReadonlyArray<{
-    readonly label: string
-    readonly enum: string
-  }>
+    readonly label: string;
+    readonly enum: string;
+  }>;
   readonly uniqueCashiers: ReadonlyArray<{
-    readonly id: string
-    readonly name: string
-  }>
-  readonly t: (key: string) => string
+    readonly id: string;
+    readonly name: string;
+  }>;
+  readonly t: (key: string) => string;
 }
 
 export function SalesFilters({
@@ -67,7 +67,7 @@ export function SalesFilters({
     <div className="flex flex-col lg:flex-row gap-3 overflow-x-auto">
       <Input
         placeholder={
-          userIsCashier ? t('search_sales_product') : t('search_sales_cashier')
+          userIsCashier ? t("search_sales_product") : t("search_sales_cashier")
         }
         value={searchTerm}
         onChange={e => onSearchChange(e.target.value)}
@@ -98,20 +98,20 @@ export function SalesFilters({
           <Button
             variant="outline"
             className={cn(
-              'w-full lg:w-[220px] justify-start text-left font-normal overflow-hidden flex-shrink-0',
+              "w-full lg:w-[220px] justify-start text-left font-normal overflow-hidden flex-shrink-0",
               !dateRange ||
-                (!dateRange.from && !dateRange.to && 'text-muted-foreground')
+                (!dateRange.from && !dateRange.to && "text-muted-foreground")
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
             <span className="truncate">
               {dateRange?.from && dateRange?.to ? (
                 <>
-                  {format(dateRange.from, 'LLL dd, y')} -{' '}
-                  {format(dateRange.to, 'LLL dd, y')}
+                  {format(dateRange.from, "LLL dd, y")} -{" "}
+                  {format(dateRange.to, "LLL dd, y")}
                 </>
               ) : (
-                t('pick_date_range')
+                t("pick_date_range")
               )}
             </span>
           </Button>
@@ -125,24 +125,24 @@ export function SalesFilters({
             onSelect={onDateRangeSelect}
             numberOfMonths={1}
             disabled={date => {
-              const today = new Date()
-              const sevenDaysAgo = new Date(today)
-              sevenDaysAgo.setDate(today.getDate() - 7)
+              const today = new Date();
+              const sevenDaysAgo = new Date(today);
+              sevenDaysAgo.setDate(today.getDate() - 7);
 
               if (userIsCashier) {
-                return date > today || date < sevenDaysAgo
+                return date > today || date < sevenDaysAgo;
               }
 
-              return date > today || date < new Date('1900-01-01')
+              return date > today || date < new Date("1900-01-01");
             }}
           />
         </PopoverContent>
       </Popover>
       {dateRange && (
         <Button variant="outline" size="sm" onClick={onClearDateRange}>
-          {t('clear_range')}
+          {t("clear_range")}
         </Button>
       )}
     </div>
-  )
+  );
 }

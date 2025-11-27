@@ -1,41 +1,41 @@
-'use client'
+"use client";
 
-import { Bell, Package, AlertTriangle } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Bell, Package, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover'
-import { Badge } from '@/components/ui/badge'
-import { useLowStock } from '@/hooks/use-low-stock'
-import { useRouter } from 'next/navigation'
-import { useTranslation } from '@/lib/i18n'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { useState } from 'react'
+} from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
+import { useLowStock } from "@/hooks/use-low-stock";
+import { useRouter } from "next/navigation";
+import { useTranslation } from "@/lib/i18n";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useState } from "react";
 
 export function LowStockBell() {
-  const { data: lowStockProducts = [], isLoading } = useLowStock()
-  const router = useRouter()
-  const t = useTranslation()
-  const [open, setOpen] = useState(false)
+  const { data: lowStockProducts = [], isLoading } = useLowStock();
+  const router = useRouter();
+  const t = useTranslation();
+  const [open, setOpen] = useState(false);
 
-  const count = lowStockProducts.length
+  const count = lowStockProducts.length;
 
   const handleProductClick = (productName: string) => {
-    setOpen(false)
+    setOpen(false);
     // Navigate to inventory page with product name in search
     router.push(
       `/dashboard/inventory?productName=${encodeURIComponent(productName)}`
-    )
-  }
+    );
+  };
 
   if (isLoading) {
     return (
       <Button variant="ghost" size="icon" disabled>
         <Bell className="h-5 w-5" />
       </Button>
-    )
+    );
   }
 
   return (
@@ -45,7 +45,7 @@ export function LowStockBell() {
           variant="ghost"
           size="icon"
           className="relative"
-          title={t('low_stock_alerts')}
+          title={t("low_stock_alerts")}
         >
           <Bell className="h-5 w-5" />
           {count > 0 && (
@@ -53,11 +53,11 @@ export function LowStockBell() {
               variant="destructive"
               className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
             >
-              {count > 99 ? '99+' : count}
+              {count > 99 ? "99+" : count}
             </Badge>
           )}
           <span className="sr-only">
-            {count} {t('low_stock_items')}
+            {count} {t("low_stock_items")}
           </span>
         </Button>
       </PopoverTrigger>
@@ -66,7 +66,7 @@ export function LowStockBell() {
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-500" />
             <h3 className="font-semibold text-foreground">
-              {t('low_stock_alerts')}
+              {t("low_stock_alerts")}
             </h3>
           </div>
           <Badge variant="destructive" className="font-semibold">
@@ -77,7 +77,7 @@ export function LowStockBell() {
         {count === 0 ? (
           <div className="p-8 text-center text-muted-foreground">
             <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">{t('all_items_well_stocked')}</p>
+            <p className="text-sm">{t("all_items_well_stocked")}</p>
           </div>
         ) : (
           <ScrollArea className="h-[400px]">
@@ -124,15 +124,15 @@ export function LowStockBell() {
               size="sm"
               className="w-full"
               onClick={() => {
-                setOpen(false)
-                router.push('/dashboard/inventory')
+                setOpen(false);
+                router.push("/dashboard/inventory");
               }}
             >
-              {t('view_all_inventory')}
+              {t("view_all_inventory")}
             </Button>
           </div>
         )}
       </PopoverContent>
     </Popover>
-  )
+  );
 }

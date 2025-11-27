@@ -1,9 +1,8 @@
-import { Role } from "@prisma/client";
 import { SoftDeleteService } from "@/lib/soft-delete";
 import { logger } from "@/lib/logger";
 import { jsonOk, jsonError, handleException } from "@/lib/api-response";
-import { getUserFromHeader } from "@/lib/api-auth";
 import { getProductBasic } from "@/lib/products";
+import { requireSuperAdmin } from "@/lib/api-middleware";
 
 import { prisma } from "@/lib/prisma";
 
@@ -14,11 +13,9 @@ export async function POST(
 ) {
   const { id } = await params;
 
-  // Read user from header and validate role
-  const { userId, user } = await getUserFromHeader(request, prisma);
-  if (!userId || !user || user.role !== Role.SUPER_ADMIN) {
-    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
-  }
+  // Validate super admin access
+  const { error, userId, user } = await requireSuperAdmin(request);
+  if (error) return error;
 
   try {
     // Check if product exists and is deleted
@@ -35,16 +32,19 @@ export async function POST(
     // Restore the product
     await SoftDeleteService.restoreProduct(id, userId);
 
-    logger.info({ 
-      productId: id, 
-      productName: product.name,
-      userId,
-      userRole: user.role
-    }, 'Product restored by super admin');
+    logger.info(
+      {
+        productId: id,
+        productName: product.name,
+        userId,
+        userRole: user.role,
+      },
+      "Product restored by super admin"
+    );
 
-    return jsonOk({ 
+    return jsonOk({
       message: "Product restored successfully",
-      productId: id 
+      productId: id,
     });
   } catch (error) {
     return handleException(error, "Failed to restore product", 500);

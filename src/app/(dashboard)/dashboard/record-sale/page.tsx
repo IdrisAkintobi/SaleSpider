@@ -1,46 +1,9 @@
-'use client'
+"use client";
 
-import { PageHeader } from '@/components/shared/page-header'
-import { Button } from '@/components/ui/button'
-import { calculateSaleTotals, useVatPercentage } from '@/lib/vat'
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { useAuth } from '@/contexts/auth-context'
-import { useToast } from '@/hooks/use-toast'
-import { useCreateSale } from '@/hooks/use-sales'
-import { ReceiptPrinter } from '@/components/shared/receipt-printer'
-import type { PaymentMode, Product, SaleItem } from '@/lib/types'
-import { ShoppingCart, XCircle } from 'lucide-react'
-import { useCallback, useMemo, useState } from 'react'
-import { useFormatCurrency } from '@/lib/currency'
-import { useTranslation } from '@/lib/i18n'
-import { PAYMENT_METHODS } from '@/lib/constants'
-import { useSettingsContext } from '@/contexts/settings-context'
-import { ProductSearch } from '@/components/dashboard/record-sale/product-search'
-import { ProductGrid } from '@/components/dashboard/record-sale/product-grid'
-import { useProducts } from '@/hooks/use-products'
+import { ProductGrid } from "@/components/dashboard/record-sale/product-grid";
+import { ProductSearch } from "@/components/dashboard/record-sale/product-search";
+import { PageHeader } from "@/components/shared/page-header";
+import { ReceiptPrinter } from "@/components/shared/receipt-printer";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,22 +14,59 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useAuth } from "@/contexts/auth-context";
+import { useSettingsContext } from "@/contexts/settings-context";
+import { useProducts } from "@/hooks/use-products";
+import { useCreateSale } from "@/hooks/use-sales";
+import { useToast } from "@/hooks/use-toast";
+import { PAYMENT_METHODS } from "@/lib/constants";
+import { useFormatCurrency } from "@/lib/currency";
+import { useTranslation } from "@/lib/i18n";
+import type { PaymentMode, Product, SaleItem } from "@/lib/types";
+import { calculateSaleTotals, useVatPercentage } from "@/lib/vat";
+import { ShoppingCart, XCircle } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
 
 // Products fetching/search/pagination handled by useProducts
 
 interface CartItem extends SaleItem {
-  stock: number // Available stock for validation
+  stock: number; // Available stock for validation
 }
 
 export default function RecordSalePage() {
-  const { user } = useAuth()
-  const { toast } = useToast()
-  const createSale = useCreateSale()
-  const formatCurrency = useFormatCurrency()
-  const t = useTranslation()
-  const { settings } = useSettingsContext()
-  const vatPercentage = useVatPercentage()
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const createSale = useCreateSale();
+  const formatCurrency = useFormatCurrency();
+  const t = useTranslation();
+  const { settings } = useSettingsContext();
+  const vatPercentage = useVatPercentage();
 
   const {
     products,
@@ -76,134 +76,135 @@ export default function RecordSalePage() {
     setSearchTerm,
     loadMore,
     refresh,
-  } = useProducts()
-  const [cart, setCart] = useState<CartItem[]>([])
-  const [paymentMode, setPaymentMode] = useState<PaymentMode>('Cash')
+  } = useProducts();
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [paymentMode, setPaymentMode] = useState<PaymentMode>("Cash");
   const [completedSale, setCompletedSale] = useState<{
-    id: string
-    cashierId: string
+    id: string;
+    cashierId: string;
     items: Array<{
-      productId: string
-      productName: string
-      quantity: number
-      price: number
-    }>
-    cashierName: string
-    subtotal: number
-    vatAmount: number
-    vatPercentage: number
-    timestamp: number
-    totalAmount: number
-    paymentMode: PaymentMode
-  } | null>(null)
+      productId: string;
+      productName: string;
+      quantity: number;
+      price: number;
+    }>;
+    cashierName: string;
+    subtotal: number;
+    vatAmount: number;
+    vatPercentage: number;
+    timestamp: number;
+    totalAmount: number;
+    paymentMode: PaymentMode;
+  } | null>(null);
 
   // Products already server-filtered in hook
-  const filteredProducts = useMemo(() => products, [products])
+  const filteredProducts = useMemo(() => products, [products]);
 
   // Enabled payment methods from settings
-  const enabledPaymentEnums = settings?.enabledPaymentMethods || undefined
+  const enabledPaymentEnums = settings?.enabledPaymentMethods || undefined;
   const enabledPaymentOptions = useMemo(
     () =>
       PAYMENT_METHODS.filter(m =>
-        !enabledPaymentEnums ? true : enabledPaymentEnums.includes(m.enum)
+        enabledPaymentEnums ? enabledPaymentEnums.includes(m.enum) : true
       ),
     [enabledPaymentEnums]
-  )
+  );
 
   // ProductGrid now manages its own IntersectionObserver
 
   const handleAddProductToCart = (product: Product, quantity: number = 1) => {
-    const productToAdd = product
+    const productToAdd = product;
 
     if (!productToAdd || quantity <= 0) {
       toast({
-        title: 'Invalid Selection',
-        description: 'Please select a product and enter a valid quantity.',
-        variant: 'destructive',
-      })
-      return
+        title: "Invalid Selection",
+        description: "Please select a product and enter a valid quantity.",
+        variant: "destructive",
+      });
+      return;
     }
 
     if (quantity > productToAdd.quantity) {
       toast({
-        title: 'Insufficient Stock',
+        title: "Insufficient Stock",
         description: `Only ${productToAdd.quantity} units of ${productToAdd.name} available.`,
-        variant: 'destructive',
-      })
-      return
+        variant: "destructive",
+      });
+      return;
     }
 
     const existingCartItemIndex = cart.findIndex(
       item => item.productId === productToAdd.id
-    )
-    const newCart = [...cart]
+    );
+    const newCart = [...cart];
 
-    if (existingCartItemIndex !== -1) {
-      const updatedQuantity = newCart[existingCartItemIndex].quantity + quantity
-      if (updatedQuantity > productToAdd.quantity) {
-        toast({
-          title: 'Insufficient Stock',
-          description: `Cannot add ${quantity} more. Total would exceed available stock of ${productToAdd.quantity}.`,
-          variant: 'destructive',
-        })
-        return
-      }
-      newCart[existingCartItemIndex].quantity = updatedQuantity
-    } else {
+    if (existingCartItemIndex === -1) {
       newCart.push({
         productId: productToAdd.id,
         productName: productToAdd.name,
         price: productToAdd.price,
         quantity: quantity,
         stock: productToAdd.quantity,
-      })
+      });
+    } else {
+      const updatedQuantity =
+        newCart[existingCartItemIndex].quantity + quantity;
+      if (updatedQuantity > productToAdd.quantity) {
+        toast({
+          title: "Insufficient Stock",
+          description: `Cannot add ${quantity} more. Total would exceed available stock of ${productToAdd.quantity}.`,
+          variant: "destructive",
+        });
+        return;
+      }
+      newCart[existingCartItemIndex].quantity = updatedQuantity;
     }
-    setCart(newCart)
-  }
+    setCart(newCart);
+  };
 
   const handleRemoveProductFromCart = (productId: string) => {
-    setCart(cart.filter(item => item.productId !== productId))
-  }
+    setCart(cart.filter(item => item.productId !== productId));
+  };
 
   const handleUpdateCartQuantity = (productId: string, newQuantity: number) => {
-    const productInCart = cart.find(item => item.productId === productId)
-    if (!productInCart) return
+    const productInCart = cart.find(item => item.productId === productId);
+    if (!productInCart) return;
 
     if (newQuantity <= 0) {
-      handleRemoveProductFromCart(productId)
-      return
+      handleRemoveProductFromCart(productId);
+      return;
     }
     if (newQuantity > productInCart.stock) {
       toast({
-        title: 'Insufficient Stock',
+        title: "Insufficient Stock",
         description: `Cannot set quantity to ${newQuantity}. Only ${productInCart.stock} units available.`,
-        variant: 'destructive',
-      })
-      return
+        variant: "destructive",
+      });
+      return;
     }
     setCart(
       cart.map(item =>
         item.productId === productId ? { ...item, quantity: newQuantity } : item
       )
-    )
-  }
+    );
+  };
 
   const cartSubtotal = useMemo(() => {
-    return cart.reduce((total, item) => total + item.price * item.quantity, 0)
-  }, [cart])
+    return cart.reduce((total, item) => total + item.price * item.quantity, 0);
+  }, [cart]);
 
   const cartTotals = useMemo(() => {
-    return calculateSaleTotals(cartSubtotal, vatPercentage)
-  }, [cartSubtotal, vatPercentage])
+    return calculateSaleTotals(cartSubtotal, vatPercentage);
+  }, [cartSubtotal, vatPercentage]);
 
   const handleRecordSale = async () => {
     if (cart.length === 0) {
       toast({
-        title: 'Empty Cart',
-        description: 'Please add products to the cart before recording a sale.',
-        variant: 'destructive',
-      })
-      return
+        title: "Empty Cart",
+        description: "Please add products to the cart before recording a sale.",
+        variant: "destructive",
+      });
+      return;
     }
 
     try {
@@ -212,9 +213,9 @@ export default function RecordSalePage() {
         items: cart.map(({ stock: _stock, ...item }) => item),
         totalAmount: cartTotals.totalAmount,
         paymentMode,
-      }
+      };
 
-      const recordedSale = await createSale.mutateAsync(saleToRecord)
+      const recordedSale = await createSale.mutateAsync(saleToRecord);
 
       setCompletedSale({
         id: recordedSale.id,
@@ -233,35 +234,35 @@ export default function RecordSalePage() {
         timestamp: Date.now(),
         totalAmount: cartTotals.totalAmount,
         paymentMode,
-      })
-      await refresh()
+      });
+      await refresh();
       toast({
-        title: 'Sale Recorded',
-        description: 'Sale recorded successfully!',
+        title: "Sale Recorded",
+        description: "Sale recorded successfully!",
         duration: 5000,
-      })
+      });
     } catch (error) {
       toast({
-        title: 'Failed to Record Sale',
+        title: "Failed to Record Sale",
         description:
           error instanceof Error
             ? error.message
-            : 'An error occurred while recording the sale',
-        variant: 'destructive',
-      })
+            : "An error occurred while recording the sale",
+        variant: "destructive",
+      });
     }
-  }
+  };
 
   const handleClearCart = useCallback(() => {
-    if (cart.length === 0) return
-    setCart([])
-  }, [cart])
+    if (cart.length === 0) return;
+    setCart([]);
+  }, [cart]);
 
   return (
     <>
       <PageHeader
-        title={t('record_sale')}
-        description={t('record_sale_description')}
+        title={t("record_sale")}
+        description={t("record_sale_description")}
       />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Product Selection Column */}
@@ -270,14 +271,14 @@ export default function RecordSalePage() {
             <CardTitle>Add Products to Cart</CardTitle>
           </CardHeader>
           <CardContent
-            className={`space-y-4 ${completedSale ? 'opacity-50 pointer-events-none' : ''}`}
+            className={`space-y-4 ${completedSale ? "opacity-50 pointer-events-none" : ""}`}
           >
             {/* Product Search */}
             <ProductSearch
               value={searchTerm}
               onChange={setSearchTerm}
               disabled={!!completedSale}
-              placeholder={t('search_products_advanced')}
+              placeholder={t("search_products_advanced")}
             />
             {/* Product Grid */}
             <ProductGrid
@@ -429,16 +430,7 @@ export default function RecordSalePage() {
                   </SelectContent>
                 </Select>
               </div>
-              {!completedSale ? (
-                <Button
-                  size="lg"
-                  onClick={handleRecordSale}
-                  className="w-full"
-                  disabled={cart.length === 0 || createSale.isPending}
-                >
-                  {createSale.isPending ? 'Recording Sale...' : 'Record Sale'}
-                </Button>
-              ) : (
+              {completedSale ? (
                 <div className="flex gap-2">
                   <ReceiptPrinter
                     sale={completedSale}
@@ -449,21 +441,30 @@ export default function RecordSalePage() {
                   <Button
                     variant="outline"
                     onClick={() => {
-                      setCompletedSale(null)
-                      setCart([])
-                      setPaymentMode('Cash')
-                      setSearchTerm('')
+                      setCompletedSale(null);
+                      setCart([]);
+                      setPaymentMode("Cash");
+                      setSearchTerm("");
                     }}
                     className="flex-1"
                   >
                     New Sale
                   </Button>
                 </div>
+              ) : (
+                <Button
+                  size="lg"
+                  onClick={handleRecordSale}
+                  className="w-full"
+                  disabled={cart.length === 0 || createSale.isPending}
+                >
+                  {createSale.isPending ? "Recording Sale..." : "Record Sale"}
+                </Button>
               )}
             </CardFooter>
           )}
         </Card>
       </div>
     </>
-  )
+  );
 }

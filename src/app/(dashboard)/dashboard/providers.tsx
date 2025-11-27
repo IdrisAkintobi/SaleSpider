@@ -1,12 +1,12 @@
-'use client'
+"use client";
 
-import { SettingsProvider } from '@/contexts/settings-context'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { useEffect, useState, type ReactNode } from 'react'
+import { SettingsProvider } from "@/contexts/settings-context";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { useEffect, useState, type ReactNode } from "react";
 
 interface ProvidersProps {
-  children: ReactNode
+  children: ReactNode;
 }
 
 /**
@@ -20,32 +20,32 @@ function GlobalErrorHandler({
 }: Readonly<{ children: React.ReactNode }>) {
   useEffect(() => {
     const handler = (event: PromiseRejectionEvent) => {
-      const error = event.reason
+      const error = event.reason;
 
       // Handle 401 Unauthorized - redirect to login
       if (
-        error.message?.toLowerCase().includes('unauthorized') ||
+        error.message?.toLowerCase().includes("unauthorized") ||
         error?.status === 401
       ) {
-        globalThis.location.href = '/login'
-        return
+        globalThis.location.href = "/login";
+        return;
       }
 
       // Handle JSON parsing errors - provide better error message
-      if (error.message?.includes('Unexpected end of JSON input')) {
+      if (error.message?.includes("Unexpected end of JSON input")) {
         console.error(
-          'JSON Parse Error: Server returned an empty or invalid response',
+          "JSON Parse Error: Server returned an empty or invalid response",
           error
-        )
+        );
         // Prevent the default error from showing in console
-        event.preventDefault()
+        event.preventDefault();
         // The error will still be caught by React Query and shown in the UI
       }
-    }
-    globalThis.addEventListener('unhandledrejection', handler)
-    return () => globalThis.removeEventListener('unhandledrejection', handler)
-  }, [])
-  return <>{children}</>
+    };
+    globalThis.addEventListener("unhandledrejection", handler);
+    return () => globalThis.removeEventListener("unhandledrejection", handler);
+  }, []);
+  return <>{children}</>;
 }
 
 // HTTP status codes that are safe to retry
@@ -58,7 +58,7 @@ const RETRIABLE_STATUS_CODES = new Set([
   507, // Insufficient Storage
   508, // Loop Detected
   509, // Bandwidth Limit Exceeded
-])
+]);
 
 export function Providers({ children }: Readonly<ProvidersProps>) {
   const [queryClient] = useState(
@@ -75,25 +75,25 @@ export function Providers({ children }: Readonly<ProvidersProps>) {
               // Don't retry JSON parsing errors - they won't fix themselves
               if (
                 error instanceof Error &&
-                (error.message.includes('Unexpected end of JSON input') ||
-                  error.message.includes('JSON') ||
-                  error.message.includes('SyntaxError'))
+                (error.message.includes("Unexpected end of JSON input") ||
+                  error.message.includes("JSON") ||
+                  error.message.includes("SyntaxError"))
               ) {
-                return false
+                return false;
               }
 
               // Only retry on retriable server errors and network errors
-              if (error instanceof Error && 'status' in error) {
-                const status = (error as any).status
+              if (error instanceof Error && "status" in error) {
+                const status = (error as any).status;
                 // Check if status code is retriable
                 if (RETRIABLE_STATUS_CODES.has(status)) {
-                  return failureCount < 3
+                  return failureCount < 3;
                 }
                 // Don't retry any other status codes (4xx, non-retriable 5xx)
-                return false
+                return false;
               }
               // Retry network errors (no status code) up to 3 times
-              return failureCount < 3
+              return failureCount < 3;
             },
           },
           mutations: {
@@ -103,16 +103,16 @@ export function Providers({ children }: Readonly<ProvidersProps>) {
           },
         },
       })
-  )
+  );
 
   return (
     <QueryClientProvider client={queryClient}>
       <SettingsProvider>
         <GlobalErrorHandler>{children}</GlobalErrorHandler>
       </SettingsProvider>
-      {process.env.NODE_ENV === 'development' && (
+      {process.env.NODE_ENV === "development" && (
         <ReactQueryDevtools initialIsOpen={false} />
       )}
     </QueryClientProvider>
-  )
+  );
 }

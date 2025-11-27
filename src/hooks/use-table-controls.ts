@@ -50,4 +50,4 @@ export function useTableControls({
     handlePageChange,
     handlePageSizeChange,
   };
-} 
+}

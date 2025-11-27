@@ -57,7 +57,7 @@ export function UpdateStockDialog({
   }, [isOpen, stockForm]);
 
   // Usage in component
-  const handleStockUpdate: SubmitHandler<StockUpdateFormData> = (data) => {
+  const handleStockUpdate: SubmitHandler<StockUpdateFormData> = data => {
     if (product) {
       updateStockMutation.mutate({
         id: product.id,
@@ -72,15 +72,15 @@ export function UpdateStockDialog({
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{t('update_stock') + ': ' + product.name}</DialogTitle>
-          <DialogDescription>{t('update_stock_description')}</DialogDescription>
+          <DialogTitle>{t("update_stock") + ": " + product.name}</DialogTitle>
+          <DialogDescription>{t("update_stock_description")}</DialogDescription>
         </DialogHeader>
         <form
           onSubmit={stockForm.handleSubmit(handleStockUpdate)}
           className="grid gap-4 py-4"
         >
           <FormInput
-            label={t('quantity')}
+            label={t("quantity")}
             name="quantity"
             type="number"
             control={stockForm.control}
@@ -89,11 +89,13 @@ export function UpdateStockDialog({
           <DialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="outline">
-                {t('cancel')}
+                {t("cancel")}
               </Button>
             </DialogClose>
             <Button type="submit" disabled={updateStockMutation.isPending}>
-              {updateStockMutation.isPending ? t('updating') : t('update_stock')}
+              {updateStockMutation.isPending
+                ? t("updating")
+                : t("update_stock")}
             </Button>
           </DialogFooter>
         </form>

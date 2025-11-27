@@ -27,7 +27,10 @@ export function useVatPercentage(): number {
 /**
  * Calculate VAT amount from subtotal
  */
-export function calculateVatAmount(subtotal: number, vatPercentage?: number): number {
+export function calculateVatAmount(
+  subtotal: number,
+  vatPercentage?: number
+): number {
   const percentage = vatPercentage ?? getVatPercentage();
   return (subtotal * percentage) / 100;
 }
@@ -35,7 +38,10 @@ export function calculateVatAmount(subtotal: number, vatPercentage?: number): nu
 /**
  * Calculate total amount including VAT
  */
-export function calculateTotalWithVat(subtotal: number, vatPercentage?: number): number {
+export function calculateTotalWithVat(
+  subtotal: number,
+  vatPercentage?: number
+): number {
   const vatAmount = calculateVatAmount(subtotal, vatPercentage);
   return subtotal + vatAmount;
 }
@@ -50,15 +56,18 @@ export interface SaleTotals {
   totalAmount: number;
 }
 
-export function calculateSaleTotals(subtotal: number, vatPercentage?: number): SaleTotals {
+export function calculateSaleTotals(
+  subtotal: number,
+  vatPercentage?: number
+): SaleTotals {
   const percentage = vatPercentage ?? getVatPercentage();
   const vatAmount = calculateVatAmount(subtotal, percentage);
   const totalAmount = subtotal + vatAmount;
-  
+
   return {
     subtotal,
     vatAmount,
     vatPercentage: percentage,
     totalAmount,
   };
-} 
+}

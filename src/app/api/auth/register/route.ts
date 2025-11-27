@@ -4,7 +4,7 @@ import * as argon2 from "argon2";
 import { NextRequest, NextResponse } from "next/server";
 import { createChildLogger } from "@/lib/logger";
 
-const logger = createChildLogger('api:auth:register');
+const logger = createChildLogger("api:auth:register");
 
 // Function to register a new user
 export async function POST(req: NextRequest) {
@@ -29,10 +29,7 @@ export async function POST(req: NextRequest) {
     // Check if user already exists by email or username
     const existingUser = await prisma.user.findFirst({
       where: {
-        OR: [
-          { email },
-          { username }
-        ]
+        OR: [{ email }, { username }],
       },
     });
 
@@ -71,7 +68,10 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Registration error');
+    logger.error(
+      { error: error instanceof Error ? error.message : "Unknown error" },
+      "Registration error"
+    );
     return NextResponse.json(
       { message: "Internal server error" },
       { status: 500 }

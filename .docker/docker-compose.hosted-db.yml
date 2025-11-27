@@ -16,7 +16,10 @@ services:
       file: compose/proxy.yml
       service: proxy
     depends_on:
-      - app
+      setup:
+        condition: service_completed_successfully
+      app:
+        condition: service_started
     networks:
       - salespider-net
     ports:
@@ -42,8 +45,9 @@ services:
       - FORCE_RESET=${FORCE_RESET:-false}
       - SETUP_BACKUP=false
       - KEEP_RUNNING=${KEEP_RUNNING:-false}
+      - HOSTED_DATABASE=true
     volumes:
-      - ../scripts/setup:/scripts:ro
+      - ./scripts:/scripts:ro
       - ${DATA_PATH:-./data}/ssl:/ssl
       - app-logs:/logs
     command: |
@@ -52,18 +56,21 @@ services:
         echo "Starting SaleSpider setup (hosted database)..."
 
         # Install required packages
-        apk add --no-cache curl openssl
+        echo "Installing required packages..."
+        apk add --no-cache curl openssl docker-cli
+
+        # List mounted scripts for debugging
+        echo "Checking mounted scripts..."
+        ls -la /scripts/ || echo "Scripts directory not found"
+        ls -la /scripts/setup/ || echo "Setup directory not found"
 
         # Run SSL setup
-        if [ -f /scripts/setup-ssl.sh ]; then
-          echo "Setting up SSL certificates..."
-          sh /scripts/setup-ssl.sh
-        fi
-
-        # Run application setup (skip database setup for hosted)
-        if [ -f /scripts/setup-application.sh ]; then
-          echo "Setting up application..."
-          sh /scripts/setup-application.sh
+        if [ -f /scripts/setup/setup-ssl.sh ]; then
+          echo "Found SSL setup script, executing..."
+          sh /scripts/setup/setup-ssl.sh
+        else
+          echo "ERROR: SSL setup script not found at /scripts/setup/setup-ssl.sh"
+          exit 1
         fi
 
         echo "Setup completed successfully"

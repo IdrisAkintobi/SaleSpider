@@ -119,17 +119,17 @@ IP.2 = 127.0.0.1
 IP.3 = ::1
 EOF
 
-# Generate private key using Docker
+# Generate private key
 echo -e "${YELLOW}→ Generating private key...${NC}"
-docker run --rm -v "${SSL_DIR}:/ssl" alpine/openssl genrsa -out /ssl/key.pem 2048
+openssl genrsa -out "${SSL_DIR}/key.pem" 2048
 
-# Generate certificate using Docker
+# Generate certificate
 echo -e "${YELLOW}→ Generating certificate...${NC}"
-docker run --rm -v "${SSL_DIR}:/ssl" alpine/openssl req -new -x509 \
-    -key /ssl/key.pem \
-    -out /ssl/cert.pem \
+openssl req -new -x509 \
+    -key "${SSL_DIR}/key.pem" \
+    -out "${SSL_DIR}/cert.pem" \
     -days ${CERT_DAYS} \
-    -config /ssl/openssl.cnf
+    -config "${SSL_DIR}/openssl.cnf"
 
 # Set proper permissions
 chmod 644 "${SSL_DIR}/cert.pem"
@@ -144,9 +144,9 @@ echo -e "  • ${SSL_DIR}/key.pem (private key)"
 echo -e "  • ${SSL_DIR}/openssl.cnf (configuration)"
 echo ""
 
-# Display certificate info using Docker
+# Display certificate info
 echo -e "${BLUE}Certificate details:${NC}"
-docker run --rm -v "${SSL_DIR}:/ssl" alpine/openssl x509 -in /ssl/cert.pem -noout -subject -issuer -dates -ext subjectAltName | sed 's/^/  /'
+openssl x509 -in "${SSL_DIR}/cert.pem" -noout -subject -issuer -dates -ext subjectAltName | sed 's/^/  /'
 echo ""
 
 echo -e "${GREEN}╔════════════════════════════════════════════════════════════╗${NC}"

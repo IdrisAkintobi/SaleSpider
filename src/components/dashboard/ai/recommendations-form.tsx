@@ -1,6 +1,5 @@
-import type { InventoryRecommendationsInput } from '@/ai/flows/inventory-recommendations'
-import { Button } from '@/components/ui/button'
-import { useSettingsContext } from '@/contexts/settings-context'
+import type { InventoryRecommendationsInput } from "@/ai/flows/inventory-recommendations";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -8,39 +7,40 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Brain, Loader2 } from 'lucide-react'
-import { useForm, type SubmitHandler } from 'react-hook-form'
-import * as z from 'zod'
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useSettingsContext } from "@/contexts/settings-context";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Brain, Loader2 } from "lucide-react";
+import { useForm, type SubmitHandler } from "react-hook-form";
+import * as z from "zod";
 
 const recommendationsSchema = z.object({
   salesData: z
     .string()
-    .min(10, 'Sales data is required (e.g., JSON or CSV format)'),
+    .min(10, "Sales data is required (e.g., JSON or CSV format)"),
   currentInventory: z
     .string()
-    .min(10, 'Current inventory data is required (e.g., JSON or CSV format)'),
-  storeName: z.string().min(1, 'Store name is required'),
-})
+    .min(10, "Current inventory data is required (e.g., JSON or CSV format)"),
+  storeName: z.string().min(1, "Store name is required"),
+});
 
-type RecommendationsFormInputs = z.infer<typeof recommendationsSchema>
+type RecommendationsFormInputs = z.infer<typeof recommendationsSchema>;
 
 interface AIRecommendationsFormProps {
-  onSubmit: (data: InventoryRecommendationsInput) => Promise<void>
-  isGenerating: boolean
-  defaultStoreName?: string
+  onSubmit: (data: InventoryRecommendationsInput) => Promise<void>;
+  isGenerating: boolean;
+  defaultStoreName?: string;
 }
 
 export function AIRecommendationsForm({
   onSubmit,
   isGenerating,
-  defaultStoreName = 'My Store',
-}: AIRecommendationsFormProps) {
-  const { settings } = useSettingsContext()
+  defaultStoreName = "My Store",
+}: Readonly<AIRecommendationsFormProps>) {
+  const { settings } = useSettingsContext();
   const {
     register,
     handleSubmit,
@@ -52,16 +52,16 @@ export function AIRecommendationsForm({
       salesData: `Example: [{"productName": "Wireless Mouse", "quantitySold": 50, "saleDate": "2023-10-01"}, ...]`,
       currentInventory: `Example: [{"productName": "Wireless Mouse", "currentStock": 150}, ...]`,
     },
-  })
+  });
 
   const handleFormSubmit: SubmitHandler<
     RecommendationsFormInputs
   > = async data => {
     await onSubmit({
       ...data,
-      language: settings?.language || 'en',
-    })
-  }
+      language: settings?.language || "en",
+    });
+  };
 
   return (
     <Card className="w-full shadow-lg">
@@ -78,8 +78,8 @@ export function AIRecommendationsForm({
             <Label htmlFor="storeName">Store Name</Label>
             <Input
               id="storeName"
-              {...register('storeName')}
-              className={errors.storeName ? 'border-destructive' : ''}
+              {...register("storeName")}
+              className={errors.storeName ? "border-destructive" : ""}
             />
             {errors.storeName && (
               <p className="text-sm text-destructive">
@@ -93,8 +93,8 @@ export function AIRecommendationsForm({
               id="salesData"
               rows={8}
               placeholder='e.g., [{"productName": "T-Shirt", "quantitySold": 100, "saleDate": "2023-01-15"}, ...]'
-              {...register('salesData')}
-              className={errors.salesData ? 'border-destructive' : ''}
+              {...register("salesData")}
+              className={errors.salesData ? "border-destructive" : ""}
             />
             {errors.salesData && (
               <p className="text-sm text-destructive">
@@ -110,8 +110,8 @@ export function AIRecommendationsForm({
               id="currentInventory"
               rows={8}
               placeholder='e.g., [{"productName": "T-Shirt", "currentStock": 200}, ...]'
-              {...register('currentInventory')}
-              className={errors.currentInventory ? 'border-destructive' : ''}
+              {...register("currentInventory")}
+              className={errors.currentInventory ? "border-destructive" : ""}
             />
             {errors.currentInventory && (
               <p className="text-sm text-destructive">
@@ -132,5 +132,5 @@ export function AIRecommendationsForm({
         </CardFooter>
       </form>
     </Card>
-  )
+  );
 }

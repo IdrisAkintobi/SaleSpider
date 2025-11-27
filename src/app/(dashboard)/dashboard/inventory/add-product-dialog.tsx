@@ -1,5 +1,5 @@
-import { Button, type ButtonProps } from '@/components/ui/button'
-import { FormInput } from '@/components/ui/custom-form-input'
+import { Button, type ButtonProps } from "@/components/ui/button";
+import { FormInput } from "@/components/ui/custom-form-input";
 import {
   Dialog,
   DialogClose,
@@ -9,39 +9,39 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog'
-import { useToast } from '@/hooks/use-toast'
-import { useCurrencySettings } from '@/lib/currency'
-import { fetchJson } from '@/lib/fetch-utils'
-import { useTranslation } from '@/lib/i18n'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { ProductCategory } from '@prisma/client'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { PlusCircle } from 'lucide-react'
-import { SubmitHandler, useForm } from 'react-hook-form'
-import * as z from 'zod'
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { useCurrencySettings } from "@/lib/currency";
+import { fetchJson } from "@/lib/fetch-utils";
+import { useTranslation } from "@/lib/i18n";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ProductCategory } from "@prisma/client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { PlusCircle } from "lucide-react";
+import { SubmitHandler, useForm } from "react-hook-form";
+import * as z from "zod";
 
 const productSchema = z.object({
-  name: z.string().min(1, 'Product name is required'),
-  description: z.string().min(10, 'Description must be at least 10 characters'),
+  name: z.string().min(1, "Product name is required"),
+  description: z.string().min(10, "Description must be at least 10 characters"),
   // Coerce to number to accept string inputs from HTML inputs
-  price: z.coerce.number().min(0.01, 'Price must be positive'),
+  price: z.coerce.number().min(0.01, "Price must be positive"),
   category: z.nativeEnum(ProductCategory),
-  quantity: z.coerce.number().int().min(1, 'Quantity cannot be less than one'),
+  quantity: z.coerce.number().int().min(1, "Quantity cannot be less than one"),
   lowStockMargin: z.coerce
     .number()
     .int()
-    .min(0, 'Low stock margin cannot be negative'),
-  imageUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+    .min(0, "Low stock margin cannot be negative"),
+  imageUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   gtin: z.string().optional(),
-})
+});
 
-type ProductFormData = z.infer<typeof productSchema>
+type ProductFormData = z.infer<typeof productSchema>;
 
 interface AddProductDialogProps {
-  isOpen: boolean
-  onOpenChange: (open: boolean) => void
-  triggerButtonProps?: ButtonProps
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  triggerButtonProps?: ButtonProps;
 }
 
 export function AddProductDialog({
@@ -49,10 +49,10 @@ export function AddProductDialog({
   onOpenChange,
   triggerButtonProps,
 }: Readonly<AddProductDialogProps>) {
-  const { toast } = useToast()
-  const queryClient = useQueryClient()
-  const { currencySymbol } = useCurrencySettings()
-  const t = useTranslation()
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { currencySymbol } = useCurrencySettings();
+  const t = useTranslation();
 
   const {
     register,
@@ -68,70 +68,70 @@ export function AddProductDialog({
       lowStockMargin: 0,
       category: ProductCategory.OTHERS,
     },
-  })
+  });
 
   const addProductMutation = useMutation({
     mutationFn: async (newProductData: ProductFormData) => {
-      return fetchJson('/api/products', {
-        method: 'POST',
+      return fetchJson("/api/products", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(newProductData),
-      })
+      });
     },
     onSuccess: () => {
       toast({
-        title: 'Product Added',
-        description: 'New product added successfully.',
-      })
-      queryClient.invalidateQueries({ queryKey: ['products'] })
-      reset()
-      onOpenChange(false)
+        title: "Product Added",
+        description: "New product added successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      reset();
+      onOpenChange(false);
     },
     onError: error => {
       toast({
-        title: 'Error adding product',
+        title: "Error adding product",
         description: error.message,
-        variant: 'destructive',
-      })
+        variant: "destructive",
+      });
     },
-  })
+  });
 
   const handleAddProduct: SubmitHandler<ProductFormData> = data => {
-    addProductMutation.mutate(data)
-  }
+    addProductMutation.mutate(data);
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button {...triggerButtonProps}>
-          <PlusCircle className="mr-2 h-4 w-4" /> {t('add_product')}
+          <PlusCircle className="mr-2 h-4 w-4" /> {t("add_product")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{t('add_new_product')}</DialogTitle>
-          <DialogDescription>{t('add_product_description')}</DialogDescription>
+          <DialogTitle>{t("add_new_product")}</DialogTitle>
+          <DialogDescription>{t("add_product_description")}</DialogDescription>
         </DialogHeader>
         <form
           onSubmit={handleSubmit(handleAddProduct)}
           className="grid gap-4 py-4"
         >
           <FormInput
-            label={t('product_name')}
+            label={t("product_name")}
             name="name"
             register={register}
             error={errors.name?.message}
           />
           <FormInput
-            label={t('product_description')}
+            label={t("product_description")}
             name="description"
             register={register}
             error={errors.description?.message}
           />
           <FormInput
-            label={t('product_category')}
+            label={t("product_category")}
             name="category"
             type="select"
             control={control}
@@ -139,7 +139,7 @@ export function AddProductDialog({
             error={errors.category?.message}
           />
           <FormInput
-            label={`${t('price')} (${currencySymbol})`}
+            label={`${t("price")} (${currencySymbol})`}
             name="price"
             type="number"
             step="0.01"
@@ -147,28 +147,28 @@ export function AddProductDialog({
             error={errors.price?.message}
           />
           <FormInput
-            label={t('new_quantity')}
+            label={t("new_quantity")}
             name="quantity"
             type="number"
             control={control}
             error={errors.quantity?.message}
           />
           <FormInput
-            label={t('low_stock_margin')}
+            label={t("low_stock_margin")}
             name="lowStockMargin"
             type="number"
             control={control}
             error={errors.lowStockMargin?.message}
           />
           <FormInput
-            label={t('image_url_optional')}
+            label={t("image_url_optional")}
             name="imageUrl"
             register={register}
             placeholder="https://placehold.co/300x300.png"
             error={errors.imageUrl?.message}
           />
           <FormInput
-            label={t('gtin_optional')}
+            label={t("gtin_optional")}
             name="gtin"
             register={register}
             error={errors.gtin?.message}
@@ -177,15 +177,15 @@ export function AddProductDialog({
           <DialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="outline">
-                {t('cancel')}
+                {t("cancel")}
               </Button>
             </DialogClose>
             <Button type="submit" disabled={addProductMutation.isPending}>
-              {addProductMutation.isPending ? t('adding') : t('add_product')}
+              {addProductMutation.isPending ? t("adding") : t("add_product")}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

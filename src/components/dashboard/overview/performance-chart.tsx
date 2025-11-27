@@ -12,16 +12,16 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { cn } from "@/lib/utils";
-import { Bar, BarChart, CartesianGrid, Legend, XAxis, YAxis } from "recharts";
 import {
   Select,
-  SelectTrigger,
   SelectContent,
   SelectItem,
+  SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { useCurrencySettings } from "@/lib/currency";
+import { cn } from "@/lib/utils";
+import { Bar, BarChart, CartesianGrid, Legend, XAxis, YAxis } from "recharts";
 
 interface PerformanceChartProps {
   readonly data: Array<{ name: string } & Record<string, number | string>>;
@@ -34,7 +34,10 @@ interface PerformanceChartProps {
   readonly className?: string;
   readonly comparisonType?: string;
   readonly onComparisonTypeChange?: (type: string) => void;
-  readonly comparisonOptions?: ReadonlyArray<{ readonly value: string; readonly label: string }>;
+  readonly comparisonOptions?: ReadonlyArray<{
+    readonly value: string;
+    readonly label: string;
+  }>;
 }
 
 const chartConfig = {
@@ -64,13 +67,32 @@ export function PerformanceChart({
   const hasExtraBar = !!extraBarDataKey;
   const { currency, currencySymbol } = useCurrencySettings();
   // List of all dollar currencies
-  const dollarCurrencies = ["USD", "CAD", "AUD", "NZD", "SGD", "HKD", "BMD", "BZD", "FJD", "GYD", "JMD", "LRD", "NAD", "SBD", "SRD", "TTD", "TWD", "ZWD"];
+  const dollarCurrencies = new Set([
+    "USD",
+    "CAD",
+    "AUD",
+    "NZD",
+    "SGD",
+    "HKD",
+    "BMD",
+    "BZD",
+    "FJD",
+    "GYD",
+    "JMD",
+    "LRD",
+    "NAD",
+    "SBD",
+    "SRD",
+    "TTD",
+    "TWD",
+    "ZWD",
+  ]);
   return (
     <Card className={cn("shadow-lg", className)}>
       <CardHeader className="flex flex-row items-center justify-between gap-2">
         <div>
-        <CardTitle>{title}</CardTitle>
-        {description && <CardDescription>{description}</CardDescription>}
+          <CardTitle>{title}</CardTitle>
+          {description && <CardDescription>{description}</CardDescription>}
         </div>
         {comparisonType && onComparisonTypeChange && comparisonOptions && (
           <Select value={comparisonType} onValueChange={onComparisonTypeChange}>
@@ -79,7 +101,9 @@ export function PerformanceChart({
             </SelectTrigger>
             <SelectContent>
               {comparisonOptions.map(opt => (
-                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -92,52 +116,56 @@ export function PerformanceChart({
               data={data}
               margin={{ top: 5, right: 5, left: 45, bottom: 5 }}
             >
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis
-              dataKey={xAxisDataKey}
-              tickLine={false}
-              axisLine={false}
-              stroke="hsl(var(--muted-foreground))"
-              fontSize={12}
-            />
-            <YAxis
-              tickLine={false}
-              axisLine={false}
-              stroke="hsl(var(--muted-foreground))"
-              fontSize={12}
-              width={40}
-              tickFormatter={(value) => {
-                // Format large numbers with K/M suffix
-                if (value >= 1000000) {
-                  return `${dollarCurrencies.includes(currency) ? '$' : currencySymbol}${(value / 1000000).toFixed(1)}M`;
-                } else if (value >= 1000) {
-                  return `${dollarCurrencies.includes(currency) ? '$' : currencySymbol}${(value / 1000).toFixed(1)}K`;
-                } else {
-                  return `${dollarCurrencies.includes(currency) ? '$' : currencySymbol}${value}`;
-                }
-              }}
-            />
-            <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent indicator="dot" />}
-            />
-            <Legend />
-            <Bar
-              dataKey={barDataKey}
-              fill="var(--color-sales)"
-              radius={4}
-              name={barLabels?.[barDataKey] ?? barDataKey}
-            />
-            {hasExtraBar && (
-              <Bar
-                dataKey={extraBarDataKey}
-                fill="var(--color-target)"
-                radius={4}
-                name={extraBarDataKey ? (barLabels?.[extraBarDataKey] ?? extraBarDataKey) : undefined}
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis
+                dataKey={xAxisDataKey}
+                tickLine={false}
+                axisLine={false}
+                stroke="hsl(var(--muted-foreground))"
+                fontSize={12}
               />
-            )}
-          </BarChart>
-        </ChartContainer>
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                stroke="hsl(var(--muted-foreground))"
+                fontSize={12}
+                width={40}
+                tickFormatter={value => {
+                  // Format large numbers with K/M suffix
+                  if (value >= 1000000) {
+                    return `${dollarCurrencies.has(currency) ? "$" : currencySymbol}${(value / 1000000).toFixed(1)}M`;
+                  } else if (value >= 1000) {
+                    return `${dollarCurrencies.has(currency) ? "$" : currencySymbol}${(value / 1000).toFixed(1)}K`;
+                  } else {
+                    return `${dollarCurrencies.has(currency) ? "$" : currencySymbol}${value}`;
+                  }
+                }}
+              />
+              <ChartTooltip
+                cursor={false}
+                content={<ChartTooltipContent indicator="dot" />}
+              />
+              <Legend />
+              <Bar
+                dataKey={barDataKey}
+                fill="var(--color-sales)"
+                radius={4}
+                name={barLabels?.[barDataKey] ?? barDataKey}
+              />
+              {hasExtraBar && (
+                <Bar
+                  dataKey={extraBarDataKey}
+                  fill="var(--color-target)"
+                  radius={4}
+                  name={
+                    extraBarDataKey
+                      ? (barLabels?.[extraBarDataKey] ?? extraBarDataKey)
+                      : undefined
+                  }
+                />
+              )}
+            </BarChart>
+          </ChartContainer>
         </div>
       </CardContent>
     </Card>

@@ -1,7 +1,7 @@
-'use client'
+"use client";
 
-import { Logo } from '@/components/shared/logo'
-import { Button } from '@/components/ui/button'
+import { Logo } from "@/components/shared/logo";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,15 +9,15 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from "@/components/ui/dropdown-menu";
 import {
   Sheet,
   SheetContent,
   SheetTrigger,
   SheetTitle,
   SheetDescription,
-} from '@/components/ui/sheet'
-import { useAuth } from '@/contexts/auth-context'
+} from "@/components/ui/sheet";
+import { useAuth } from "@/contexts/auth-context";
 import {
   LogOut,
   Moon,
@@ -25,37 +25,37 @@ import {
   Settings,
   Sun,
   User as UserIcon,
-} from 'lucide-react'
-import { useTheme } from 'next-themes'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { Fragment, useEffect, useState } from 'react'
-import { SidebarNav } from './sidebar-nav'
-import { useTranslation } from '@/lib/i18n'
-import { LowStockBell } from './low-stock-bell'
+} from "lucide-react";
+import { useTheme } from "next-themes";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Fragment, useEffect, useState } from "react";
+import { SidebarNav } from "./sidebar-nav";
+import { useTranslation } from "@/lib/i18n";
+import { LowStockBell } from "./low-stock-bell";
 
 // Helper for theme toggle, assuming next-themes
 function ThemeToggle() {
-  const { setTheme, theme, resolvedTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
+  const { setTheme, theme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
   // useEffect only runs on the client, so now we can safely show the UI
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
 
   const handleThemeChange = () => {
     if (mounted) {
-      setTheme(theme === 'light' ? 'dark' : 'light')
+      setTheme(theme === "light" ? "dark" : "light");
     }
-  }
+  };
 
   return (
     <Button
       variant="ghost"
       size="icon"
       onClick={handleThemeChange}
-      title={mounted ? `Current theme: ${resolvedTheme}` : 'Loading theme...'}
+      title={mounted ? `Current theme: ${resolvedTheme}` : "Loading theme..."}
       disabled={!mounted}
       className="transition-all duration-200"
       data-theme-toggle
@@ -64,20 +64,20 @@ function ThemeToggle() {
       <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
       <span className="sr-only">Toggle theme</span>
     </Button>
-  )
+  );
 }
 
 export function DashboardHeader() {
-  const { user, logout, userIsManager } = useAuth()
-  const pathname = usePathname()
-  const t = useTranslation()
-  const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const { user, logout, userIsManager } = useAuth();
+  const pathname = usePathname();
+  const t = useTranslation();
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  const breadcrumbs = generateBreadcrumbs(pathname, t)
+  const breadcrumbs = generateBreadcrumbs(pathname, t);
 
   const handleCloseSheet = () => {
-    setIsSheetOpen(false)
-  }
+    setIsSheetOpen(false);
+  };
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-4 md:px-6">
@@ -114,8 +114,8 @@ export function DashboardHeader() {
               href={crumb.href}
               className={
                 index === breadcrumbs.length - 1
-                  ? 'font-medium text-foreground'
-                  : 'hover:text-foreground'
+                  ? "font-medium text-foreground"
+                  : "hover:text-foreground"
               }
             >
               {crumb.label}
@@ -146,48 +146,49 @@ export function DashboardHeader() {
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link href="/dashboard/settings">
-                {' '}
+                {" "}
                 <Settings className="mr-2 h-4 w-4" />
-                <span>{t('settings')}</span>
+                <span>{t("settings")}</span>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={logout}>
               <LogOut className="mr-2 h-4 w-4" />
-              <span>{t('logout')}</span>
+              <span>{t("logout")}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
     </header>
-  )
+  );
 }
 
 // Example breadcrumb generation (can be more sophisticated)
 function generateBreadcrumbs(pathname: string, t: (key: string) => string) {
-  const paths = pathname.split('/').filter(Boolean)
-  const crumbs = [{ href: '/dashboard/overview', label: t('dashboard') }]
-  let currentPath = '/dashboard'
+  const paths = pathname.split("/").filter(Boolean);
+  const crumbs = [{ href: "/dashboard/overview", label: t("dashboard") }];
+  let currentPath = "/dashboard";
   for (const part of paths.slice(1)) {
-    if (part === 'dashboard') continue
-    currentPath += `/${part}`
+    if (part === "dashboard") continue;
+    currentPath += `/${part}`;
     // Prefer i18n route labels under `routes.*`, fall back to humanized slug
-    const labelKey = part.replaceAll('-', '_')
-    const routeKey = `routes.${labelKey}`
-    const translated = t(routeKey)
+    const labelKey = part.replaceAll("-", "_");
+    const routeKey = `routes.${labelKey}`;
+    const translated = t(routeKey);
 
     const humanized = part
-      .split('-')
+      .split("-")
       .map(s => s.charAt(0).toUpperCase() + s.slice(1))
-      .join(' ')
+      .join(" ");
 
     // If translation returns the key itself (missing), use humanized fallback
-    const label = translated && translated !== routeKey ? translated : humanized
+    const label =
+      translated && translated !== routeKey ? translated : humanized;
 
     crumbs.push({
       href: currentPath,
       label,
-    })
+    });
   }
-  return crumbs
+  return crumbs;
 }

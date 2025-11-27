@@ -1,10 +1,7 @@
 "use client";
 import type { User } from "@/lib/types";
 import type { PropsWithChildren } from "react";
-import React, {
-  createContext,
-  useContext,
-} from "react";
+import React, { createContext, useContext } from "react";
 import { useAuth as useAuthQuery } from "@/hooks/use-auth";
 
 interface AuthContextType {

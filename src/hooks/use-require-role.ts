@@ -5,7 +5,10 @@ import type { User } from "@/lib/types";
 
 type Role = User["role"];
 
-export function useRequireRole(allowedRoles: Role[], redirectTo: string = "/dashboard/overview") {
+export function useRequireRole(
+  allowedRoles: Role[],
+  redirectTo: string = "/dashboard/overview"
+) {
   const { user, isLoading, isAuthenticated } = useAuth();
   const router = useRouter();
 
@@ -23,4 +26,4 @@ export function useRequireRole(allowedRoles: Role[], redirectTo: string = "/dash
     isAuthenticated,
     hasRequiredRole,
   };
-} 
+}

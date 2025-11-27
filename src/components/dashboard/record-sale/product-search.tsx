@@ -9,7 +9,12 @@ interface ProductSearchProps {
   readonly placeholder?: string;
 }
 
-export function ProductSearch({ value, onChange, disabled, placeholder }: Readonly<ProductSearchProps>) {
+export function ProductSearch({
+  value,
+  onChange,
+  disabled,
+  placeholder,
+}: Readonly<ProductSearchProps>) {
   return (
     <div>
       <div className="flex items-center gap-2 mb-2">
@@ -21,7 +26,7 @@ export function ProductSearch({ value, onChange, disabled, placeholder }: Readon
           id="product-search"
           placeholder={placeholder ?? "Search products"}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={e => onChange(e.target.value)}
           className="pl-10 mb-2"
           disabled={disabled}
         />

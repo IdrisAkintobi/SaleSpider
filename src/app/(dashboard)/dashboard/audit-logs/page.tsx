@@ -26,7 +26,7 @@ export default function AuditLogsPage() {
         description: t("exportSuccess"),
       });
     } catch (error) {
-      console.error('Error exporting audit logs:', error);
+      console.error("Error exporting audit logs:", error);
       toast({
         title: t("exportError"),
         description: error instanceof Error ? error.message : t("exportError"),
@@ -66,8 +66,8 @@ export default function AuditLogsPage() {
             {t("auditLogsDescription")}
           </p>
         </div>
-        
-        <Button 
+
+        <Button
           onClick={handleExportCSV}
           disabled={isExporting}
           variant="outline"

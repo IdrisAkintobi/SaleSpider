@@ -5,7 +5,9 @@ interface PerformanceChartSkeletonProps {
   className?: string;
 }
 
-export function PerformanceChartSkeleton({ className }: PerformanceChartSkeletonProps) {
+export function PerformanceChartSkeleton({
+  className,
+}: Readonly<PerformanceChartSkeletonProps>) {
   return (
     <Card className={className}>
       <CardHeader className="flex flex-row items-center justify-between gap-2">
@@ -20,4 +22,4 @@ export function PerformanceChartSkeleton({ className }: PerformanceChartSkeleton
       </CardContent>
     </Card>
   );
-} 
+}

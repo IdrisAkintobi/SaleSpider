@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { createChildLogger } from "@/lib/logger";
 import { AuditTrailService } from "@/lib/audit-trail";
 
-const logger = createChildLogger('deshelving-service');
+const logger = createChildLogger("deshelving-service");
 
 export interface DeshelvingRequest {
   productId: string;
@@ -28,11 +28,14 @@ export interface DeshelvingRecord {
 export interface DeshelvingAnalytics {
   totalQuantityDeshelved: number;
   totalValueLost: number;
-  reasonBreakdown: Record<DeshelvingReason, {
-    quantity: number;
-    value: number;
-    count: number;
-  }>;
+  reasonBreakdown: Record<
+    DeshelvingReason,
+    {
+      quantity: number;
+      value: number;
+      count: number;
+    }
+  >;
   topAffectedProducts: Array<{
     productId: string;
     productName: string;
@@ -60,49 +63,59 @@ export class DeshelvingService {
       // Validate manager permissions
       const manager = await prisma.user.findUnique({
         where: { id: managerId },
-        select: { id: true, role: true, email: true, name: true }
+        select: { id: true, role: true, email: true, name: true },
       });
 
-      if (!manager || (manager.role !== 'MANAGER' && manager.role !== 'SUPER_ADMIN')) {
-        return { success: false, error: 'Insufficient permissions. Only managers can deshelve products.' };
+      if (
+        !manager ||
+        (manager.role !== "MANAGER" && manager.role !== "SUPER_ADMIN")
+      ) {
+        return {
+          success: false,
+          error:
+            "Insufficient permissions. Only managers can deshelve products.",
+        };
       }
 
       // Get current product state
       const product = await prisma.product.findUnique({
         where: { id: request.productId },
-        select: { 
-          id: true, 
-          name: true, 
-          quantity: true, 
+        select: {
+          id: true,
+          name: true,
+          quantity: true,
           price: true,
-          deletedAt: true 
-        }
+          deletedAt: true,
+        },
       });
 
       if (!product) {
-        return { success: false, error: 'Product not found.' };
+        return { success: false, error: "Product not found." };
       }
 
       if (product.deletedAt) {
-        return { success: false, error: 'Cannot deshelve deleted products.' };
+        return { success: false, error: "Cannot deshelve deleted products." };
       }
 
       if (product.quantity < request.quantity) {
-        return { 
-          success: false, 
-          error: `Insufficient inventory. Available: ${product.quantity}, Requested: ${request.quantity}` 
+        return {
+          success: false,
+          error: `Insufficient inventory. Available: ${product.quantity}, Requested: ${request.quantity}`,
         };
       }
 
       if (request.quantity <= 0) {
-        return { success: false, error: 'Deshelving quantity must be greater than 0.' };
+        return {
+          success: false,
+          error: "Deshelving quantity must be greater than 0.",
+        };
       }
 
       const oldQuantity = product.quantity;
       const newQuantity = oldQuantity - request.quantity;
 
       // Perform deshelving in a transaction
-      const result = await prisma.$transaction(async (tx) => {
+      const result = await prisma.$transaction(async tx => {
         // Create deshelving record
         const deshelving = await tx.deshelving.create({
           data: {
@@ -114,18 +127,18 @@ export class DeshelvingService {
           },
           include: {
             product: {
-              select: { name: true, price: true }
+              select: { name: true, price: true },
             },
             manager: {
-              select: { name: true, email: true }
-            }
-          }
+              select: { name: true, email: true },
+            },
+          },
         });
 
         // Update product quantity
         await tx.product.update({
           where: { id: request.productId },
-          data: { quantity: newQuantity }
+          data: { quantity: newQuantity },
         });
 
         return deshelving;
@@ -133,9 +146,9 @@ export class DeshelvingService {
 
       // Log to audit trail
       await AuditTrailService.log({
-        entityType: 'DESHELVING',
+        entityType: "DESHELVING",
         entityId: request.productId, // Use productId as entityId for deshelving operations
-        action: 'CREATE',
+        action: "CREATE",
         changes: {
           productId: request.productId,
           productName: product.name,
@@ -143,7 +156,7 @@ export class DeshelvingService {
           reason: request.reason,
           description: request.description,
           oldProductQuantity: oldQuantity,
-          newProductQuantity: newQuantity
+          newProductQuantity: newQuantity,
         },
         oldValues: { productQuantity: oldQuantity },
         newValues: { productQuantity: newQuantity },
@@ -154,35 +167,40 @@ export class DeshelvingService {
           deshelvingRecordId: result.id, // Store the deshelving record ID in metadata
           deshelvingReason: request.reason,
           quantityDeshelved: request.quantity,
-          valueImpact: request.quantity * product.price
-        }
+          valueImpact: request.quantity * product.price,
+        },
       });
 
-      logger.info({
-        deshelvingId: result.id,
-        productId: request.productId,
-        productName: product.name,
-        quantity: request.quantity,
-        reason: request.reason,
-        managerId,
-        managerEmail: manager.email,
-        oldQuantity,
-        newQuantity,
-        valueImpact: request.quantity * product.price
-      }, 'Product deshelved successfully');
+      logger.info(
+        {
+          deshelvingId: result.id,
+          productId: request.productId,
+          productName: product.name,
+          quantity: request.quantity,
+          reason: request.reason,
+          managerId,
+          managerEmail: manager.email,
+          oldQuantity,
+          newQuantity,
+          valueImpact: request.quantity * product.price,
+        },
+        "Product deshelved successfully"
+      );
 
       return { success: true, deshelving: result };
-
     } catch (error) {
-      logger.error({
-        error: error instanceof Error ? error.message : 'Unknown error',
-        request,
-        managerId
-      }, 'Failed to deshelve product');
-      
-      return { 
-        success: false, 
-        error: 'Failed to deshelve product. Please try again.' 
+      logger.error(
+        {
+          error: error instanceof Error ? error.message : "Unknown error",
+          request,
+          managerId,
+        },
+        "Failed to deshelve product"
+      );
+
+      return {
+        success: false,
+        error: "Failed to deshelve product. Please try again.",
       };
     }
   }
@@ -190,15 +208,17 @@ export class DeshelvingService {
   /**
    * Get deshelving records with filtering and pagination
    */
-  static async getDeshelvingRecords(options: {
-    productId?: string;
-    managerId?: string;
-    reason?: DeshelvingReason;
-    startDate?: Date;
-    endDate?: Date;
-    page?: number;
-    pageSize?: number;
-  } = {}): Promise<{
+  static async getDeshelvingRecords(
+    options: {
+      productId?: string;
+      managerId?: string;
+      reason?: DeshelvingReason;
+      startDate?: Date;
+      endDate?: Date;
+      page?: number;
+      pageSize?: number;
+    } = {}
+  ): Promise<{
     records: DeshelvingRecord[];
     total: number;
     totalPages: number;
@@ -211,7 +231,7 @@ export class DeshelvingService {
         startDate,
         endDate,
         page = 1,
-        pageSize = 20
+        pageSize = 20,
       } = options;
 
       const where: any = {};
@@ -230,17 +250,17 @@ export class DeshelvingService {
           where,
           include: {
             product: {
-              select: { name: true }
+              select: { name: true },
             },
             manager: {
-              select: { name: true, email: true }
-            }
+              select: { name: true, email: true },
+            },
           },
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: "desc" },
           skip: (page - 1) * pageSize,
-          take: pageSize
+          take: pageSize,
         }),
-        prisma.deshelving.count({ where })
+        prisma.deshelving.count({ where }),
       ]);
 
       const formattedRecords: DeshelvingRecord[] = records.map(record => ({
@@ -253,21 +273,23 @@ export class DeshelvingService {
         managerId: record.managerId,
         managerName: record.manager.name,
         managerEmail: record.manager.email,
-        createdAt: record.createdAt
+        createdAt: record.createdAt,
       }));
 
       return {
         records: formattedRecords,
         total,
-        totalPages: Math.ceil(total / pageSize)
+        totalPages: Math.ceil(total / pageSize),
       };
-
     } catch (error) {
-      logger.error({
-        error: error instanceof Error ? error.message : 'Unknown error',
-        options
-      }, 'Failed to get deshelving records');
-      
+      logger.error(
+        {
+          error: error instanceof Error ? error.message : "Unknown error",
+          options,
+        },
+        "Failed to get deshelving records"
+      );
+
       return { records: [], total: 0, totalPages: 0 };
     }
   }
@@ -275,7 +297,9 @@ export class DeshelvingService {
   /**
    * Get deshelving analytics for AI insights and reporting
    */
-  static async getDeshelvingAnalytics(daysBack: number = 30): Promise<DeshelvingAnalytics> {
+  static async getDeshelvingAnalytics(
+    daysBack: number = 30
+  ): Promise<DeshelvingAnalytics> {
     try {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - daysBack);
@@ -284,23 +308,32 @@ export class DeshelvingService {
       const deshelvings = await prisma.deshelving.findMany({
         where: {
           createdAt: {
-            gte: startDate
-          }
+            gte: startDate,
+          },
         },
         include: {
           product: {
-            select: { name: true, price: true }
-          }
-        }
+            select: { name: true, price: true },
+          },
+        },
       });
 
       // Calculate totals
-      const totalQuantityDeshelved = deshelvings.reduce((sum, d) => sum + d.quantity, 0);
-      const totalValueLost = deshelvings.reduce((sum, d) => sum + (d.quantity * d.product.price), 0);
+      const totalQuantityDeshelved = deshelvings.reduce(
+        (sum, d) => sum + d.quantity,
+        0
+      );
+      const totalValueLost = deshelvings.reduce(
+        (sum, d) => sum + d.quantity * d.product.price,
+        0
+      );
 
       // Reason breakdown
-      const reasonBreakdown: Record<DeshelvingReason, { quantity: number; value: number; count: number }> = {} as any;
-      
+      const reasonBreakdown: Record<
+        DeshelvingReason,
+        { quantity: number; value: number; count: number }
+      > = {} as any;
+
       Object.values(DeshelvingReason).forEach(reason => {
         reasonBreakdown[reason] = { quantity: 0, value: 0, count: 0 };
       });
@@ -313,66 +346,79 @@ export class DeshelvingService {
       });
 
       // Top affected products
-      const productMap = new Map<string, {
-        productId: string;
-        productName: string;
-        totalQuantityDeshelved: number;
-        totalValueLost: number;
-        reasons: Record<DeshelvingReason, number>;
-      }>();
+      const productMap = new Map<
+        string,
+        {
+          productId: string;
+          productName: string;
+          totalQuantityDeshelved: number;
+          totalValueLost: number;
+          reasons: Record<DeshelvingReason, number>;
+        }
+      >();
 
       deshelvings.forEach(d => {
         const key = d.productId;
         const value = d.quantity * d.product.price;
-        
+
         if (!productMap.has(key)) {
           productMap.set(key, {
             productId: d.productId,
             productName: d.product.name,
             totalQuantityDeshelved: 0,
             totalValueLost: 0,
-            reasons: {} as Record<DeshelvingReason, number>
+            reasons: {} as Record<DeshelvingReason, number>,
           });
         }
 
         const product = productMap.get(key)!;
         product.totalQuantityDeshelved += d.quantity;
         product.totalValueLost += value;
-        product.reasons[d.reason] = (product.reasons[d.reason] || 0) + d.quantity;
+        product.reasons[d.reason] =
+          (product.reasons[d.reason] || 0) + d.quantity;
       });
 
       const topAffectedProducts = Array.from(productMap.values())
         .map(p => ({
           ...p,
-          mostCommonReason: Object.entries(p.reasons)
-            .sort(([,a], [,b]) => b - a)[0]?.[0] as DeshelvingReason || DeshelvingReason.OTHER
+          mostCommonReason:
+            (Object.entries(p.reasons).sort(
+              ([, a], [, b]) => b - a
+            )[0]?.[0] as DeshelvingReason) || DeshelvingReason.OTHER,
         }))
         .sort((a, b) => b.totalValueLost - a.totalValueLost)
         .slice(0, 10);
 
       // Monthly trends (simplified for now)
-      const monthlyTrends = [{
-        month: new Date().toISOString().slice(0, 7),
-        totalQuantity: totalQuantityDeshelved,
-        totalValue: totalValueLost
-      }];
+      const monthlyTrends = [
+        {
+          month: new Date().toISOString().slice(0, 7),
+          totalQuantity: totalQuantityDeshelved,
+          totalValue: totalValueLost,
+        },
+      ];
 
       return {
         totalQuantityDeshelved,
         totalValueLost,
         reasonBreakdown,
         topAffectedProducts,
-        monthlyTrends
+        monthlyTrends,
       };
-
     } catch (error) {
-      logger.error({
-        error: error instanceof Error ? error.message : 'Unknown error',
-        daysBack
-      }, 'Failed to get deshelving analytics');
-      
+      logger.error(
+        {
+          error: error instanceof Error ? error.message : "Unknown error",
+          daysBack,
+        },
+        "Failed to get deshelving analytics"
+      );
+
       // Return empty analytics on error
-      const emptyReasonBreakdown = {} as Record<DeshelvingReason, { quantity: number; value: number; count: number }>;
+      const emptyReasonBreakdown = {} as Record<
+        DeshelvingReason,
+        { quantity: number; value: number; count: number }
+      >;
       Object.values(DeshelvingReason).forEach(reason => {
         emptyReasonBreakdown[reason] = { quantity: 0, value: 0, count: 0 };
       });
@@ -382,7 +428,7 @@ export class DeshelvingService {
         totalValueLost: 0,
         reasonBreakdown: emptyReasonBreakdown,
         topAffectedProducts: [],
-        monthlyTrends: []
+        monthlyTrends: [],
       };
     }
   }
@@ -390,18 +436,54 @@ export class DeshelvingService {
   /**
    * Get deshelving reasons with labels for UI
    */
-  static getDeshelvingReasons(): Array<{ value: DeshelvingReason; label: string; color: string }> {
+  static getDeshelvingReasons(): Array<{
+    value: DeshelvingReason;
+    label: string;
+    color: string;
+  }> {
     return [
-      { value: DeshelvingReason.DAMAGED, label: 'Damaged', color: 'destructive' },
-      { value: DeshelvingReason.RETURNED, label: 'Customer Return', color: 'secondary' },
-      { value: DeshelvingReason.EXPIRED, label: 'Expired', color: 'destructive' },
-      { value: DeshelvingReason.RESERVED, label: 'Reserved', color: 'default' },
-      { value: DeshelvingReason.STOLEN, label: 'Stolen/Theft', color: 'destructive' },
-      { value: DeshelvingReason.LOST, label: 'Lost/Missing', color: 'destructive' },
-      { value: DeshelvingReason.QUALITY_CONTROL, label: 'Quality Control', color: 'secondary' },
-      { value: DeshelvingReason.RECALL, label: 'Product Recall', color: 'destructive' },
-      { value: DeshelvingReason.TRANSFER, label: 'Transfer to Another Location', color: 'default' },
-      { value: DeshelvingReason.OTHER, label: 'Other', color: 'secondary' }
+      {
+        value: DeshelvingReason.DAMAGED,
+        label: "Damaged",
+        color: "destructive",
+      },
+      {
+        value: DeshelvingReason.RETURNED,
+        label: "Customer Return",
+        color: "secondary",
+      },
+      {
+        value: DeshelvingReason.EXPIRED,
+        label: "Expired",
+        color: "destructive",
+      },
+      { value: DeshelvingReason.RESERVED, label: "Reserved", color: "default" },
+      {
+        value: DeshelvingReason.STOLEN,
+        label: "Stolen/Theft",
+        color: "destructive",
+      },
+      {
+        value: DeshelvingReason.LOST,
+        label: "Lost/Missing",
+        color: "destructive",
+      },
+      {
+        value: DeshelvingReason.QUALITY_CONTROL,
+        label: "Quality Control",
+        color: "secondary",
+      },
+      {
+        value: DeshelvingReason.RECALL,
+        label: "Product Recall",
+        color: "destructive",
+      },
+      {
+        value: DeshelvingReason.TRANSFER,
+        label: "Transfer to Another Location",
+        color: "default",
+      },
+      { value: DeshelvingReason.OTHER, label: "Other", color: "secondary" },
     ];
   }
 }

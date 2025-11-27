@@ -1,16 +1,16 @@
-import React from 'react'
+import React from "react";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from "@/components/ui/select";
 
-type TFunc = (key: string) => string
+type TFunc = (key: string) => string;
 
-export type PaymentOption = { enum: string; label: string }
-export type Cashier = { id: string; name: string }
+export type PaymentOption = { enum: string; label: string };
+export type Cashier = { id: string; name: string };
 
 export function PaymentMethodSelect({
   value,
@@ -18,18 +18,18 @@ export function PaymentMethodSelect({
   options,
   t,
 }: Readonly<{
-  value: string
-  onChange: (v: string) => void
-  options: readonly PaymentOption[]
-  t: TFunc
+  value: string;
+  onChange: (v: string) => void;
+  options: readonly PaymentOption[];
+  t: TFunc;
 }>) {
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger className="w-full lg:w-[160px] flex-shrink-0">
-        <SelectValue placeholder={t('filter_by_payment_method')} />
+        <SelectValue placeholder={t("filter_by_payment_method")} />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="all">{t('all_payment_methods')}</SelectItem>
+        <SelectItem value="all">{t("all_payment_methods")}</SelectItem>
         {options.map(m => (
           <SelectItem key={m.enum} value={m.enum}>
             {m.label}
@@ -37,7 +37,7 @@ export function PaymentMethodSelect({
         ))}
       </SelectContent>
     </Select>
-  )
+  );
 }
 
 export function CashierSelect({
@@ -47,20 +47,20 @@ export function CashierSelect({
   cashiers,
   t,
 }: Readonly<{
-  show: boolean
-  value: string
-  onChange: (v: string) => void
-  cashiers: readonly Cashier[]
-  t: TFunc
+  show: boolean;
+  value: string;
+  onChange: (v: string) => void;
+  cashiers: readonly Cashier[];
+  t: TFunc;
 }>) {
-  if (!show) return null
+  if (!show) return null;
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger className="w-full lg:w-[160px] flex-shrink-0">
-        <SelectValue placeholder={t('filter_by_cashier')} />
+        <SelectValue placeholder={t("filter_by_cashier")} />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="all">{t('all_cashiers')}</SelectItem>
+        <SelectItem value="all">{t("all_cashiers")}</SelectItem>
         {cashiers.map(c => (
           <SelectItem key={c.id} value={c.id}>
             {c.name}
@@ -68,7 +68,7 @@ export function CashierSelect({
         ))}
       </SelectContent>
     </Select>
-  )
+  );
 }
 
 export function DateRangeQuickSelect({
@@ -77,22 +77,22 @@ export function DateRangeQuickSelect({
   t,
   isCashier = false,
 }: Readonly<{
-  value: string
-  onChange: (v: string) => void
-  t: TFunc
-  isCashier?: boolean
+  value: string;
+  onChange: (v: string) => void;
+  t: TFunc;
+  isCashier?: boolean;
 }>) {
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger className="w-full lg:w-[140px] flex-shrink-0">
-        <SelectValue placeholder={t('filter_by_date')} />
+        <SelectValue placeholder={t("filter_by_date")} />
       </SelectTrigger>
       <SelectContent>
-        {!isCashier && <SelectItem value="all">{t('all_time')}</SelectItem>}
-        <SelectItem value="today">{t('today')}</SelectItem>
-        <SelectItem value="week">{t('this_week')}</SelectItem>
-        {!isCashier && <SelectItem value="month">{t('this_month')}</SelectItem>}
+        {!isCashier && <SelectItem value="all">{t("all_time")}</SelectItem>}
+        <SelectItem value="today">{t("today")}</SelectItem>
+        <SelectItem value="week">{t("this_week")}</SelectItem>
+        {!isCashier && <SelectItem value="month">{t("this_month")}</SelectItem>}
       </SelectContent>
     </Select>
-  )
+  );
 }

@@ -1,35 +1,35 @@
-'use client'
+"use client";
 
-import { Button } from '@/components/ui/button'
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { useAuth } from '@/contexts/auth-context'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2, LogIn, Eye, EyeOff } from 'lucide-react'
-import { useForm, type SubmitHandler } from 'react-hook-form'
-import { useState } from 'react'
-import * as z from 'zod'
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useAuth } from "@/contexts/auth-context";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2, LogIn, Eye, EyeOff } from "lucide-react";
+import { useForm, type SubmitHandler } from "react-hook-form";
+import { useState } from "react";
+import * as z from "zod";
 
 const loginSchema = z.object({
   email: z
     .string()
-    .email('Please enter a valid email address')
-    .min(1, 'Email is required'),
-  password: z.string().min(1, 'Password is required'),
-})
+    .min(1, "Email is required")
+    .email("Please enter a valid email address"),
+  password: z.string().min(1, "Password is required"),
+});
 
-type LoginFormInputs = z.infer<typeof loginSchema>
+type LoginFormInputs = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
-  const { isLoading, login } = useAuth()
-  const [showPassword, setShowPassword] = useState(false)
+  const { isLoading, login } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -37,11 +37,11 @@ export function LoginForm() {
     formState: { errors },
   } = useForm<LoginFormInputs>({
     resolver: zodResolver(loginSchema),
-  })
+  });
 
   const onSubmit: SubmitHandler<LoginFormInputs> = data => {
-    login(data.email, data.password)
-  }
+    login(data.email, data.password);
+  };
 
   return (
     <Card className="w-full shadow-xl">
@@ -54,15 +54,19 @@ export function LoginForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="space-y-6"
+          noValidate
+        >
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               type="email"
               placeholder="user@example.com"
-              {...register('email')}
-              className={errors.email ? 'border-destructive' : ''}
+              {...register("email")}
+              className={errors.email ? "border-destructive" : ""}
             />
             {errors.email && (
               <p className="text-sm text-destructive">{errors.email.message}</p>
@@ -73,11 +77,11 @@ export function LoginForm() {
             <div className="relative">
               <Input
                 id="password"
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
-                {...register('password')}
+                {...register("password")}
                 className={
-                  errors.password ? 'border-destructive pr-10' : 'pr-10'
+                  errors.password ? "border-destructive pr-10" : "pr-10"
                 }
               />
               <Button
@@ -93,7 +97,7 @@ export function LoginForm() {
                   <Eye className="h-4 w-4" />
                 )}
                 <span className="sr-only">
-                  {showPassword ? 'Hide password' : 'Show password'}
+                  {showPassword ? "Hide password" : "Show password"}
                 </span>
               </Button>
             </div>
@@ -114,5 +118,5 @@ export function LoginForm() {
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }

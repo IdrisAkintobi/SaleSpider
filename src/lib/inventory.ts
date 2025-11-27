@@ -1,29 +1,29 @@
-import { Prisma } from '@prisma/client'
+import { Prisma } from "@prisma/client";
 
 /**
  * Represents an item to reserve from inventory
  */
 export interface ReservationItem {
-  productId: string
-  quantity: number
+  productId: string;
+  quantity: number;
 }
 
 /**
  * Represents a product with insufficient stock
  */
 export interface InsufficientStockProduct {
-  productId: string
-  productName: string
-  requested: number
-  available: number
+  productId: string;
+  productName: string;
+  requested: number;
+  available: number;
 }
 
 /**
  * Result of a reservation attempt
  */
 export interface ReservationResult {
-  success: boolean
-  insufficientStock?: InsufficientStockProduct[]
+  success: boolean;
+  insufficientStock?: InsufficientStockProduct[];
 }
 
 /**
@@ -31,8 +31,8 @@ export interface ReservationResult {
  */
 export type PrismaTransaction = Omit<
   Prisma.TransactionClient,
-  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
->
+  "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
+>;
 
 /**
  * Reserves inventory for a sale transaction with row-level locking.
@@ -65,10 +65,10 @@ export async function reserveInventory(
   tx: PrismaTransaction,
   items: ReservationItem[]
 ): Promise<ReservationResult> {
-  const insufficientStock: InsufficientStockProduct[] = []
+  const insufficientStock: InsufficientStockProduct[] = [];
 
   // Extract all product IDs
-  const productIds = items.map(item => item.productId)
+  const productIds = items.map(item => item.productId);
 
   // Lock all product rows in a single query using FOR UPDATE
   // This prevents other transactions from modifying these products until we commit
@@ -80,18 +80,18 @@ export async function reserveInventory(
     FROM "Product"
     WHERE id = ANY(${productIds}::text[])
     FOR UPDATE
-  `
+  `;
 
   // Create a map for quick lookup
-  const productMap = new Map(products.map(p => [p.id, p]))
+  const productMap = new Map(products.map(p => [p.id, p]));
 
   // Validate all products exist and have sufficient quantity
   for (const item of items) {
-    const product = productMap.get(item.productId)
+    const product = productMap.get(item.productId);
 
     // Sanity check: Check if product exists
     if (!product) {
-      throw new Error(`Product ${item.productId} not found`)
+      throw new Error(`Product ${item.productId} not found`);
     }
 
     // Validate available quantity
@@ -101,7 +101,7 @@ export async function reserveInventory(
         productName: product.name,
         requested: item.quantity,
         available: product.quantity,
-      })
+      });
     }
   }
 
@@ -110,7 +110,7 @@ export async function reserveInventory(
     return {
       success: false,
       insufficientStock,
-    }
+    };
   }
 
   // All validations passed - decrement inventory for all products
@@ -125,9 +125,9 @@ export async function reserveInventory(
         },
       })
     )
-  )
+  );
 
   return {
     success: true,
-  }
+  };
 }

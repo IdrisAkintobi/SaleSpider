@@ -151,13 +151,16 @@ All the above app settings have corresponding `NEXT_PUBLIC_` versions that make 
 
 ### PostgreSQL Core Settings
 
-| Variable            | Default       | Description                     | Required |
-| ------------------- | ------------- | ------------------------------- | -------- |
-| `POSTGRES_DB`       | `salespider`  | Database name                   | Yes      |
-| `POSTGRES_USER`     | `postgres`    | Database username               | Yes      |
-| `POSTGRES_PASSWORD` | (none)        | Database password               | Yes      |
-| `POSTGRES_PORT`     | `5432`        | Database port                   | Yes      |
-| `DATABASE_URL`      | (constructed) | Full database connection string | Yes      |
+| Variable            | Default       | Description                                                | Required |
+| ------------------- | ------------- | ---------------------------------------------------------- | -------- |
+| `POSTGRES_HOST`     | `postgres`    | PostgreSQL server hostname (used by setup/backup services) | Yes      |
+| `POSTGRES_DB`       | `salespider`  | Database name                                              | Yes      |
+| `POSTGRES_USER`     | `postgres`    | Database username                                          | Yes      |
+| `POSTGRES_PASSWORD` | (none)        | Database password                                          | Yes      |
+| `POSTGRES_PORT`     | `5432`        | Database port                                              | Yes      |
+| `DATABASE_URL`      | (constructed) | Full database connection string                            | Yes      |
+
+**Note:** The backup service internally maps these to standard PostgreSQL client variables (`PGHOST`, `PGUSER`, `PGPASSWORD`, `PGPORT`). You don't need to set those directly.
 
 ### PostgreSQL Performance Tuning
 

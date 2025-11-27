@@ -2,39 +2,61 @@
 
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ColorPicker } from "@/components/ui/color-picker";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ColorPicker } from "@/components/ui/color-picker";
 import { useAuth } from "@/contexts/auth-context";
 import { useSettingsContext } from "@/contexts/settings-context";
-import { useToast } from "@/hooks/use-toast";
 import { useSettings, useUpdateSettings } from "@/hooks/use-settings";
-import { useTheme } from "next-themes";
-import { 
-  DEFAULT_SETTINGS, 
-  CURRENCY_OPTIONS, 
-  TIMEZONE_OPTIONS, 
-  DATE_FORMAT_OPTIONS, 
-  TIME_FORMAT_OPTIONS, 
-  LANGUAGE_OPTIONS, 
-  THEME_OPTIONS,
+import { useToast } from "@/hooks/use-toast";
+import {
+  CURRENCY_OPTIONS,
+  DATE_FORMAT_OPTIONS,
+  DEFAULT_SETTINGS,
+  LANGUAGE_OPTIONS,
   PAYMENT_METHODS,
   PAYMENT_MODE_VALUES,
+  THEME_OPTIONS,
+  TIMEZONE_OPTIONS,
+  TIME_FORMAT_OPTIONS,
   type PaymentMode,
 } from "@/lib/constants";
-import { useTranslation } from "@/lib/i18n";
 import { applyDynamicStyles } from "@/lib/dynamic-styles";
-import { Settings, Palette, Globe, CreditCard, Monitor, Save, RotateCcw } from "lucide-react";
+import { useTranslation } from "@/lib/i18n";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  CreditCard,
+  Globe,
+  Monitor,
+  Palette,
+  RotateCcw,
+  Save,
+  Settings,
+} from "lucide-react";
+import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+
+type ThemeMode = "light" | "dark" | "auto";
 
 const settingsSchema = z.object({
   appName: z.string().min(1, "Application name is required"),
@@ -80,7 +102,7 @@ export default function SettingsPage() {
     dateFormat: DEFAULT_SETTINGS.dateFormat,
     timeFormat: DEFAULT_SETTINGS.timeFormat,
     language: DEFAULT_SETTINGS.language,
-    theme: DEFAULT_SETTINGS.theme as "light" | "dark" | "auto",
+    theme: DEFAULT_SETTINGS.theme as ThemeMode,
     maintenanceMode: DEFAULT_SETTINGS.maintenanceMode,
     showDeletedProducts: DEFAULT_SETTINGS.showDeletedProducts,
     enabledPaymentMethods: [...DEFAULT_SETTINGS.enabledPaymentMethods],
@@ -89,7 +111,9 @@ export default function SettingsPage() {
   const getDefaultSettingsWithMeta = () => ({
     ...DEFAULT_SETTINGS,
     // ensure mutable array type for enabledPaymentMethods
-    enabledPaymentMethods: [...DEFAULT_SETTINGS.enabledPaymentMethods] as PaymentMode[],
+    enabledPaymentMethods: [
+      ...DEFAULT_SETTINGS.enabledPaymentMethods,
+    ] as PaymentMode[],
     id: "",
     createdAt: "",
     updatedAt: "",
@@ -116,10 +140,12 @@ export default function SettingsPage() {
         dateFormat: settings.dateFormat,
         timeFormat: settings.timeFormat,
         language: settings.language,
-        theme: settings.theme as "light" | "dark" | "auto",
+        theme: settings.theme as ThemeMode,
         maintenanceMode: settings.maintenanceMode,
         showDeletedProducts: settings.showDeletedProducts,
-        enabledPaymentMethods: settings.enabledPaymentMethods ?? [...DEFAULT_SETTINGS.enabledPaymentMethods],
+        enabledPaymentMethods: settings.enabledPaymentMethods ?? [
+          ...DEFAULT_SETTINGS.enabledPaymentMethods,
+        ],
       });
     }
   }, [settings, form]);
@@ -130,7 +156,13 @@ export default function SettingsPage() {
   // Apply dynamic styles instantly when colors change
   useEffect(() => {
     applyDynamicStyles(currentSettings);
-  }, [watchedValues.primaryColor, watchedValues.secondaryColor, watchedValues.accentColor, watchedValues.theme, currentSettings]);
+  }, [
+    watchedValues.primaryColor,
+    watchedValues.secondaryColor,
+    watchedValues.accentColor,
+    watchedValues.theme,
+    currentSettings,
+  ]);
 
   // Check if user is super admin
   if (!user || user.role !== "SUPER_ADMIN") {
@@ -138,9 +170,7 @@ export default function SettingsPage() {
       <div className="flex flex-col items-center justify-center h-full text-center">
         <Settings className="w-16 h-16 text-muted-foreground mb-4" />
         <h2 className="text-2xl font-semibold mb-2">{t("access_denied")}</h2>
-        <p className="text-muted-foreground">
-          {t("super_admin_only")}
-        </p>
+        <p className="text-muted-foreground">{t("super_admin_only")}</p>
         <Button
           onClick={() => router.push("/dashboard/overview")}
           className="mt-4"
@@ -163,11 +193,10 @@ export default function SettingsPage() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center">
-        <p className="text-destructive">Failed to load settings: {error.message}</p>
-        <Button
-          onClick={() => window.location.reload()}
-          className="mt-4"
-        >
+        <p className="text-destructive">
+          Failed to load settings: {error.message}
+        </p>
+        <Button onClick={() => globalThis.location.reload()} className="mt-4">
           {t("retry")}
         </Button>
       </div>
@@ -182,7 +211,7 @@ export default function SettingsPage() {
           description: t("settings_saved"),
         });
       },
-      onError: (error) => {
+      onError: error => {
         toast({
           title: t("error"),
           description: error.message || t("failed_to_update"),
@@ -203,47 +232,52 @@ export default function SettingsPage() {
   const handleReset = () => {
     // Reset to application default settings
     form.reset(getDefaultFormValues());
-    
+
     // Reset theme to default value
-    const themeValue = DEFAULT_SETTINGS.theme === "auto" ? "system" : DEFAULT_SETTINGS.theme;
+    const themeValue =
+      DEFAULT_SETTINGS.theme === "auto" ? "system" : DEFAULT_SETTINGS.theme;
     setTheme(themeValue);
-    
+
     // Apply default dynamic styles
     applyDynamicStyles(getDefaultSettingsWithMeta());
   };
 
   const handleSectionReset = (section: string) => {
     const defaults = getDefaultFormValues();
-    
+
     switch (section) {
-      case 'general':
+      case "general":
         form.setValue("appName", defaults.appName);
         form.setValue("appLogo", defaults.appLogo);
         form.setValue("vatPercentage", defaults.vatPercentage);
         break;
-      case 'appearance':
+      case "appearance": {
         form.setValue("primaryColor", defaults.primaryColor);
         form.setValue("secondaryColor", defaults.secondaryColor);
         form.setValue("accentColor", defaults.accentColor);
         form.setValue("theme", defaults.theme);
         // Reset theme immediately
-        const themeValue = DEFAULT_SETTINGS.theme === "auto" ? "system" : DEFAULT_SETTINGS.theme;
+        const themeValue =
+          DEFAULT_SETTINGS.theme === "auto" ? "system" : DEFAULT_SETTINGS.theme;
         setTheme(themeValue);
         // Apply default colors
         applyDynamicStyles(getDefaultSettingsWithMeta());
         break;
-      case 'payments':
+      }
+      case "payments":
         form.setValue("currency", defaults.currency);
         form.setValue("currencySymbol", defaults.currencySymbol);
-        form.setValue("enabledPaymentMethods", [...DEFAULT_SETTINGS.enabledPaymentMethods] as PaymentMode[]);
+        form.setValue("enabledPaymentMethods", [
+          ...DEFAULT_SETTINGS.enabledPaymentMethods,
+        ] as PaymentMode[]);
         break;
-      case 'localization':
+      case "localization":
         form.setValue("language", defaults.language);
         form.setValue("timezone", defaults.timezone);
         form.setValue("dateFormat", defaults.dateFormat);
         form.setValue("timeFormat", defaults.timeFormat);
         break;
-      case 'system':
+      case "system":
         form.setValue("maintenanceMode", defaults.maintenanceMode);
         break;
     }
@@ -278,7 +312,7 @@ export default function SettingsPage() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleSectionReset('general')}
+                    onClick={() => handleSectionReset("general")}
                   >
                     <RotateCcw className="h-4 w-4" />
                   </Button>
@@ -349,7 +383,7 @@ export default function SettingsPage() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleSectionReset('appearance')}
+                    onClick={() => handleSectionReset("appearance")}
                   >
                     <RotateCcw className="h-4 w-4" />
                   </Button>
@@ -365,16 +399,18 @@ export default function SettingsPage() {
                     <ColorPicker
                       id="primaryColor"
                       value={watchedValues.primaryColor}
-                      onChange={(color) => form.setValue("primaryColor", color)}
+                      onChange={color => form.setValue("primaryColor", color)}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="secondaryColor">{t("secondary_color")}</Label>
+                    <Label htmlFor="secondaryColor">
+                      {t("secondary_color")}
+                    </Label>
                     <ColorPicker
                       id="secondaryColor"
                       value={watchedValues.secondaryColor}
-                      onChange={(color) => form.setValue("secondaryColor", color)}
+                      onChange={color => form.setValue("secondaryColor", color)}
                     />
                   </div>
 
@@ -383,7 +419,7 @@ export default function SettingsPage() {
                     <ColorPicker
                       id="accentColor"
                       value={watchedValues.accentColor}
-                      onChange={(color) => form.setValue("accentColor", color)}
+                      onChange={color => form.setValue("accentColor", color)}
                     />
                   </div>
                 </div>
@@ -393,8 +429,8 @@ export default function SettingsPage() {
                   <Select
                     name="theme"
                     value={watchedValues.theme}
-                    onValueChange={(value) => {
-                      form.setValue("theme", value as "light" | "dark" | "auto");
+                    onValueChange={value => {
+                      form.setValue("theme", value as ThemeMode);
                       // Apply theme immediately using next-themes
                       const themeValue = value === "auto" ? "system" : value;
                       setTheme(themeValue);
@@ -404,7 +440,7 @@ export default function SettingsPage() {
                       <SelectValue placeholder="Select theme" />
                     </SelectTrigger>
                     <SelectContent>
-                      {THEME_OPTIONS.map((theme) => (
+                      {THEME_OPTIONS.map(theme => (
                         <SelectItem key={theme.value} value={theme.value}>
                           {t(theme.value)}
                         </SelectItem>
@@ -433,7 +469,7 @@ export default function SettingsPage() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleSectionReset('payments')}
+                    onClick={() => handleSectionReset("payments")}
                   >
                     <RotateCcw className="h-4 w-4" />
                   </Button>
@@ -454,7 +490,7 @@ export default function SettingsPage() {
                       <SelectValue placeholder="Select currency" />
                     </SelectTrigger>
                     <SelectContent>
-                      {CURRENCY_OPTIONS.map((currency) => (
+                      {CURRENCY_OPTIONS.map(currency => (
                         <SelectItem key={currency.code} value={currency.code}>
                           {currency.symbol} {currency.name} ({currency.code})
                         </SelectItem>
@@ -475,7 +511,12 @@ export default function SettingsPage() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => form.setValue("enabledPaymentMethods", PAYMENT_METHODS.map(m => m.enum))}
+                      onClick={() =>
+                        form.setValue(
+                          "enabledPaymentMethods",
+                          PAYMENT_METHODS.map(m => m.enum)
+                        )
+                      }
                     >
                       Select All
                     </Button>
@@ -489,22 +530,32 @@ export default function SettingsPage() {
                     </Button>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                    {PAYMENT_METHODS.map((m) => {
-                      const checked = (watchedValues.enabledPaymentMethods || []).includes(m.enum);
+                    {PAYMENT_METHODS.map(m => {
+                      const checked = (
+                        watchedValues.enabledPaymentMethods || []
+                      ).includes(m.enum);
                       return (
-                        <div key={m.enum} className="flex items-center space-x-2">
+                        <div
+                          key={m.enum}
+                          className="flex items-center space-x-2"
+                        >
                           <Checkbox
                             id={`pm-${m.enum}`}
                             name={`enabledPaymentMethods-${m.enum}`}
                             checked={checked}
-                            onCheckedChange={(val) => {
-                              const current = new Set(watchedValues.enabledPaymentMethods || []);
+                            onCheckedChange={val => {
+                              const current = new Set(
+                                watchedValues.enabledPaymentMethods || []
+                              );
                               if (val === true) {
                                 current.add(m.enum);
                               } else {
                                 current.delete(m.enum);
                               }
-                              form.setValue("enabledPaymentMethods", Array.from(current) as PaymentMode[]);
+                              form.setValue(
+                                "enabledPaymentMethods",
+                                Array.from(current) as PaymentMode[]
+                              );
                             }}
                           />
                           <Label htmlFor={`pm-${m.enum}`}>{m.label}</Label>
@@ -529,7 +580,7 @@ export default function SettingsPage() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleSectionReset('localization')}
+                    onClick={() => handleSectionReset("localization")}
                   >
                     <RotateCcw className="h-4 w-4" />
                   </Button>
@@ -544,13 +595,13 @@ export default function SettingsPage() {
                   <Select
                     name="language"
                     value={watchedValues.language}
-                    onValueChange={(value) => form.setValue("language", value)}
+                    onValueChange={value => form.setValue("language", value)}
                   >
                     <SelectTrigger id="language">
                       <SelectValue placeholder="Select language" />
                     </SelectTrigger>
                     <SelectContent>
-                      {LANGUAGE_OPTIONS.map((lang) => (
+                      {LANGUAGE_OPTIONS.map(lang => (
                         <SelectItem key={lang.value} value={lang.value}>
                           {lang.label}
                         </SelectItem>
@@ -569,13 +620,13 @@ export default function SettingsPage() {
                   <Select
                     name="timezone"
                     value={watchedValues.timezone}
-                    onValueChange={(value) => form.setValue("timezone", value)}
+                    onValueChange={value => form.setValue("timezone", value)}
                   >
                     <SelectTrigger id="timezone">
                       <SelectValue placeholder="Select timezone" />
                     </SelectTrigger>
                     <SelectContent>
-                      {TIMEZONE_OPTIONS.map((tz) => (
+                      {TIMEZONE_OPTIONS.map(tz => (
                         <SelectItem key={tz.value} value={tz.value}>
                           {tz.label}
                         </SelectItem>
@@ -595,13 +646,15 @@ export default function SettingsPage() {
                     <Select
                       name="dateFormat"
                       value={watchedValues.dateFormat}
-                      onValueChange={(value) => form.setValue("dateFormat", value)}
+                      onValueChange={value =>
+                        form.setValue("dateFormat", value)
+                      }
                     >
                       <SelectTrigger id="dateFormat">
                         <SelectValue placeholder="Select date format" />
                       </SelectTrigger>
                       <SelectContent>
-                        {DATE_FORMAT_OPTIONS.map((format) => (
+                        {DATE_FORMAT_OPTIONS.map(format => (
                           <SelectItem key={format.value} value={format.value}>
                             {format.label}
                           </SelectItem>
@@ -620,13 +673,15 @@ export default function SettingsPage() {
                     <Select
                       name="timeFormat"
                       value={watchedValues.timeFormat}
-                      onValueChange={(value) => form.setValue("timeFormat", value)}
+                      onValueChange={value =>
+                        form.setValue("timeFormat", value)
+                      }
                     >
                       <SelectTrigger id="timeFormat">
                         <SelectValue placeholder="Select time format" />
                       </SelectTrigger>
                       <SelectContent>
-                        {TIME_FORMAT_OPTIONS.map((format) => (
+                        {TIME_FORMAT_OPTIONS.map(format => (
                           <SelectItem key={format.value} value={format.value}>
                             {format.label}
                           </SelectItem>
@@ -656,7 +711,7 @@ export default function SettingsPage() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleSectionReset('system')}
+                    onClick={() => handleSectionReset("system")}
                   >
                     <RotateCcw className="h-4 w-4" />
                   </Button>
@@ -667,13 +722,17 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="maintenanceMode">{t("maintenance_mode")}</Label>
+                  <Label htmlFor="maintenanceMode">
+                    {t("maintenance_mode")}
+                  </Label>
                   <div className="flex items-center space-x-2">
                     <Switch
                       id="maintenanceMode"
                       name="maintenanceMode"
                       checked={watchedValues.maintenanceMode}
-                      onCheckedChange={(checked) => form.setValue("maintenanceMode", checked)}
+                      onCheckedChange={checked =>
+                        form.setValue("maintenanceMode", checked)
+                      }
                     />
                     <span className="text-sm text-muted-foreground">
                       {t("maintenance_mode_description")}
@@ -687,16 +746,21 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="showDeletedProducts">Show Deleted Products</Label>
+                  <Label htmlFor="showDeletedProducts">
+                    Show Deleted Products
+                  </Label>
                   <div className="flex items-center space-x-2">
                     <Switch
                       id="showDeletedProducts"
                       name="showDeletedProducts"
                       checked={watchedValues.showDeletedProducts}
-                      onCheckedChange={(checked) => form.setValue("showDeletedProducts", checked)}
+                      onCheckedChange={checked =>
+                        form.setValue("showDeletedProducts", checked)
+                      }
                     />
                     <span className="text-sm text-muted-foreground">
-                      Display soft-deleted products in inventory (Super Admin only)
+                      Display soft-deleted products in inventory (Super Admin
+                      only)
                     </span>
                   </div>
                   {form.formState.errors.showDeletedProducts && (
@@ -720,15 +784,13 @@ export default function SettingsPage() {
             <RotateCcw className="mr-2 h-4 w-4" />
             {t("reset")}
           </Button>
-          <Button
-            type="submit"
-            disabled={updateSettingsMutation.isPending}
-          >
+          <Button type="submit" disabled={updateSettingsMutation.isPending}>
             <Save className="mr-2 h-4 w-4" />
-            {updateSettingsMutation.isPending ? t("loading") : t("save")} {t("settings")}
+            {updateSettingsMutation.isPending ? t("loading") : t("save")}{" "}
+            {t("settings")}
           </Button>
         </div>
       </form>
     </>
   );
-} 
+}

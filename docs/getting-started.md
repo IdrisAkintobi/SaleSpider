@@ -100,7 +100,7 @@ Once deployment is complete, access SaleSpider at:
 
 Now that SaleSpider is running, you can:
 
-1. **[Configure Settings](/configuration/environment-variables)** - Customize application behavior
+1. **[Configure Settings](/ENVIRONMENT_VARIABLES)** - Customize application behavior
 2. **[Set Up Backups](/configuration/backup)** - Protect your data
 3. **[Add Users](/features/staff)** - Create staff accounts
 4. **[Add Products](/features/inventory)** - Start managing inventory
@@ -218,6 +218,6 @@ Need assistance?
 ## What's Next?
 
 - [Deployment Guide](/deployment/) - Detailed deployment instructions
-- [Configuration](/configuration/environment-variables) - All configuration options
+- [Configuration](/ENVIRONMENT_VARIABLES) - All configuration options
 - [Features](/features/) - Explore SaleSpider's capabilities
 - [Operations](/operations/backup-restore) - Backup and maintenance

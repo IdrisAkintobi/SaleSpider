@@ -38,9 +38,10 @@
     "test:coverage": "vitest run --coverage",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
-    "analyze": "ANALYZE=true npm run build",
+    "analyze": "ANALYZE=true npm run build:webpack",
     "seed": "tsx --env-file .env prisma/seeds/index.ts",
     "seed:prod": "npx tsx prisma/seeds/seed-production.ts",
+    "docs:build": "cd docs && npm run docs:build",
     "prepare": "husky"
   },
   "dependencies": {
@@ -93,6 +94,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
     "@faker-js/faker": "^10.0.0",
+    "@next/bundle-analyzer": "^16.0.5",
     "@testing-library/jest-dom": "^6.1.6",
     "@testing-library/react": "^14.1.2",
     "@testing-library/user-event": "^14.5.1",
@@ -112,8 +114,7 @@
     "prisma": "^6.13.0",
     "tailwindcss": "^3.4.18",
     "typescript": "^5",
-    "vitest": "^4.0.10",
-    "webpack-bundle-analyzer": "^4.10.2"
+    "vitest": "^4.0.10"
   },
   "engines": {
     "node": ">=24"

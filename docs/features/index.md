@@ -256,5 +256,5 @@ Have an idea for a new feature?
 
 - [Getting Started](/getting-started) - Deploy SaleSpider
 - [Deployment Options](/deployment/) - Choose your deployment
-- [Configuration](/configuration/environment-variables) - Customize your setup
+- [Configuration](/ENVIRONMENT_VARIABLES) - Customize your setup
 - [Operations](/operations/backup-restore) - Manage your deployment

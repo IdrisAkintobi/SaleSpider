@@ -208,13 +208,13 @@ SETUP_BACKUP="false"
 Use the provided `docker-compose.hosted-db.yml`:
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   app:
     build: .
     ports:
-      - '3000:3000'
+      - "3000:3000"
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - JWT_SECRET=${JWT_SECRET}
@@ -397,4 +397,4 @@ npx prisma migrate deploy
 
 - [Self-Hosted Deployment](/deployment/self-hosted)
 - [Cloud Platforms](/deployment/cloud-platforms)
-- [Environment Variables](/configuration/environment-variables)
+- [Environment Variables](/ENVIRONMENT_VARIABLES)

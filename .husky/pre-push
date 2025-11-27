@@ -1,22 +1,27 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
 echo "🔍 Running pre-push checks..."
 
 # Run linting
 echo "📝 Running ESLint..."
 npm run lint
 
+# Run formatting
+echo "📝 Running Prettier..."
+npm run format
+
 # Run type checking
 echo "🔍 Running TypeScript check..."
 npx tsc --noEmit
+
+# Run build
+echo "🏗️  Running build..."
+npm run build
 
 # Run tests
 echo "🧪 Running tests..."
 npm test
 
-# Run build
-echo "🏗️  Running build..."
-npm run build
+# Run docs build
+echo "📚 Running docs build..."
+npm run docs:build
 
 echo "✅ All pre-push checks passed!"

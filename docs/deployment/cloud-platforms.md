@@ -374,7 +374,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '24'
+          node-version: "24"
 
       - name: Install dependencies
         run: npm ci
@@ -508,5 +508,5 @@ npm run build && npm start
 
 - [Hosted Database Deployment](/deployment/hosted-database)
 - [Self-Hosted Deployment](/deployment/self-hosted)
-- [Environment Variables](/configuration/environment-variables)
+- [Environment Variables](/ENVIRONMENT_VARIABLES)
 - [Deployment Guide](/deployment/)

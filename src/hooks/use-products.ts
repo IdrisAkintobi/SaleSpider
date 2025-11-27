@@ -25,8 +25,13 @@ export function useProducts(options: UseProductsOptions = {}) {
     const run = async () => {
       try {
         setLoading(true);
-        const result = await getProducts(1, pageSize, debouncedSearch, controller.signal);
-        setProducts(result.products.filter((p) => p.quantity > 0));
+        const result = await getProducts(
+          1,
+          pageSize,
+          debouncedSearch,
+          controller.signal
+        );
+        setProducts(result.products.filter(p => p.quantity > 0));
         setHasMore(result.hasMore);
         setCurrentPage(1);
       } catch {
@@ -45,9 +50,9 @@ export function useProducts(options: UseProductsOptions = {}) {
       setLoading(true);
       const nextPage = currentPage + 1;
       const result = await getProducts(nextPage, pageSize, debouncedSearch);
-      setProducts((prev) => [
+      setProducts(prev => [
         ...prev,
-        ...result.products.filter((p) => p.quantity > 0),
+        ...result.products.filter(p => p.quantity > 0),
       ]);
       setHasMore(result.hasMore);
       setCurrentPage(nextPage);
@@ -58,7 +63,7 @@ export function useProducts(options: UseProductsOptions = {}) {
 
   const refresh = useCallback(async () => {
     const result = await getProducts(1, pageSize, debouncedSearch);
-    setProducts(result.products.filter((p) => p.quantity > 0));
+    setProducts(result.products.filter(p => p.quantity > 0));
     setHasMore(result.hasMore);
     setCurrentPage(1);
   }, [pageSize, debouncedSearch]);

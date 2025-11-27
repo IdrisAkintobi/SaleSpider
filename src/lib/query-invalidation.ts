@@ -12,10 +12,11 @@ export class QueryInvalidator {
    * Invalidate queries after product operations
    */
   async invalidateAfterProductChange() {
-    await Promise.all([
-      this.queryClient.invalidateQueries({ queryKey: queryKeys.products.all }),
-      this.queryClient.invalidateQueries({ queryKey: queryKeys.ai.all }), // AI insights depend on product data
-    ]);
+    // AI insights are manually triggered and expensive - don't auto-invalidate
+    // Users must click "Generate Insights" button to refresh AI data
+    await this.queryClient.invalidateQueries({
+      queryKey: queryKeys.products.all,
+    });
   }
 
   /**
@@ -25,7 +26,8 @@ export class QueryInvalidator {
     await Promise.all([
       this.queryClient.invalidateQueries({ queryKey: queryKeys.sales.all }),
       this.queryClient.invalidateQueries({ queryKey: queryKeys.products.all }), // Product quantities change
-      this.queryClient.invalidateQueries({ queryKey: queryKeys.ai.all }), // AI insights depend on sales data
+      // AI insights are manually triggered and expensive - don't auto-invalidate on every sale
+      // Users must click "Generate Insights" button to refresh AI data
     ]);
   }
 
@@ -34,9 +36,12 @@ export class QueryInvalidator {
    */
   async invalidateAfterDeshelvingChange() {
     await Promise.all([
-      this.queryClient.invalidateQueries({ queryKey: queryKeys.deshelvings.all }),
+      this.queryClient.invalidateQueries({
+        queryKey: queryKeys.deshelvings.all,
+      }),
       this.queryClient.invalidateQueries({ queryKey: queryKeys.products.all }), // Product quantities change
-      this.queryClient.invalidateQueries({ queryKey: queryKeys.ai.all }), // AI insights include deshelving data
+      // AI insights are manually triggered and expensive - don't auto-invalidate
+      // Users must click "Generate Insights" button to refresh AI data
       this.queryClient.invalidateQueries({ queryKey: queryKeys.auditLogs.all }), // Audit logs are created
     ]);
   }
@@ -66,7 +71,9 @@ export class QueryInvalidator {
    * Invalidate all audit-related queries (for compliance)
    */
   async invalidateAuditData() {
-    await this.queryClient.invalidateQueries({ queryKey: queryKeys.auditLogs.all });
+    await this.queryClient.invalidateQueries({
+      queryKey: queryKeys.auditLogs.all,
+    });
   }
 
   /**
@@ -92,12 +99,16 @@ export const optimisticUpdates = {
   /**
    * Optimistically update product quantity
    */
-  updateProductQuantity: (queryClient: QueryClient, productId: string, newQuantity: number) => {
+  updateProductQuantity: (
+    queryClient: QueryClient,
+    productId: string,
+    newQuantity: number
+  ) => {
     queryClient.setQueriesData(
       { queryKey: queryKeys.products.all },
       (oldData: any) => {
         if (!oldData?.products) return oldData;
-        
+
         return {
           ...oldData,
           products: oldData.products.map((product: any) =>
@@ -118,7 +129,7 @@ export const optimisticUpdates = {
       { queryKey: queryKeys.sales.all },
       (oldData: any) => {
         if (!oldData?.data) return oldData;
-        
+
         return {
           ...oldData,
           data: [newSale, ...oldData.data],

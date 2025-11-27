@@ -1,56 +1,56 @@
-import { NextRequest } from 'next/server'
-import { Role } from '@prisma/client'
-import { SoftDeleteService } from '@/lib/soft-delete'
-import { AuditTrailService } from '@/lib/audit-trail'
-import { jsonOk, jsonError, handleException } from '@/lib/api-response'
-import { getUserFromHeader } from '@/lib/api-auth'
-import { getProductBasic, productExists } from '@/lib/products'
-import { createChildLogger } from '@/lib/logger'
+import { NextRequest } from "next/server";
+import { Role } from "@prisma/client";
+import { SoftDeleteService } from "@/lib/soft-delete";
+import { AuditTrailService } from "@/lib/audit-trail";
+import { jsonOk, jsonError, handleException } from "@/lib/api-response";
+import { getUserFromHeader } from "@/lib/api-auth";
+import { getProductBasic, productExists } from "@/lib/products";
+import { createChildLogger } from "@/lib/logger";
 
-import { prisma } from '@/lib/prisma'
-const logger = createChildLogger('api:products:id')
+import { prisma } from "@/lib/prisma";
+const logger = createChildLogger("api:products:id");
 
 async function validateAndNormalizeGtin(
   gtin: string | null | undefined,
   productId: string
 ) {
-  const normalizedGtin = gtin?.trim() || null
+  const normalizedGtin = gtin?.trim() || null;
 
   if (normalizedGtin) {
     const existingProduct = await prisma.product.findUnique({
       where: { gtin: normalizedGtin },
-    })
+    });
 
     if (existingProduct && existingProduct.id !== productId) {
       return {
         error: jsonError(
           `A product with GTIN ${normalizedGtin} already exists: ${existingProduct.name}`,
           409,
-          { code: 'DUPLICATE_GTIN' }
+          { code: "DUPLICATE_GTIN" }
         ),
-      }
+      };
     }
   }
 
-  return { normalizedGtin }
+  return { normalizedGtin };
 }
 
 function prepareUpdatePayload(updateData: any) {
-  const updatePayload: any = { ...updateData }
-  const changedFields: Record<string, any> = {}
+  const updatePayload: any = { ...updateData };
+  const changedFields: Record<string, any> = {};
 
   if (updateData.quantity !== undefined) {
-    updatePayload.quantity = { increment: updateData.quantity }
-    changedFields.quantity = `+${updateData.quantity}`
+    updatePayload.quantity = { increment: updateData.quantity };
+    changedFields.quantity = `+${updateData.quantity}`;
   }
 
   for (const key of Object.keys(updateData)) {
-    if (key !== 'quantity') {
-      changedFields[key] = updateData[key]
+    if (key !== "quantity") {
+      changedFields[key] = updateData[key];
     }
   }
 
-  return { updatePayload, changedFields }
+  return { updatePayload, changedFields };
 }
 
 // Function to get product by ID
@@ -58,7 +58,7 @@ export async function GET(
   _: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params
+  const { id } = await params;
 
   try {
     const product = await prisma.product.findUnique({
@@ -66,19 +66,19 @@ export async function GET(
         id,
         deletedAt: null,
       },
-    })
+    });
 
     if (!product) {
-      return jsonError('Product not found', 404, { code: 'NOT_FOUND' })
+      return jsonError("Product not found", 404, { code: "NOT_FOUND" });
     }
 
-    return jsonOk(product)
+    return jsonOk(product);
   } catch (error) {
     logger.error(
-      { error: error instanceof Error ? error.message : 'Unknown error' },
-      'Failed to fetch product'
-    )
-    return handleException(error, 'Failed to fetch product', 500)
+      { error: error instanceof Error ? error.message : "Unknown error" },
+      "Failed to fetch product"
+    );
+    return handleException(error, "Failed to fetch product", 500);
   }
 }
 
@@ -87,46 +87,46 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params
-  const updateData = await request.json()
+  const { id } = await params;
+  const updateData = await request.json();
 
   // Read user from header and validate role
-  const { userId, user } = await getUserFromHeader(request, prisma)
+  const { userId, user } = await getUserFromHeader(request, prisma);
   if (!userId || !user || user.role === Role.CASHIER) {
-    return jsonError('Unauthorized', 401, { code: 'UNAUTHORIZED' })
+    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
   }
 
   try {
     // Check if product exists before update
-    const exists = await productExists(prisma, id)
+    const exists = await productExists(prisma, id);
     if (!exists) {
-      return jsonError('Product not found', 404, { code: 'NOT_FOUND' })
+      return jsonError("Product not found", 404, { code: "NOT_FOUND" });
     }
 
     // Validate quantity if provided
     if (
       updateData.quantity !== undefined &&
-      typeof updateData.quantity !== 'number'
+      typeof updateData.quantity !== "number"
     ) {
-      return jsonError('Invalid quantity provided', 400, {
-        code: 'BAD_REQUEST',
-      })
+      return jsonError("Invalid quantity provided", 400, {
+        code: "BAD_REQUEST",
+      });
     }
 
     // Normalize GTIN and check for duplicates
-    if ('gtin' in updateData) {
-      const gtinResult = await validateAndNormalizeGtin(updateData.gtin, id)
-      if (gtinResult.error) return gtinResult.error
-      updateData.gtin = gtinResult.normalizedGtin
+    if ("gtin" in updateData) {
+      const gtinResult = await validateAndNormalizeGtin(updateData.gtin, id);
+      if (gtinResult.error) return gtinResult.error;
+      updateData.gtin = gtinResult.normalizedGtin;
     }
 
     // Prepare the data for update and audit trail
-    const { updatePayload, changedFields } = prepareUpdatePayload(updateData)
+    const { updatePayload, changedFields } = prepareUpdatePayload(updateData);
 
     const updatedProduct = await prisma.product.update({
       where: { id },
       data: updatePayload,
-    })
+    });
 
     // Log audit trail
     await AuditTrailService.logProductUpdate(
@@ -136,19 +136,19 @@ export async function PATCH(
       user.email,
       {
         ip:
-          (request as NextRequest).headers.get('x-forwarded-for') ||
-          (request as NextRequest).headers.get('x-real-ip'),
-        userAgent: (request as NextRequest).headers.get('user-agent'),
+          (request as NextRequest).headers.get("x-forwarded-for") ||
+          (request as NextRequest).headers.get("x-real-ip"),
+        userAgent: (request as NextRequest).headers.get("user-agent"),
       }
-    )
+    );
 
-    return jsonOk(updatedProduct)
+    return jsonOk(updatedProduct);
   } catch (error) {
     logger.error(
-      { error: error instanceof Error ? error.message : 'Unknown error' },
-      'Failed to update product'
-    )
-    return handleException(error, 'Failed to update product', 500)
+      { error: error instanceof Error ? error.message : "Unknown error" },
+      "Failed to update product"
+    );
+    return handleException(error, "Failed to update product", 500);
   }
 }
 
@@ -157,30 +157,30 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params
+  const { id } = await params;
 
   // Read user from header and validate role
-  const { userId, user } = await getUserFromHeader(request, prisma)
+  const { userId, user } = await getUserFromHeader(request, prisma);
   if (!userId || !user || user.role !== Role.SUPER_ADMIN) {
-    return jsonError('Unauthorized', 401, { code: 'UNAUTHORIZED' })
+    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
   }
 
   try {
     // Check if product exists and is not already deleted
-    const product = await getProductBasic(prisma, id)
+    const product = await getProductBasic(prisma, id);
 
     if (!product) {
-      return jsonError('Product not found', 404, { code: 'NOT_FOUND' })
+      return jsonError("Product not found", 404, { code: "NOT_FOUND" });
     }
 
     if (product.deletedAt) {
-      return jsonError('Product is already deleted', 400, {
-        code: 'BAD_REQUEST',
-      })
+      return jsonError("Product is already deleted", 400, {
+        code: "BAD_REQUEST",
+      });
     }
 
     // Soft delete the product
-    await SoftDeleteService.deleteProduct(id, userId)
+    await SoftDeleteService.deleteProduct(id, userId);
 
     logger.info(
       {
@@ -189,18 +189,18 @@ export async function DELETE(
         userId,
         userRole: user.role,
       },
-      'Product soft deleted by super admin'
-    )
+      "Product soft deleted by super admin"
+    );
 
     return jsonOk({
-      message: 'Product deleted successfully',
+      message: "Product deleted successfully",
       productId: id,
-    })
+    });
   } catch (error) {
     logger.error(
-      { error: error instanceof Error ? error.message : 'Unknown error' },
-      'Failed to delete product'
-    )
-    return handleException(error, 'Failed to delete product', 500)
+      { error: error instanceof Error ? error.message : "Unknown error" },
+      "Failed to delete product"
+    );
+    return handleException(error, "Failed to delete product", 500);
   }
 }

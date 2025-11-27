@@ -1,9 +1,8 @@
 // Prisma client extension for automatic soft delete filtering
-import { prisma as basePrisma } from '@/lib/prisma';
+import { prisma as basePrisma } from "@/lib/prisma";
 
 // Create extended Prisma client with soft delete filtering
 export const createPrismaWithSoftDelete = () => {
-    
   return basePrisma.$extends({
     query: {
       product: {
@@ -18,7 +17,7 @@ export const createPrismaWithSoftDelete = () => {
           }
           return query(args);
         },
-        
+
         findFirst({ args, query }: any) {
           if (!args.where?.deletedAt) {
             args.where = {
@@ -28,7 +27,7 @@ export const createPrismaWithSoftDelete = () => {
           }
           return query(args);
         },
-        
+
         findUnique({ args, query }: any) {
           if (!args.where?.deletedAt) {
             args.where = {
@@ -38,7 +37,7 @@ export const createPrismaWithSoftDelete = () => {
           }
           return query(args);
         },
-        
+
         count({ args, query }: any) {
           if (!args.where?.deletedAt) {
             args.where = {
@@ -48,7 +47,7 @@ export const createPrismaWithSoftDelete = () => {
           }
           return query(args);
         },
-        
+
         aggregate({ args, query }: any) {
           if (!args.where?.deletedAt) {
             args.where = {
@@ -58,7 +57,7 @@ export const createPrismaWithSoftDelete = () => {
           }
           return query(args);
         },
-        
+
         groupBy({ args, query }: any) {
           if (!args.where?.deletedAt) {
             args.where = {

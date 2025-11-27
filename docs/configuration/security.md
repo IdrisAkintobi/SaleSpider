@@ -253,6 +253,6 @@ Verify:
 
 ## Related Documentation
 
-- [Environment Variables](/configuration/environment-variables)
+- [Environment Variables](/ENVIRONMENT_VARIABLES)
 - [Backup Configuration](/configuration/backup)
 - [Deployment Guide](/deployment/)

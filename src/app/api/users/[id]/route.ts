@@ -4,7 +4,7 @@ import { jsonOk, jsonError, handleException } from "@/lib/api-response";
 import { createChildLogger } from "@/lib/logger";
 
 import { prisma } from "@/lib/prisma";
-const logger = createChildLogger('api:users:id');
+const logger = createChildLogger("api:users:id");
 
 // Function to update user status
 export async function PATCH(
@@ -32,7 +32,9 @@ export async function PATCH(
 
   // Prevent self-deactivation
   if (userId === id) {
-    return jsonError("Cannot update your own status", 400, { code: "BAD_REQUEST" });
+    return jsonError("Cannot update your own status", 400, {
+      code: "BAD_REQUEST",
+    });
   }
 
   // Validate status
@@ -58,7 +60,10 @@ export async function PATCH(
 
     return jsonOk(updatedUser);
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to update user status');
+    logger.error(
+      { error: error instanceof Error ? error.message : "Unknown error" },
+      "Failed to update user status"
+    );
     return handleException(error, "Failed to update user status", 500);
   }
 }

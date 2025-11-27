@@ -1,40 +1,40 @@
-import { handleException, jsonError, jsonOk } from '@/lib/api-response'
-import { reserveInventory } from '@/lib/inventory'
-import { createChildLogger } from '@/lib/logger'
-import { createSaleSchema } from '@/lib/validation-schemas'
-import { calculateSaleTotals } from '@/lib/vat'
-import { PaymentMode, Role } from '@prisma/client'
-import { endOfDay, startOfDay } from 'date-fns'
-import { NextRequest } from 'next/server'
+import { handleException, jsonError, jsonOk } from "@/lib/api-response";
+import { reserveInventory } from "@/lib/inventory";
+import { createChildLogger } from "@/lib/logger";
+import { createSaleSchema } from "@/lib/validation-schemas";
+import { calculateSaleTotals } from "@/lib/vat";
+import { PaymentMode, Role } from "@prisma/client";
+import { endOfDay, startOfDay } from "date-fns";
+import { NextRequest } from "next/server";
 
-import { prisma } from '@/lib/prisma'
-const logger = createChildLogger('sales-api')
+import { prisma } from "@/lib/prisma";
+const logger = createChildLogger("sales-api");
 
 // Helper function to map payment mode string to enum
 function mapPaymentMode(paymentModeString: string): PaymentMode {
   const mapping: Record<string, PaymentMode> = {
     Cash: PaymentMode.CASH,
     Card: PaymentMode.CARD,
-    'Bank Transfer': PaymentMode.BANK_TRANSFER,
+    "Bank Transfer": PaymentMode.BANK_TRANSFER,
     Crypto: PaymentMode.CRYPTO,
     Other: PaymentMode.OTHER,
-  }
+  };
 
-  return mapping[paymentModeString] || PaymentMode.CASH
+  return mapping[paymentModeString] || PaymentMode.CASH;
 }
 
 // Helper to build order by clause
-function buildOrderBy(sort: string, order: 'asc' | 'desc') {
-  if (sort === 'cashierName') {
-    return { cashier: { name: order } }
+function buildOrderBy(sort: string, order: "asc" | "desc") {
+  if (sort === "cashierName") {
+    return { cashier: { name: order } };
   }
-  if (sort === 'totalAmount') {
-    return { totalAmount: order }
+  if (sort === "totalAmount") {
+    return { totalAmount: order };
   }
-  if (sort === 'paymentMode') {
-    return { paymentMode: order }
+  if (sort === "paymentMode") {
+    return { paymentMode: order };
   }
-  return { createdAt: order }
+  return { createdAt: order };
 }
 
 // Helper to build base where clause with filters
@@ -46,21 +46,21 @@ function buildBaseWhereClause(
   from: string | null,
   to: string | null
 ) {
-  const where: any = { deletedAt: null }
+  const where: any = { deletedAt: null };
 
   // Cashiers can only see their own sales
   if (userRole === Role.CASHIER) {
-    where.cashierId = userId
+    where.cashierId = userId;
   }
 
   // Manager filter by cashier
-  if (cashierId && cashierId !== 'all') {
-    where.cashierId = cashierId
+  if (cashierId && cashierId !== "all") {
+    where.cashierId = cashierId;
   }
 
   // Payment method filter
-  if (paymentMethod && paymentMethod !== 'all') {
-    where.paymentMode = paymentMethod as PaymentMode
+  if (paymentMethod && paymentMethod !== "all") {
+    where.paymentMode = paymentMethod as PaymentMode;
   }
 
   // Date range filter with proper time boundaries
@@ -68,89 +68,89 @@ function buildBaseWhereClause(
     where.createdAt = {
       gte: startOfDay(new Date(from)),
       lte: endOfDay(new Date(to)),
-    }
+    };
   } else if (from) {
-    where.createdAt = { gte: startOfDay(new Date(from)) }
+    where.createdAt = { gte: startOfDay(new Date(from)) };
   } else if (to) {
-    where.createdAt = { lte: endOfDay(new Date(to)) }
+    where.createdAt = { lte: endOfDay(new Date(to)) };
   }
 
-  return where
+  return where;
 }
 
 // Helper to get payment mode matches from search term
 function getPaymentModeMatches(searchLower: string): PaymentMode[] {
   const labelToEnum: Array<{ label: string; value: PaymentMode }> = [
-    { label: 'cash', value: PaymentMode.CASH },
-    { label: 'card', value: PaymentMode.CARD },
-    { label: 'bank transfer', value: PaymentMode.BANK_TRANSFER },
-    { label: 'crypto', value: PaymentMode.CRYPTO },
-    { label: 'other', value: PaymentMode.OTHER },
-  ]
+    { label: "cash", value: PaymentMode.CASH },
+    { label: "card", value: PaymentMode.CARD },
+    { label: "bank transfer", value: PaymentMode.BANK_TRANSFER },
+    { label: "crypto", value: PaymentMode.CRYPTO },
+    { label: "other", value: PaymentMode.OTHER },
+  ];
 
   return labelToEnum
     .filter(entry => entry.label.includes(searchLower))
-    .map(entry => entry.value)
+    .map(entry => entry.value);
 }
 
 // Helper to add search filter to where clause
 function addSearchFilter(where: any, search: string) {
-  const searchLower = search.toLowerCase()
-  const paymentModeMatches = getPaymentModeMatches(searchLower)
+  const searchLower = search.toLowerCase();
+  const paymentModeMatches = getPaymentModeMatches(searchLower);
 
   where.OR = [
     { id: search }, // Exact match for sale ID
-    { cashier: { name: { contains: search, mode: 'insensitive' } } },
-    { cashier: { username: { contains: search, mode: 'insensitive' } } },
+    { cashier: { name: { contains: search, mode: "insensitive" } } },
+    { cashier: { username: { contains: search, mode: "insensitive" } } },
     {
       items: {
-        some: { product: { name: { contains: search, mode: 'insensitive' } } },
+        some: { product: { name: { contains: search, mode: "insensitive" } } },
       },
     },
-  ]
+  ];
 
   if (paymentModeMatches.length > 0) {
-    where.OR.push({ paymentMode: { in: paymentModeMatches } })
+    where.OR.push({ paymentMode: { in: paymentModeMatches } });
   }
 
-  return where
+  return where;
 }
 
 // Function to get sales
 export async function GET(req: NextRequest) {
   // Read the X-User-Id header set by the middleware
-  const userId = req.headers.get('X-User-Id')
+  const userId = req.headers.get("X-User-Id");
 
   if (!userId) {
-    return jsonError('Unauthorized', 401, { code: 'UNAUTHORIZED' })
+    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
   }
 
   // Fetch the user to check their role
   const user = await prisma.user.findUnique({
     where: { id: userId },
-  })
+  });
 
   if (!user) {
-    return jsonError('Unauthorized', 401, { code: 'UNAUTHORIZED' })
+    return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
   }
 
   // Parse query params
-  const { searchParams } = new URL(req.url)
-  const page = Number.parseInt(searchParams.get('page') || '1', 10)
-  const pageSize = Number.parseInt(searchParams.get('pageSize') || '20', 10)
-  const sort = searchParams.get('sort') || 'createdAt'
+  const { searchParams } = new URL(req.url);
+  const page = Number.parseInt(searchParams.get("page") || "1", 10);
+  const pageSize = Number.parseInt(searchParams.get("pageSize") || "20", 10);
+  const sort = searchParams.get("sort") || "createdAt";
   const order =
-    (searchParams.get('order') || 'desc').toLowerCase() === 'asc'
-      ? 'asc'
-      : 'desc'
-  const cashierId = searchParams.get('cashierId')
-  const paymentMethod = searchParams.get('paymentMethod')
-  const from = searchParams.get('from')
-  const to = searchParams.get('to')
-  const search = (searchParams.get('search') || '').trim()
+    (searchParams.get("order") || "desc").toLowerCase() === "asc"
+      ? "asc"
+      : "desc";
+  const cashierId = searchParams.get("cashierId");
+  const paymentMethod = searchParams.get("paymentMethod");
+  const from = searchParams.get("from");
+  const to = searchParams.get("to");
+  const search = (searchParams.get("search") || "").trim();
 
   // Build order by clause
-  const orderBy = buildOrderBy(sort, order)
+  const orderBy = buildOrderBy(sort, order);
 
   try {
     // Build where clause with filters
@@ -161,37 +161,37 @@ export async function GET(req: NextRequest) {
       paymentMethod,
       from,
       to
-    )
+    );
 
     // Apply search filter if provided
     if (search) {
-      where = addSearchFilter(where, search)
+      where = addSearchFilter(where, search);
     }
 
     // Get total count for pagination
-    const total = await prisma.sale.count({ where })
+    const total = await prisma.sale.count({ where });
 
     // Get total sales value for all filtered sales
     const totalSalesValueAgg = await prisma.sale.aggregate({
       _sum: { totalAmount: true },
       where,
-    })
-    const totalSalesValue = Number(totalSalesValueAgg._sum.totalAmount || 0)
+    });
+    const totalSalesValue = Number(totalSalesValueAgg._sum.totalAmount || 0);
 
     // Aggregate total sales by payment method
     const paymentMethodTotalsRaw = await prisma.sale.groupBy({
-      by: ['paymentMode'],
+      by: ["paymentMode"],
       _sum: { totalAmount: true },
       where,
-    })
+    });
     // Convert to object: { Cash: 1000, Card: 500, ... }
     const paymentMethodTotals = paymentMethodTotalsRaw.reduce(
       (acc, row) => {
-        acc[row.paymentMode] = Number(row._sum.totalAmount || 0)
-        return acc
+        acc[row.paymentMode] = Number(row._sum.totalAmount || 0);
+        return acc;
       },
       {} as Record<PaymentMode, number>
-    )
+    );
 
     // Fetch paginated, sorted sales
     const sales = await prisma.sale.findMany({
@@ -218,7 +218,7 @@ export async function GET(req: NextRequest) {
       orderBy,
       skip: (page - 1) * pageSize,
       take: pageSize,
-    })
+    });
 
     // Transform the data to match frontend expectations
     const transformedSales = sales.map((sale: any) => ({
@@ -237,81 +237,83 @@ export async function GET(req: NextRequest) {
         quantity: item.quantity,
         price: item.price,
       })),
-    }))
+    }));
 
     return jsonOk({
       data: transformedSales,
       total,
       paymentMethodTotals,
       totalSalesValue,
-    })
+    });
   } catch (error) {
     logger.error(
-      { error: error instanceof Error ? error.message : 'Unknown error' },
-      'Failed to fetch sales'
-    )
-    return handleException(error, 'Failed to fetch sales', 500)
+      { error: error instanceof Error ? error.message : "Unknown error" },
+      "Failed to fetch sales"
+    );
+    return handleException(error, "Failed to fetch sales", 500);
   }
 }
 
 // Helper to handle insufficient stock errors
 function handleInsufficientStockError(error: any) {
-  const insufficientStock = error.insufficientStock
-  return jsonError('Insufficient inventory for one or more products', 409, {
-    code: 'INSUFFICIENT_STOCK',
+  const insufficientStock = error.insufficientStock;
+  return jsonError("Insufficient inventory for one or more products", 409, {
+    code: "INSUFFICIENT_STOCK",
     details: {
       products: insufficientStock,
     },
-  })
+  });
 }
 
 // Helper to handle Prisma constraint violations
 function handleConstraintViolation(error: any) {
-  const meta = error.meta
-  if (meta?.constraint_name === 'Product_quantity_non_negative') {
+  const meta = error.meta;
+  if (meta?.constraint_name === "Product_quantity_non_negative") {
     logger.error(
       {
         constraint: meta.constraint_name,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
       },
-      'Database constraint violation: negative inventory prevented'
-    )
+      "Database constraint violation: negative inventory prevented"
+    );
 
-    return jsonError('Insufficient inventory for one or more products', 409, {
-      code: 'INSUFFICIENT_STOCK',
+    return jsonError("Insufficient inventory for one or more products", 409, {
+      code: "INSUFFICIENT_STOCK",
       details: {
-        message: 'The requested quantity would result in negative inventory',
+        message: "The requested quantity would result in negative inventory",
       },
-    })
+    });
   }
-  return null
+  return null;
 }
 
 // Helper to verify user authorization for sales
 async function verifyUserAuthorization(userId: string | null) {
   if (!userId) {
-    return { error: jsonError('Unauthorized', 401, { code: 'UNAUTHORIZED' }) }
+    return { error: jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" }) };
   }
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-  })
+  });
 
   if (!user) {
-    return { error: jsonError('Unauthorized', 401, { code: 'UNAUTHORIZED' }) }
+    return { error: jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" }) };
   }
 
   if (![Role.CASHIER, Role.MANAGER, Role.SUPER_ADMIN].includes(user.role)) {
     return {
       error: jsonError(
-        'Only cashiers, managers, and super admins can record sales',
+        "Only cashiers, managers, and super admins can record sales",
         403,
-        { code: 'FORBIDDEN' }
+        {
+          code: "FORBIDDEN",
+        }
       ),
-    }
+    };
   }
 
-  return { user }
+  return { user };
 }
 
 // Helper to process sale transaction
@@ -329,7 +331,7 @@ async function processSaleTransaction(
         productId: item.productId,
         quantity: item.quantity,
       }))
-    )
+    );
 
     // If reservation failed due to insufficient stock, return error details
     if (!reservationResult.success) {
@@ -338,13 +340,13 @@ async function processSaleTransaction(
           insufficientStock: reservationResult.insufficientStock,
           cashierId,
         },
-        'Sale failed due to insufficient stock'
-      )
+        "Sale failed due to insufficient stock"
+      );
 
       // Throw error to rollback transaction
-      const error = new Error('INSUFFICIENT_STOCK')
-      ;(error as any).insufficientStock = reservationResult.insufficientStock
-      throw error
+      const error = new Error("INSUFFICIENT_STOCK");
+      (error as any).insufficientStock = reservationResult.insufficientStock;
+      throw error;
     }
 
     // Create the sale
@@ -357,7 +359,7 @@ async function processSaleTransaction(
         totalAmount: saleTotals.totalAmount,
         paymentMode: mappedPaymentMode,
       },
-    })
+    });
 
     // Create sale items
     await Promise.all(
@@ -371,49 +373,49 @@ async function processSaleTransaction(
           },
         })
       )
-    )
+    );
 
-    return sale
-  })
+    return sale;
+  });
 }
 
 // Function to record a sale
 export async function POST(req: NextRequest) {
-  const userId = req.headers.get('X-User-Id')
+  const userId = req.headers.get("X-User-Id");
 
-  const authResult = await verifyUserAuthorization(userId)
+  const authResult = await verifyUserAuthorization(userId);
   if (authResult.error) {
-    return authResult.error
+    return authResult.error;
   }
 
   try {
-    const body = await req.json()
+    const body = await req.json();
 
     // Add cashierId to body for validation
-    const saleData = { ...body, cashierId: userId }
+    const saleData = { ...body, cashierId: userId };
 
     // Validate input with Zod
-    const validation = createSaleSchema.safeParse(saleData)
+    const validation = createSaleSchema.safeParse(saleData);
     if (!validation.success) {
       return jsonError(validation.error.errors[0].message, 400, {
-        code: 'VALIDATION_ERROR',
+        code: "VALIDATION_ERROR",
         details: validation.error.errors,
-      })
+      });
     }
 
-    const { items, paymentMode, cashierId } = validation.data
+    const { items, paymentMode, cashierId } = validation.data;
 
     // Calculate subtotal from items
     const subtotal = items.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
-    )
+    );
 
     // Calculate VAT totals
-    const saleTotals = calculateSaleTotals(subtotal)
+    const saleTotals = calculateSaleTotals(subtotal);
 
     // Map payment mode to enum
-    const mappedPaymentMode = mapPaymentMode(paymentMode)
+    const mappedPaymentMode = mapPaymentMode(paymentMode);
 
     // Create the sale and update stock in a transaction
     const result = await processSaleTransaction(
@@ -421,7 +423,7 @@ export async function POST(req: NextRequest) {
       cashierId,
       saleTotals,
       mappedPaymentMode
-    )
+    );
 
     logger.info(
       {
@@ -431,34 +433,34 @@ export async function POST(req: NextRequest) {
         itemCount: items.length,
         paymentMode: mappedPaymentMode,
       },
-      'Sale recorded successfully'
-    )
+      "Sale recorded successfully"
+    );
 
     return jsonOk({
       id: result.id,
-      message: 'Sale recorded successfully',
-    })
+      message: "Sale recorded successfully",
+    });
   } catch (error) {
     // Handle insufficient stock error
-    if (error instanceof Error && error.message === 'INSUFFICIENT_STOCK') {
-      return handleInsufficientStockError(error)
+    if (error instanceof Error && error.message === "INSUFFICIENT_STOCK") {
+      return handleInsufficientStockError(error);
     }
 
     // Handle Prisma constraint violation errors (P2034)
     if (
       error &&
-      typeof error === 'object' &&
-      'code' in error &&
-      error.code === 'P2034'
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "P2034"
     ) {
-      const constraintError = handleConstraintViolation(error)
-      if (constraintError) return constraintError
+      const constraintError = handleConstraintViolation(error);
+      if (constraintError) return constraintError;
     }
 
     logger.error(
-      { error: error instanceof Error ? error.message : 'Unknown error' },
-      'Failed to record sale'
-    )
-    return handleException(error, 'Failed to record sale', 500)
+      { error: error instanceof Error ? error.message : "Unknown error" },
+      "Failed to record sale"
+    );
+    return handleException(error, "Failed to record sale", 500);
   }
 }

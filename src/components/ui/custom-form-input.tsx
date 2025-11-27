@@ -1,5 +1,9 @@
 import { ChangeEvent } from "react";
-import { Controller, type Control, type UseFormRegister } from "react-hook-form";
+import {
+  Controller,
+  type Control,
+  type UseFormRegister,
+} from "react-hook-form";
 import { FormField } from "./custom-form-field";
 import { Input } from "./input";
 import {
@@ -47,7 +51,7 @@ export const FormInput = ({
             <SelectValue placeholder={placeholder ?? "Select an option"} />
           </SelectTrigger>
           <SelectContent>
-            {options?.map((option) => (
+            {options?.map(option => (
               <SelectItem key={option} value={option}>
                 {option}
               </SelectItem>

@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { createChildLogger } from "@/lib/logger";
 import { jsonOk, handleException } from "@/lib/api-response";
 
-const logger = createChildLogger('api:logs');
+const logger = createChildLogger("api:logs");
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,28 +15,28 @@ export async function POST(req: NextRequest) {
       clientData: data,
       userAgent,
       clientUrl: url,
-      ip: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip'),
+      ip: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip"),
     };
 
     // Use appropriate server log level based on client level
     switch (level) {
-      case 'fatal':
-      case 'error':
-        logger.error(clientLogData, 'Client-side error logged');
+      case "fatal":
+      case "error":
+        logger.error(clientLogData, "Client-side error logged");
         break;
-      case 'warn':
-        logger.warn(clientLogData, 'Client-side warning logged');
+      case "warn":
+        logger.warn(clientLogData, "Client-side warning logged");
         break;
-      case 'debug':
-      case 'trace':
-        logger.debug(clientLogData, 'Client-side debug logged');
+      case "debug":
+      case "trace":
+        logger.debug(clientLogData, "Client-side debug logged");
         break;
       default:
-        logger.info(clientLogData, 'Client-side log received');
+        logger.info(clientLogData, "Client-side log received");
     }
 
     return jsonOk({ success: true });
   } catch (error) {
-    return handleException(error, 'Failed to process log', 500);
+    return handleException(error, "Failed to process log", 500);
   }
 }

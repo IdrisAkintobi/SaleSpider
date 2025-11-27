@@ -23,7 +23,12 @@ const InventoryRecommendationsInputSchema = z.object({
       "Current inventory levels for each product. Must be in a clear, parseable format, such as JSON or CSV."
     ),
   storeName: z.string().describe("The name of the store."),
-  language: z.string().describe("The language to generate recommendations in (e.g., 'en', 'fr', 'es', 'de').").default("en"),
+  language: z
+    .string()
+    .describe(
+      "The language to generate recommendations in (e.g., 'en', 'fr', 'es', 'de')."
+    )
+    .default("en"),
 });
 export type InventoryRecommendationsInput = z.infer<
   typeof InventoryRecommendationsInputSchema
@@ -146,7 +151,7 @@ const inventoryRecommendationsFlow = ai.defineFlow(
     inputSchema: InventoryRecommendationsInputSchema,
     outputSchema: InventoryRecommendationsOutputSchema,
   },
-  async (input) => {
+  async input => {
     const { output } = await prompt(input);
     return output!;
   }
