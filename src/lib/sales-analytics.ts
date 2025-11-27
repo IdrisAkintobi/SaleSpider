@@ -1,6 +1,6 @@
+import { DeshelvingService } from '@/lib/deshelving-service'
 import { createChildLogger } from '@/lib/logger'
 import { prisma } from '@/lib/prisma'
-import { DeshelvingService } from '@/lib/deshelving-service'
 const logger = createChildLogger('sales-analytics')
 
 export interface SalesAnalytics {
@@ -8,7 +8,6 @@ export interface SalesAnalytics {
   totalRevenue: number
   averageOrderValue: number
   topSellingProducts: Array<{
-    productId: string
     productName: string
     totalQuantitySold: number
     totalRevenue: number
@@ -123,7 +122,6 @@ export class SalesAnalyticsService {
       const productMap = new Map(products.map(p => [p.id, p.name]))
 
       const topSellingWithNames = topSellingProducts.map(item => ({
-        productId: item.productId,
         productName: productMap.get(item.productId) || 'Unknown Product',
         totalQuantitySold: item._sum?.quantity || 0,
         totalRevenue: item._sum?.price || 0,

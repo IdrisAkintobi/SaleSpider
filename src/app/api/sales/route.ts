@@ -1,10 +1,11 @@
-import { PaymentMode, Role } from '@prisma/client'
-import { NextRequest } from 'next/server'
-import { calculateSaleTotals } from '@/lib/vat'
-import { startOfDay, endOfDay } from 'date-fns'
+import { handleException, jsonError, jsonOk } from '@/lib/api-response'
+import { reserveInventory } from '@/lib/inventory'
 import { createChildLogger } from '@/lib/logger'
-import { jsonOk, jsonError, handleException } from '@/lib/api-response'
 import { createSaleSchema } from '@/lib/validation-schemas'
+import { calculateSaleTotals } from '@/lib/vat'
+import { PaymentMode, Role } from '@prisma/client'
+import { endOfDay, startOfDay } from 'date-fns'
+import { NextRequest } from 'next/server'
 
 import { prisma } from '@/lib/prisma'
 const logger = createChildLogger('sales-api')
@@ -253,31 +254,136 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// Function to record a sale
-export async function POST(req: NextRequest) {
-  // Read the X-User-Id header set by the middleware
-  const userId = req.headers.get('X-User-Id')
+// Helper to handle insufficient stock errors
+function handleInsufficientStockError(error: any) {
+  const insufficientStock = error.insufficientStock
+  return jsonError('Insufficient inventory for one or more products', 409, {
+    code: 'INSUFFICIENT_STOCK',
+    details: {
+      products: insufficientStock,
+    },
+  })
+}
 
+// Helper to handle Prisma constraint violations
+function handleConstraintViolation(error: any) {
+  const meta = error.meta
+  if (meta?.constraint_name === 'Product_quantity_non_negative') {
+    logger.error(
+      {
+        constraint: meta.constraint_name,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+      'Database constraint violation: negative inventory prevented'
+    )
+
+    return jsonError('Insufficient inventory for one or more products', 409, {
+      code: 'INSUFFICIENT_STOCK',
+      details: {
+        message: 'The requested quantity would result in negative inventory',
+      },
+    })
+  }
+  return null
+}
+
+// Helper to verify user authorization for sales
+async function verifyUserAuthorization(userId: string | null) {
   if (!userId) {
-    return jsonError('Unauthorized', 401, { code: 'UNAUTHORIZED' })
+    return { error: jsonError('Unauthorized', 401, { code: 'UNAUTHORIZED' }) }
   }
 
-  // Fetch the user to check their role
   const user = await prisma.user.findUnique({
     where: { id: userId },
   })
 
   if (!user) {
-    return jsonError('Unauthorized', 401, { code: 'UNAUTHORIZED' })
+    return { error: jsonError('Unauthorized', 401, { code: 'UNAUTHORIZED' }) }
   }
 
-  // Only cashiers, managers, and super admins can record sales
   if (![Role.CASHIER, Role.MANAGER, Role.SUPER_ADMIN].includes(user.role)) {
-    return jsonError(
-      'Only cashiers, managers, and super admins can record sales',
-      403,
-      { code: 'FORBIDDEN' }
+    return {
+      error: jsonError(
+        'Only cashiers, managers, and super admins can record sales',
+        403,
+        { code: 'FORBIDDEN' }
+      ),
+    }
+  }
+
+  return { user }
+}
+
+// Helper to process sale transaction
+async function processSaleTransaction(
+  items: any[],
+  cashierId: string,
+  saleTotals: any,
+  mappedPaymentMode: PaymentMode
+) {
+  return await prisma.$transaction(async tx => {
+    // Reserve inventory with row-level locking
+    const reservationResult = await reserveInventory(
+      tx,
+      items.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity,
+      }))
     )
+
+    // If reservation failed due to insufficient stock, return error details
+    if (!reservationResult.success) {
+      logger.warn(
+        {
+          insufficientStock: reservationResult.insufficientStock,
+          cashierId,
+        },
+        'Sale failed due to insufficient stock'
+      )
+
+      // Throw error to rollback transaction
+      const error = new Error('INSUFFICIENT_STOCK')
+      ;(error as any).insufficientStock = reservationResult.insufficientStock
+      throw error
+    }
+
+    // Create the sale
+    const sale = await tx.sale.create({
+      data: {
+        cashierId,
+        subtotal: saleTotals.subtotal,
+        vatAmount: saleTotals.vatAmount,
+        vatPercentage: saleTotals.vatPercentage,
+        totalAmount: saleTotals.totalAmount,
+        paymentMode: mappedPaymentMode,
+      },
+    })
+
+    // Create sale items
+    await Promise.all(
+      items.map(item =>
+        tx.saleItem.create({
+          data: {
+            saleId: sale.id,
+            productId: item.productId,
+            quantity: item.quantity,
+            price: item.price,
+          },
+        })
+      )
+    )
+
+    return sale
+  })
+}
+
+// Function to record a sale
+export async function POST(req: NextRequest) {
+  const userId = req.headers.get('X-User-Id')
+
+  const authResult = await verifyUserAuthorization(userId)
+  if (authResult.error) {
+    return authResult.error
   }
 
   try {
@@ -297,27 +403,6 @@ export async function POST(req: NextRequest) {
 
     const { items, paymentMode, cashierId } = validation.data
 
-    // Validate items and check stock
-    for (const item of items) {
-      const product = await prisma.product.findUnique({
-        where: { id: item.productId },
-      })
-
-      if (!product) {
-        return jsonError(`Product ${item.productId} not found`, 404, {
-          code: 'NOT_FOUND',
-        })
-      }
-
-      if (product.quantity < item.quantity) {
-        return jsonError(
-          `Insufficient stock for ${product.name}. Available: ${product.quantity}, Requested: ${item.quantity}`,
-          400,
-          { code: 'BAD_REQUEST' }
-        )
-      }
-    }
-
     // Calculate subtotal from items
     const subtotal = items.reduce(
       (sum, item) => sum + item.price * item.quantity,
@@ -331,43 +416,12 @@ export async function POST(req: NextRequest) {
     const mappedPaymentMode = mapPaymentMode(paymentMode)
 
     // Create the sale and update stock in a transaction
-    const result = await prisma.$transaction(async tx => {
-      // Create the sale
-      const sale = await tx.sale.create({
-        data: {
-          cashierId,
-          subtotal: saleTotals.subtotal,
-          vatAmount: saleTotals.vatAmount,
-          vatPercentage: saleTotals.vatPercentage,
-          totalAmount: saleTotals.totalAmount,
-          paymentMode: mappedPaymentMode,
-        },
-      })
-
-      // Create sale items and update product stock
-      for (const item of items) {
-        await tx.saleItem.create({
-          data: {
-            saleId: sale.id,
-            productId: item.productId,
-            quantity: item.quantity,
-            price: item.price,
-          },
-        })
-
-        // Update product stock
-        await tx.product.update({
-          where: { id: item.productId },
-          data: {
-            quantity: {
-              decrement: item.quantity,
-            },
-          },
-        })
-      }
-
-      return sale
-    })
+    const result = await processSaleTransaction(
+      items,
+      cashierId,
+      saleTotals,
+      mappedPaymentMode
+    )
 
     logger.info(
       {
@@ -385,6 +439,22 @@ export async function POST(req: NextRequest) {
       message: 'Sale recorded successfully',
     })
   } catch (error) {
+    // Handle insufficient stock error
+    if (error instanceof Error && error.message === 'INSUFFICIENT_STOCK') {
+      return handleInsufficientStockError(error)
+    }
+
+    // Handle Prisma constraint violation errors (P2034)
+    if (
+      error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      error.code === 'P2034'
+    ) {
+      const constraintError = handleConstraintViolation(error)
+      if (constraintError) return constraintError
+    }
+
     logger.error(
       { error: error instanceof Error ? error.message : 'Unknown error' },
       'Failed to record sale'

@@ -106,11 +106,9 @@ render deploy
 ### 4. Initialize Database
 
 ```bash
-# Run migrations
+# Run migrations and seed data
 npx prisma migrate deploy
-
-# Seed initial data
-npm run seed
+npm run seed:prod
 ```
 
 ## Provider-Specific Guides

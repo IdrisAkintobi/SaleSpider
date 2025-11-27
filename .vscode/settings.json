@@ -95,5 +95,6 @@
     "sonarlint.connectedMode.project": {
         "connectionId": "idrisakintobi",
         "projectKey": "IdrisAkintobi_SaleSpider"
-    }
+    },
+    "prisma.pinToPrisma6": true
 }

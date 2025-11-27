@@ -5,6 +5,7 @@ The SaleSpider application includes a comprehensive settings system that allows 
 ## Settings Overview
 
 ### Access Control
+
 - **Only Super Administrators** can access the settings page
 - Settings are persisted in the database
 - Environment variables provide default values
@@ -13,27 +14,45 @@ The SaleSpider application includes a comprehensive settings system that allows 
 ## Available Settings
 
 ### General Settings
+
 - **Application Name**: The name displayed throughout the application
 - **Logo URL**: URL to the application logo
 - **VAT Percentage**: Default VAT rate for sales calculations
 
 ### Appearance Settings
+
 - **Primary Color**: Main brand color (#0f172a)
 - **Secondary Color**: Secondary brand color (#3b82f6)
 - **Accent Color**: Accent/highlight color (#f59e0b)
 - **Theme**: Light, Dark, or Auto (system preference)
 
-### Currency Settings
+### Payment Settings
+
 - **Currency**: Currency code (NGN, USD, EUR, etc.)
 - **Currency Symbol**: Currency symbol (₦, $, €, etc.)
+- **Enabled Payment Methods**: Select which payment methods are available at checkout
+  - Cash
+  - Card
+  - Bank Transfer
+  - Crypto
+  - Other
+
+**Note**: Payment methods are defined in the database schema. To add custom payment methods beyond the defaults, you'll need to:
+
+1. Update the `PaymentMode` enum in `prisma/schema.prisma`
+2. Update `PAYMENT_MODE_VALUES` and `PAYMENT_METHODS` in `src/lib/constants.ts`
+3. Create and run a migration: `npx prisma migrate dev --name add_payment_method`
+4. Rebuild and redeploy the application
 
 ### Localization Settings
+
 - **Language**: Application language (en, es, fr, etc.)
 - **Timezone**: Application timezone (Africa/Lagos, etc.)
 - **Date Format**: Date display format (dd/MM/yyyy, etc.)
 - **Time Format**: Time display format (HH:mm, etc.)
 
 ### System Settings
+
 - **Maintenance Mode**: Enable/disable application access
 
 ## Environment Variables
@@ -50,10 +69,11 @@ PRIMARY_COLOR="#0f172a"
 SECONDARY_COLOR="#3b82f6"
 ACCENT_COLOR="#f59e0b"
 
-# Currency Settings
+# Payment Settings
 CURRENCY="NGN"
 CURRENCY_SYMBOL="₦"
 VAT_PERCENTAGE="7.5"
+ENABLED_PAYMENT_METHODS="CASH,CARD,BANK_TRANSFER,CRYPTO,OTHER"
 
 # Localization
 TIMEZONE="Africa/Lagos"
@@ -107,11 +127,13 @@ CREATE TABLE "AppSettings" (
 ## API Endpoints
 
 ### GET /api/settings
+
 - **Access**: Super Admin only
 - **Purpose**: Retrieve current application settings
 - **Response**: AppSettings object
 
 ### PATCH /api/settings
+
 - **Access**: Super Admin only
 - **Purpose**: Update application settings
 - **Body**: Partial AppSettings object
@@ -120,17 +142,17 @@ CREATE TABLE "AppSettings" (
 ## Usage in Components
 
 ```tsx
-import { useSettingsContext } from "@/contexts/settings-context";
+import { useSettingsContext } from '@/contexts/settings-context'
 
 function MyComponent() {
-  const { settings } = useSettingsContext();
-  
+  const { settings } = useSettingsContext()
+
   return (
     <div>
       <h1>{settings.appName}</h1>
       <p>Currency: {settings.currencySymbol}</p>
     </div>
-  );
+  )
 }
 ```
 
@@ -147,6 +169,7 @@ If no settings exist in the database, the system will:
 To set up the settings system:
 
 1. Run the database migration:
+
    ```bash
    npx prisma migrate dev --name add_app_settings
    ```
@@ -166,16 +189,19 @@ To set up the settings system:
 ## Troubleshooting
 
 ### Settings Not Loading
+
 - Check if the user has Super Admin role
 - Verify database connection
 - Check for environment variable conflicts
 
 ### Changes Not Taking Effect
+
 - Clear browser cache
 - Restart the application
 - Check for validation errors
 
 ### Database Errors
+
 - Ensure migration has been run
 - Check Prisma client is regenerated
-- Verify database permissions 
+- Verify database permissions

@@ -17,6 +17,12 @@ Complete guide for deploying SaleSpider in different environments with various c
 
 The fastest way to get SaleSpider running with all default settings:
 
+::: danger Critical: Database Seeding Required
+After deployment, you **must** seed the database to create the super admin account and essential data. Without this step, the application will not be functional and you won't be able to log in.
+
+The `make deploy` command handles this automatically for self-hosted deployments. For cloud deployments, you must run `npm run seed:prod` manually after deployment.
+:::
+
 ### Prerequisites
 
 - **Docker 20.10+** with Docker Compose
@@ -158,13 +164,20 @@ nano .env
 # Set: APP_URL (your app URL)
 # Set: SUPER_ADMIN_EMAIL, SUPER_ADMIN_PASSWORD
 
-# 3. Run database migrations
-npm install
-npx prisma migrate deploy
-npm run seed:prod
-
-# 4. Deploy to your platform (see platform-specific guides below)
+# 3. Deploy to your platform (see platform-specific guides below)
+# Make sure to use "npm run start:prod" as your start command
+vercel --prod  # or railway up, or render deploy
 ```
+
+::: tip Automatic Database Setup
+When you use `npm run start:prod` as your start command, SaleSpider automatically:
+
+- ✅ Runs database migrations
+- ✅ Seeds the super admin account (if it doesn't exist)
+- ✅ Configures default application settings
+
+**Exception:** Vercel requires one-time manual seeding after first deployment due to its serverless architecture.
+:::
 
 **Platform-Specific Deployment:**
 

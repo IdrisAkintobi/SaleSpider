@@ -83,26 +83,41 @@ HOST_IP=127.0.0.1
 
 ### Default App Settings
 
-These can be overridden through the application UI:
+These can be overridden through the application UI (Settings page, Super Admin only):
 
-| Variable                  | Default                                | Description                               |
-| ------------------------- | -------------------------------------- | ----------------------------------------- |
-| `APP_NAME`                | `SaleSpider`                           | Application display name                  |
-| `APP_LOGO`                | (empty)                                | URL or path to application logo           |
-| `PRIMARY_COLOR`           | `#3b82f6`                              | Primary theme color (hex)                 |
-| `SECONDARY_COLOR`         | `#10b981`                              | Secondary theme color (hex)               |
-| `ACCENT_COLOR`            | `#f59e0b`                              | Accent theme color (hex)                  |
-| `CURRENCY`                | `NGN`                                  | Default currency code                     |
-| `CURRENCY_SYMBOL`         | `₦`                                    | Currency symbol                           |
-| `VAT_PERCENTAGE`          | `7.5`                                  | Default VAT/tax percentage                |
-| `TIMEZONE`                | `Africa/Lagos`                         | Default timezone                          |
-| `DATE_FORMAT`             | `dd/MM/yyyy`                           | Date display format                       |
-| `TIME_FORMAT`             | `HH:mm`                                | Time display format                       |
-| `LANGUAGE`                | `en`                                   | Default language (`en`, `fr`, `es`, `de`) |
-| `THEME`                   | `light`                                | Default theme (`light`, `dark`)           |
-| `MAINTENANCE_MODE`        | `false`                                | Enable maintenance mode                   |
-| `SHOW_DELETED_PRODUCTS`   | `false`                                | Show deleted products in lists            |
-| `ENABLED_PAYMENT_METHODS` | `CASH,CARD,MOBILE_MONEY,BANK_TRANSFER` | Comma-separated payment methods           |
+**Note on Payment Methods**: The available payment methods are defined in the database schema. To add custom payment methods:
+
+1. Update `prisma/schema.prisma` to add new values to the `PaymentMode` enum
+2. Update `src/lib/constants.ts` to add the new payment method to `PAYMENT_MODE_VALUES` and `PAYMENT_METHODS`
+3. Create and run a Prisma migration: `npx prisma migrate dev --name add_payment_method`
+4. Rebuild and redeploy the application
+
+**Available Payment Methods** (defined in schema):
+
+- `CASH` - Cash payments
+- `CARD` - Card/credit card payments
+- `BANK_TRANSFER` - Bank transfer payments
+- `CRYPTO` - Cryptocurrency payments
+- `OTHER` - Other payment methods
+
+| Variable                  | Default                                | Description                                                            |
+| ------------------------- | -------------------------------------- | ---------------------------------------------------------------------- |
+| `APP_NAME`                | `SaleSpider`                           | Application display name                                               |
+| `APP_LOGO`                | (empty)                                | URL or path to application logo                                        |
+| `PRIMARY_COLOR`           | `#3b82f6`                              | Primary theme color (hex)                                              |
+| `SECONDARY_COLOR`         | `#10b981`                              | Secondary theme color (hex)                                            |
+| `ACCENT_COLOR`            | `#f59e0b`                              | Accent theme color (hex)                                               |
+| `CURRENCY`                | `NGN`                                  | Default currency code                                                  |
+| `CURRENCY_SYMBOL`         | `₦`                                    | Currency symbol                                                        |
+| `VAT_PERCENTAGE`          | `7.5`                                  | Default VAT/tax percentage                                             |
+| `TIMEZONE`                | `Africa/Lagos`                         | Default timezone                                                       |
+| `DATE_FORMAT`             | `dd/MM/yyyy`                           | Date display format                                                    |
+| `TIME_FORMAT`             | `HH:mm`                                | Time display format                                                    |
+| `LANGUAGE`                | `en`                                   | Default language (`en`, `fr`, `es`, `de`)                              |
+| `THEME`                   | `light`                                | Default theme (`light`, `dark`)                                        |
+| `MAINTENANCE_MODE`        | `false`                                | Enable maintenance mode                                                |
+| `SHOW_DELETED_PRODUCTS`   | `false`                                | Show deleted products in lists                                         |
+| `ENABLED_PAYMENT_METHODS` | `CASH,CARD,BANK_TRANSFER,CRYPTO,OTHER` | Comma-separated payment methods (must match Prisma schema enum values) |
 
 ### Client-Side Settings
 

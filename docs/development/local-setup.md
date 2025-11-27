@@ -61,23 +61,21 @@ PORT=3000
 # Start PostgreSQL with Docker Compose
 make docker-up
 
-# Run database migrations
+# Run migrations and seed sample data
 npx prisma migrate dev
-
-# Seed the database with sample data
 npm run seed
 ```
+
+::: tip
+Seeding creates the super admin account (admin@example.com / Admin123!) and sample data for testing.
+:::
 
 #### Option B: Local PostgreSQL
 
 ```bash
-# Create database
+# Create database and initialize
 createdb salespider
-
-# Run migrations
 npx prisma migrate dev
-
-# Seed the database
 npm run seed
 ```
 

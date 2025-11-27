@@ -128,12 +128,14 @@ For local development:
     # Edit .env with your development settings
     ```
 
-4.  **Set up database**:
+4.  **Set up database** (required):
 
     ```bash
     npx prisma migrate dev
     npx prisma db seed
     ```
+
+    **Important:** Database seeding is required for the application to function. It creates the initial super admin account and essential data.
 
 5.  **Run development server**:
 
@@ -233,6 +235,48 @@ make help          # All commands
 ```
 
 **For detailed command references, see [Makefile Commands](https://idrisakintobi.github.io/SaleSpider/operations/makefile)**
+
+## ❓ FAQ
+
+### Why can't I log in after deployment?
+
+**You must seed the database** to create the super admin account. This is a required step:
+
+```bash
+# For self-hosted (Docker)
+docker-compose exec app npm run seed
+
+# For cloud/production
+npm run seed:prod
+```
+
+The `make deploy` command handles this automatically for self-hosted deployments. For cloud deployments, you must run the seed command manually after your first deployment.
+
+### What does database seeding do?
+
+Seeding creates:
+
+- Super admin account (using SUPER_ADMIN_EMAIL and SUPER_ADMIN_PASSWORD from .env)
+- Essential roles and permissions
+- Initial system configuration
+
+**Without seeding, the application will not be functional.**
+
+### How do I reset my admin password?
+
+You can reset the database and re-seed:
+
+```bash
+# Self-hosted
+docker-compose exec app npx prisma migrate reset
+docker-compose exec app npm run seed
+
+# Cloud
+npx prisma migrate reset
+npm run seed:prod
+```
+
+Or update the password directly in the database using Prisma Studio.
 
 ## 📄 License
 

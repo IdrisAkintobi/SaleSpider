@@ -65,6 +65,10 @@ export default defineConfig({
             },
             { text: 'Backup Configuration', link: '/configuration/backup' },
             { text: 'Security Settings', link: '/configuration/security' },
+            {
+              text: 'Custom Payment Methods',
+              link: '/configuration/custom-payment-methods',
+            },
           ],
         },
         {
