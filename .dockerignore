@@ -10,7 +10,7 @@ out
 
 # Environment files
 .env*
-!.docker/env.example
+!env.example
 
 # Logs
 logs
