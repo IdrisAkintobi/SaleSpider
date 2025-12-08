@@ -12,15 +12,31 @@ export default function manifest(): MetadataRoute.Manifest {
     orientation: "portrait-primary",
     icons: [
       {
-        src: "/icon.svg",
-        sizes: "any",
-        type: "image/svg+xml",
+        src: "/favicon/android-chrome-192x192.png",
+        sizes: "192x192",
+        type: "image/png",
         purpose: "maskable",
       },
       {
-        src: "/apple-icon.svg",
+        src: "/favicon/android-chrome-512x512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
+      },
+      {
+        src: "/favicon/apple-touch-icon.png",
         sizes: "180x180",
-        type: "image/svg+xml",
+        type: "image/png",
+      },
+      {
+        src: "/favicon/favicon-32x32.png",
+        sizes: "32x32",
+        type: "image/png",
+      },
+      {
+        src: "/favicon/favicon-16x16.png",
+        sizes: "16x16",
+        type: "image/png",
       },
     ],
     categories: ["business", "productivity", "finance"],
