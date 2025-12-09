@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { NextRequest, NextResponse } from "next/server";
+import { aggregateSales } from "@/lib/utils";
 import { Role } from "@prisma/client";
-import { startOfDay, endOfDay } from "date-fns";
+import { endOfDay, startOfDay } from "date-fns";
+import { NextRequest, NextResponse } from "next/server";
 
 interface ManagerAnalytics {
   totalRevenue: number;
@@ -34,20 +35,10 @@ async function handleCashierAnalytics(
 ): Promise<CashierAnalytics> {
   const dateRange = getTodayDateRange();
 
-  const salesMetrics = await prisma.sale.aggregate({
-    where: {
-      cashierId: userId,
-      createdAt: {
-        gte: dateRange.from,
-        lte: dateRange.to,
-      },
-    },
-    _sum: {
-      totalAmount: true,
-    },
-    _count: {
-      id: true,
-    },
+  const salesMetrics = await aggregateSales(prisma, {
+    cashierId: userId,
+    from: dateRange.from,
+    to: dateRange.to,
   });
 
   const totalRevenue = salesMetrics._sum.totalAmount ?? 0;
@@ -72,19 +63,9 @@ async function handleManagerAnalytics(
   // Execute all queries in parallel for better performance
   const [salesMetrics, activeCashiers, lowStockItems] = await Promise.all([
     // Get sales metrics (revenue and order count) for the selected period
-    prisma.sale.aggregate({
-      where: {
-        createdAt: {
-          gte: from,
-          lte: to,
-        },
-      },
-      _sum: {
-        totalAmount: true,
-      },
-      _count: {
-        id: true,
-      },
+    aggregateSales(prisma, {
+      from,
+      to,
     }),
 
     // Get active cashiers count (current state, not time-based)
@@ -155,7 +136,7 @@ export async function GET(request: NextRequest) {
       const to = new Date(toParam);
 
       // Validate dates
-      if (isNaN(from.getTime()) || isNaN(to.getTime())) {
+      if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) {
         return NextResponse.json(
           { error: "Invalid date format. Use ISO 8601 format." },
           { status: 400 }

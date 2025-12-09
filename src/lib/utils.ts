@@ -15,6 +15,45 @@ export function isManager(user: User | null) {
 }
 
 /**
+ * Aggregates sales data for a given date range or filters
+ */
+export async function aggregateSales(
+  prisma: any,
+  options?: {
+    from?: Date;
+    to?: Date;
+    cashierId?: string;
+    includeDeleted?: boolean;
+  }
+) {
+  const where: any = {};
+
+  if (!options?.includeDeleted) {
+    where.deletedAt = null;
+  }
+
+  if (options?.cashierId) {
+    where.cashierId = options.cashierId;
+  }
+
+  if (options?.from || options?.to) {
+    where.createdAt = {};
+    if (options.from) where.createdAt.gte = options.from;
+    if (options.to) where.createdAt.lte = options.to;
+  }
+
+  return prisma.sale.aggregate({
+    where,
+    _sum: {
+      totalAmount: true,
+    },
+    _count: {
+      id: true,
+    },
+  });
+}
+
+/**
  * Returns an array of monthly sales totals for the given range.
  * If from/to are not provided, returns the last 6 months including current.
  */
