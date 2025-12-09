@@ -16,6 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useFormatCurrency } from "@/lib/currency";
 import { useTranslation } from "@/lib/i18n";
 import { fetchJson } from "@/lib/fetch-utils";
+import { useDashboardAnalytics } from "@/hooks/use-dashboard-analytics";
 
 async function fetchSalesByCashierId(cashierId: string): Promise<Sale[]> {
   // Get today's date range
@@ -30,16 +31,38 @@ async function fetchSalesByCashierId(cashierId: string): Promise<Sale[]> {
   return data;
 }
 
+interface CashierAnalytics {
+  totalRevenue: number;
+  totalOrders: number;
+  averageOrderValue: number;
+  period: "today";
+  dateRange: {
+    from: string;
+    to: string;
+  };
+}
+
+function isCashierAnalytics(analytics: any): analytics is CashierAnalytics {
+  return analytics && "averageOrderValue" in analytics;
+}
+
 export function CashierOverview() {
   const { user } = useAuth();
   const { toast } = useToast();
   const formatCurrency = useFormatCurrency();
   const t = useTranslation();
 
-  // Use TanStack Query for data fetching
+  // Use the new dashboard analytics hook
+  const {
+    data: analytics,
+    error: analyticsError,
+    isLoading: isLoadingAnalytics,
+  } = useDashboardAnalytics();
+
+  // Use TanStack Query for data fetching (for recent sales table)
   const {
     data: mySales = [],
-    error,
+    error: salesError,
     isLoading: isLoadingSales,
   } = useQuery({
     queryKey: ["sales", "cashier", user?.id],
@@ -50,40 +73,29 @@ export function CashierOverview() {
   });
 
   // Handle errors
-  if (error) {
+  if (analyticsError || salesError) {
     toast({
       title: "Error",
-      description: error.message || "Failed to fetch sales data",
+      description:
+        analyticsError?.message ||
+        salesError?.message ||
+        "Failed to fetch data",
       variant: "destructive",
     });
   }
 
   // Removed early return to keep hooks order consistent
 
-  // Calculate stats using useMemo
-  const stats = useMemo(() => {
+  // Calculate recent sales for the table
+  const recentSales = useMemo(() => {
     const sortedSales = [...mySales].sort((a, b) => b.timestamp - a.timestamp);
-    const totalValue = sortedSales.reduce(
-      (sum, sale) => sum + sale.totalAmount,
-      0
-    );
-    const totalOrders = sortedSales.length;
-    const averageValue = totalOrders > 0 ? totalValue / totalOrders : 0;
-
-    return {
-      totalValue,
-      totalOrders,
-      averageValue,
-      recentSales: sortedSales.slice(0, 5),
-    };
+    return sortedSales.slice(0, 5);
   }, [mySales]);
-
-  const recentSales = stats.recentSales;
 
   return (
     <div className="space-y-4">
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-        {isLoadingSales ? (
+        {isLoadingAnalytics ? (
           <>
             <StatsCardSkeleton />
             <StatsCardSkeleton />
@@ -93,19 +105,23 @@ export function CashierOverview() {
           <>
             <StatsCard
               title={t("my_total_sales_value")}
-              value={formatCurrency(stats.totalValue)}
+              value={formatCurrency(
+                isCashierAnalytics(analytics) ? analytics.totalRevenue : 0
+              )}
               icon={DollarSign}
               description={t("todays_sales")}
             />
             <StatsCard
               title={t("my_total_orders")}
-              value={stats.totalOrders}
+              value={isCashierAnalytics(analytics) ? analytics.totalOrders : 0}
               icon={ShoppingCart}
               description={t("todays_orders")}
             />
             <StatsCard
               title={t("my_average_sale_value")}
-              value={formatCurrency(stats.averageValue)}
+              value={formatCurrency(
+                isCashierAnalytics(analytics) ? analytics.averageOrderValue : 0
+              )}
               icon={TrendingUp}
               description={t("todays_average")}
             />
