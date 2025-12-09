@@ -67,6 +67,12 @@ make backup    # Create manual backup
 
 **📸 Product Images**: The app supports product images via image URLs rather than direct file uploads. Users can set up their own image processing service (local or cloud with CDN) and simply provide the image links for products. This approach provides flexibility while avoiding the complexity of built-in file storage, processing, and CDN management. You maintain full control over your image infrastructure and can choose the solution that best fits your needs.
 
+**🎨 Customization**: SaleSpider is designed to be easily customized to match your brand:
+
+- **Application Icons**: Replace the default icons in `public/icons/` directory with your own branded versions. Maintain the same file names or update references in the code where needed.
+- **Logo**: Update `logo.png` in `public/icons/` for the main application logo, or set a custom URL via environment variables.
+- **Favicons**: All favicon files are located in `public/icons/` - replace them with your branded versions following standard favicon naming conventions.
+
 **🔧 Extensibility**: The clean, modular architecture makes it easy to fork and extend SaleSpider with additional features like:
 
 - Direct image uploads and advanced image processing
@@ -164,10 +170,10 @@ This project uses TypeScript path aliases for clean, maintainable imports:
 
 ```typescript
 // Instead of relative imports like this:
-import { Button } from '../../../components/ui/button'
+import { Button } from "../../../components/ui/button";
 
 // Use clean path aliases like this:
-import { Button } from '@/components/ui/button'
+import { Button } from "@/components/ui/button";
 ```
 
 Available aliases:

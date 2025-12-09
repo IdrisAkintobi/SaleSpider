@@ -4,7 +4,7 @@
 
 export const DEFAULT_SETTINGS = {
   appName: "SaleSpider",
-  appLogo: "",
+  appLogo: "/icons/logo.png",
   primaryColor: "#0f172a",
   secondaryColor: "#3b82f6",
   accentColor: "#f59e0b",
