@@ -16,12 +16,18 @@ export const metadata: Metadata = {
     "A Next.js DApp for sales and inventory management using account abstraction for SaleSpider.",
   icons: {
     icon: [
-      { url: "/favicon.svg", type: "image/svg+xml" },
-      { url: "/icon.svg", type: "image/svg+xml", sizes: "32x32" },
-      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/favicon/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon/favicon.ico", sizes: "any" },
     ],
-    apple: [{ url: "/apple-icon.svg", type: "image/svg+xml" }],
-    shortcut: "/favicon.svg",
+    apple: [
+      {
+        url: "/favicon/apple-touch-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
+    ],
+    shortcut: "/favicon/favicon.ico",
   },
   manifest: "/manifest.json",
 };
