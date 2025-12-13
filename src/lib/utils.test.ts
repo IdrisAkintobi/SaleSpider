@@ -1,6 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { cn, isCashier, isManager, getMonthlySales } from "./utils";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { User } from "./types";
+import {
+  aggregateSales,
+  cn,
+  getMonthlySales,
+  isCashier,
+  isManager,
+} from "./utils";
 
 // Helper function to create test users
 const createTestUser = (role: User["role"]): User => ({
@@ -64,6 +70,98 @@ describe("utils", () => {
 
     it("returns false for null user", () => {
       expect(isManager(null)).toBe(false);
+    });
+  });
+
+  describe("aggregateSales", () => {
+    const mockPrisma = {
+      sale: {
+        aggregate: vi.fn(),
+      },
+    };
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it("aggregates sales with default options", async () => {
+      const mockResult = {
+        _sum: { totalAmount: 5000 },
+        _count: { id: 10 },
+      };
+      mockPrisma.sale.aggregate.mockResolvedValue(mockResult);
+
+      const result = await aggregateSales(mockPrisma);
+
+      expect(mockPrisma.sale.aggregate).toHaveBeenCalledWith({
+        where: { deletedAt: null },
+        _sum: { totalAmount: true },
+        _count: { id: true },
+      });
+      expect(result).toEqual(mockResult);
+    });
+
+    it("includes deleted records when specified", async () => {
+      const mockResult = {
+        _sum: { totalAmount: 6000 },
+        _count: { id: 12 },
+      };
+      mockPrisma.sale.aggregate.mockResolvedValue(mockResult);
+
+      await aggregateSales(mockPrisma, { includeDeleted: true });
+
+      expect(mockPrisma.sale.aggregate).toHaveBeenCalledWith({
+        where: {},
+        _sum: { totalAmount: true },
+        _count: { id: true },
+      });
+    });
+
+    it("filters by cashier ID", async () => {
+      const cashierId = "cashier-123";
+      await aggregateSales(mockPrisma, { cashierId });
+
+      expect(mockPrisma.sale.aggregate).toHaveBeenCalledWith({
+        where: { deletedAt: null, cashierId },
+        _sum: { totalAmount: true },
+        _count: { id: true },
+      });
+    });
+
+    it("filters by date range", async () => {
+      const from = new Date("2024-01-01");
+      const to = new Date("2024-12-31");
+
+      await aggregateSales(mockPrisma, { from, to });
+
+      expect(mockPrisma.sale.aggregate).toHaveBeenCalledWith({
+        where: {
+          deletedAt: null,
+          createdAt: { gte: from, lte: to },
+        },
+        _sum: { totalAmount: true },
+        _count: { id: true },
+      });
+    });
+
+    it("combines all filter options", async () => {
+      const options = {
+        from: new Date("2024-01-01"),
+        to: new Date("2024-12-31"),
+        cashierId: "cashier-456",
+        includeDeleted: true,
+      };
+
+      await aggregateSales(mockPrisma, options);
+
+      expect(mockPrisma.sale.aggregate).toHaveBeenCalledWith({
+        where: {
+          cashierId: "cashier-456",
+          createdAt: { gte: options.from, lte: options.to },
+        },
+        _sum: { totalAmount: true },
+        _count: { id: true },
+      });
     });
   });
 

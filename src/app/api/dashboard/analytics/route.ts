@@ -1,3 +1,4 @@
+import { isErrorResponse, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { aggregateSales } from "@/lib/utils";
 import { Role } from "@prisma/client";
@@ -99,26 +100,16 @@ async function handleManagerAnalytics(
 
 export async function GET(request: NextRequest) {
   try {
-    // Read the X-User-Id header set by the middleware
-    const userId = request.headers.get("X-User-Id");
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const userOrError = await requireAuth(request);
+    if (isErrorResponse(userOrError)) {
+      return userOrError;
     }
 
-    // Fetch the user to check their role
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { role: true },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
+    const user = userOrError;
     const url = new URL(request.url);
 
     if (user.role === Role.CASHIER) {
-      const analytics = await handleCashierAnalytics(userId);
+      const analytics = await handleCashierAnalytics(user.id);
       return NextResponse.json({ analytics });
     } else {
       // Managers/Admins

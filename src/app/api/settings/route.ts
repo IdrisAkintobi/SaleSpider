@@ -1,5 +1,5 @@
 import { handleException, jsonError, jsonOk } from "@/lib/api-response";
-import { getCurrentUser, isSuperAdmin } from "@/lib/auth";
+import { authenticateUser, isSuperAdmin } from "@/lib/auth";
 import { DEFAULT_SETTINGS, PAYMENT_METHODS } from "@/lib/constants";
 import { createChildLogger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
@@ -143,7 +143,7 @@ function buildUpdateData(body: any, validatedPaymentMethods?: string[]) {
 // PATCH /api/settings
 export async function PATCH(request: NextRequest) {
   try {
-    const user = await getCurrentUser(request);
+    const user = await authenticateUser(request);
 
     if (!user) {
       return jsonError("Unauthorized", 401, { code: "UNAUTHORIZED" });
