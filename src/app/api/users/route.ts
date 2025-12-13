@@ -1,10 +1,10 @@
-import { Role } from "@prisma/client";
-import { NextRequest } from "next/server";
+import { handleException, jsonError, jsonOk } from "@/lib/api-response";
 import { AuditTrailService } from "@/lib/audit-trail";
-import * as argon2 from "argon2";
-import { jsonOk, jsonError, handleException } from "@/lib/api-response";
 import { createChildLogger } from "@/lib/logger";
 import { createUserSchema } from "@/lib/validation-schemas";
+import { Role } from "@prisma/client";
+import * as argon2 from "argon2";
+import { NextRequest } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 const logger = createChildLogger("api:users");
@@ -136,6 +136,39 @@ export async function POST(request: NextRequest) {
         updatedAt: true,
       },
     });
+
+    // Log audit trail for user creation
+    // Note: We need to get the acting user for proper auditing
+    const actingUserId = request.headers.get("X-User-Id");
+    if (actingUserId) {
+      const actingUser = await prisma.user.findUnique({
+        where: { id: actingUserId },
+        select: { email: true },
+      });
+
+      if (actingUser) {
+        await AuditTrailService.logUserChange(
+          "CREATE",
+          newUser.id,
+          undefined,
+          {
+            name: newUser.name,
+            username: newUser.username,
+            email: newUser.email,
+            role: newUser.role,
+            status: newUser.status,
+          },
+          actingUserId,
+          actingUser.email,
+          {
+            ip:
+              request.headers.get("x-forwarded-for") ||
+              request.headers.get("x-real-ip"),
+            userAgent: request.headers.get("user-agent"),
+          }
+        );
+      }
+    }
 
     return jsonOk(newUser, { status: 201 });
   } catch (error) {
