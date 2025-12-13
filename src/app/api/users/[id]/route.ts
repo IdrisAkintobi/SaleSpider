@@ -1,9 +1,9 @@
+import { handleException, jsonError, jsonOk } from "@/lib/api-response";
+import { AuditTrailService } from "@/lib/audit-trail";
+import { createChildLogger } from "@/lib/logger";
+import { prisma } from "@/lib/prisma";
 import { Role, UserStatus } from "@prisma/client";
 import { NextRequest } from "next/server";
-import { jsonOk, jsonError, handleException } from "@/lib/api-response";
-import { createChildLogger } from "@/lib/logger";
-
-import { prisma } from "@/lib/prisma";
 const logger = createChildLogger("api:users:id");
 
 // Function to update user status
@@ -43,6 +43,16 @@ export async function PATCH(
   }
 
   try {
+    // Get the current user data before update for audit trail
+    const currentUser = await prisma.user.findUnique({
+      where: { id },
+      select: { status: true, name: true, email: true },
+    });
+
+    if (!currentUser) {
+      return jsonError("User not found", 404, { code: "NOT_FOUND" });
+    }
+
     const updatedUser = await prisma.user.update({
       where: { id },
       data: { status },
@@ -57,6 +67,28 @@ export async function PATCH(
         updatedAt: true,
       },
     });
+
+    // Log audit trail for status change
+    await AuditTrailService.logUserUpdate(id, { status }, userId, user.email, {
+      ip: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip"),
+      userAgent: req.headers.get("user-agent"),
+      previousStatus: currentUser.status,
+      targetUserName: currentUser.name,
+      targetUserEmail: currentUser.email,
+      action: "STATUS_UPDATE",
+    });
+
+    logger.info(
+      {
+        actorUserId: userId,
+        actorUserEmail: user.email,
+        targetUserId: id,
+        targetUserName: currentUser.name,
+        previousStatus: currentUser.status,
+        newStatus: status,
+      },
+      "User status updated"
+    );
 
     return jsonOk(updatedUser);
   } catch (error) {

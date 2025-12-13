@@ -4,24 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSales } from "@/hooks/use-sales";
 import { useSalesMonthly } from "@/hooks/use-sales-monthly";
-import { useSalesStats } from "@/hooks/use-sales-stats";
-import { useStaff } from "@/hooks/use-staff";
+import { useDashboardAnalytics } from "@/hooks/use-dashboard-analytics";
 import { useToast } from "@/hooks/use-toast";
 import { useFormatCurrency } from "@/lib/currency";
-import { fetchJson } from "@/lib/fetch-utils";
 import { useTranslation } from "@/lib/i18n";
-import type { Sale, User } from "@/lib/types";
-import { useQuery } from "@tanstack/react-query";
-import {
-  endOfDay,
-  endOfMonth,
-  endOfWeek,
-  endOfYear,
-  startOfDay,
-  startOfMonth,
-  startOfWeek,
-  startOfYear,
-} from "date-fns";
+import type { Sale } from "@/lib/types";
 import {
   AlertTriangle,
   DollarSign,
@@ -44,35 +31,25 @@ interface DailySalesData {
   [key: string]: string | number;
 }
 
-interface Product {
-  id: string;
-  quantity: number;
-  lowStockMargin: number;
-}
-
 interface ManagerOverviewProps {
   readonly period: string;
 }
 
-async function fetchProductsData() {
-  const data = await fetchJson<{ products: Product[] }>("/api/products");
-  return data.products;
+interface ManagerAnalytics {
+  totalRevenue: number;
+  totalOrders: number;
+  activeCashiers: number;
+  lowStockItems: number;
+  dateRange: {
+    from: string;
+    to: string;
+  };
 }
 
-// Helper: Calculate stats from data
-function calculateStats(sales: Sale[], users: User[], products: Product[]) {
-  const totalSales = sales.reduce(
-    (sum: number, sale: Sale) => sum + sale.totalAmount,
-    0
+function isManagerAnalytics(analytics: any): analytics is ManagerAnalytics {
+  return (
+    analytics && "activeCashiers" in analytics && "lowStockItems" in analytics
   );
-  const totalOrders = sales.length;
-  const activeStaff = users.filter(
-    (u: User) => u.status === "ACTIVE" && u.role === "CASHIER"
-  ).length;
-  const lowStockItems = products.filter(
-    (p: Product) => p.quantity <= p.lowStockMargin
-  ).length;
-  return { totalSales, totalOrders, activeStaff, lowStockItems };
 }
 
 // Helper: Calculate daily sales data
@@ -240,50 +217,10 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
     error: salesError,
   } = useSales(salesParams);
   const {
-    data: usersData,
-    isLoading: isLoadingUsers,
-    error: usersError,
-  } = useStaff();
-  const {
-    data: products = [],
-    isLoading: isLoadingProducts,
-    error: productsError,
-  } = useQuery({
-    queryKey: ["products-overview"],
-    queryFn: fetchProductsData,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-  });
-
-  // Compute date range based on period
-  const statsDateRange = useMemo(() => {
-    const now = new Date();
-    if (period === "today") {
-      return { from: startOfDay(now), to: endOfDay(now) };
-    } else if (period === "week") {
-      return {
-        from: startOfWeek(now, { weekStartsOn: 1 }),
-        to: endOfWeek(now, { weekStartsOn: 1 }),
-      };
-    } else if (period === "month") {
-      return { from: startOfMonth(now), to: endOfMonth(now) };
-    } else if (period === "year") {
-      return { from: startOfYear(now), to: endOfYear(now) };
-    }
-    return { from: undefined, to: undefined };
-  }, [period]);
-
-  const statsParams = useMemo(() => {
-    return statsDateRange.from && statsDateRange.to
-      ? { from: statsDateRange.from, to: statsDateRange.to }
-      : undefined;
-  }, [statsDateRange.from, statsDateRange.to]);
-
-  const {
-    data: stats,
-    isLoading: isLoadingStats,
-    error: statsError,
-  } = useSalesStats(statsParams);
+    data: analytics,
+    isLoading: isLoadingAnalytics,
+    error: analyticsError,
+  } = useDashboardAnalytics(period as "today" | "week" | "month" | "year");
 
   const [comparisonType, setComparisonType] = useState<"weekly" | "monthly">(
     "weekly"
@@ -296,10 +233,8 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
 
   // Handle errors in useEffect - memoize error check
   const hasError = useMemo(() => {
-    return (
-      salesError || usersError || productsError || statsError || monthlyError
-    );
-  }, [salesError, usersError, productsError, statsError, monthlyError]);
+    return salesError || analyticsError || monthlyError;
+  }, [salesError, analyticsError, monthlyError]);
 
   useEffect(() => {
     if (hasError) {
@@ -315,12 +250,6 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
 
   // Stabilize derived arrays to avoid changing deps in useMemo
   const sales: Sale[] = useMemo(() => salesData?.data ?? [], [salesData]);
-  const users = useMemo(() => usersData?.data ?? [], [usersData]);
-
-  const statsMemo = useMemo(
-    () => calculateStats(sales, users, products),
-    [sales, users, products]
-  );
 
   const dailySalesData = useMemo(
     () => calculateDailySalesData(sales, t),
@@ -403,12 +332,7 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
   };
 
   // Loading state
-  const isLoading =
-    isLoadingSales ||
-    isLoadingUsers ||
-    isLoadingProducts ||
-    isLoadingStats ||
-    isLoadingMonthly;
+  const isLoading = isLoadingSales || isLoadingAnalytics || isLoadingMonthly;
 
   if (isLoading) {
     return (
@@ -427,11 +351,11 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
     );
   }
 
-  if (statsError) {
+  if (analyticsError) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center">
         <p className="text-destructive">
-          Failed to fetch sales stats: {statsError.message}
+          Failed to fetch analytics: {analyticsError.message}
         </p>
       </div>
     );
@@ -442,33 +366,39 @@ export function ManagerOverview({ period }: ManagerOverviewProps) {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title={t("total_revenue")}
-          value={formatCurrency(stats?.totalSales ?? 0)}
+          value={formatCurrency(analytics?.totalRevenue ?? 0)}
           icon={DollarSign}
           description={getPeriodDescription(period, t, "'s sales")}
         />
         <StatsCard
           title={t("total_orders")}
-          value={stats?.totalOrders ?? 0}
+          value={analytics?.totalOrders ?? 0}
           icon={ShoppingCart}
           description={getPeriodDescription(period, t, "'s orders")}
         />
         <StatsCard
           title={t("active_cashiers")}
-          value={statsMemo.activeStaff}
+          value={isManagerAnalytics(analytics) ? analytics.activeCashiers : 0}
           icon={Users}
           description={t("currently_active_staff")}
         />
         <StatsCard
           title={t("low_stock_items")}
-          value={statsMemo.lowStockItems}
-          icon={statsMemo.lowStockItems > 0 ? AlertTriangle : PackageCheck}
+          value={isManagerAnalytics(analytics) ? analytics.lowStockItems : 0}
+          icon={
+            isManagerAnalytics(analytics) && analytics.lowStockItems > 0
+              ? AlertTriangle
+              : PackageCheck
+          }
           description={
-            statsMemo.lowStockItems > 0
+            isManagerAnalytics(analytics) && analytics.lowStockItems > 0
               ? t("needs_attention")
               : t("all_items_well_stocked")
           }
           iconClassName={
-            statsMemo.lowStockItems > 0 ? "text-destructive" : "text-green-500"
+            isManagerAnalytics(analytics) && analytics.lowStockItems > 0
+              ? "text-destructive"
+              : "text-green-500"
           }
         />
       </div>

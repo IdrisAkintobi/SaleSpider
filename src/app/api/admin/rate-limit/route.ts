@@ -1,9 +1,9 @@
-import { NextRequest } from "next/server";
-import { loginRateLimiter } from "@/lib/rate-limiter";
-import { prisma } from "@/lib/prisma";
-import { jsonOk, jsonError } from "@/lib/api-response";
-import { createChildLogger } from "@/lib/logger";
 import { requireManagerOrAdmin } from "@/lib/api-middleware";
+import { jsonError, jsonOk } from "@/lib/api-response";
+import { createChildLogger } from "@/lib/logger";
+import { prisma } from "@/lib/prisma";
+import { loginRateLimiter } from "@/lib/rate-limiter";
+import { NextRequest } from "next/server";
 
 const logger = createChildLogger("api:admin:rate-limit");
 

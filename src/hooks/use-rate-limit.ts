@@ -1,5 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchJson } from "@/lib/fetch-utils";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface BlockedAccount {
   identifier: string;
@@ -35,8 +35,10 @@ export function useRateLimitStats() {
         throw error;
       }
     },
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: false,
     retry: false, // Don't retry if forbidden
+    // Cache for 5 minutes to reduce API calls
+    staleTime: 5 * 60 * 1000,
   });
 }
 

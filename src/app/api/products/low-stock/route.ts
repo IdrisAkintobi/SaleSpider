@@ -1,27 +1,16 @@
+import { isErrorResponse, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { Role } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
-    // Read the X-User-Id header set by the middleware
-    const userId = request.headers.get("X-User-Id");
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Fetch the user to check their role
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { role: true },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Only managers and super admins can view low stock alerts
-    if (user.role === "CASHIER") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const userOrError = await requireAuth(request, [
+      Role.MANAGER,
+      Role.SUPER_ADMIN,
+    ]);
+    if (isErrorResponse(userOrError)) {
+      return userOrError;
     }
 
     // Get products where quantity <= lowStockMargin
