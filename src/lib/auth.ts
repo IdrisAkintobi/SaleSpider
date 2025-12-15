@@ -1,94 +1,72 @@
-import { jwtVerify } from "jose";
-import { NextRequest } from "next/server";
-import { prisma } from "./prisma";
+import { prisma } from "@/lib/prisma";
+import { Role } from "@prisma/client";
+import { NextRequest, NextResponse } from "next/server";
 
-const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-
-export interface AuthUser {
+export interface AuthenticatedUser {
   id: string;
-  email: string;
-  name: string;
-  role: string;
+  role: Role;
 }
 
 /**
- * Verify JWT token and return user data
+ * Authenticates a user from the request headers and returns user info
+ * Returns null if authentication fails
  */
-export async function verifyToken(token: string): Promise<AuthUser | null> {
-  try {
-    const { payload } = await jwtVerify(token, secret);
-    return payload as unknown as AuthUser;
-  } catch (error) {
-    console.error("Token verification failed:", error);
-    return null;
-  }
-}
-
-/**
- * Get user from request headers (set by middleware)
- */
-export async function getCurrentUser(
+export async function authenticateUser(
   request: NextRequest
-): Promise<AuthUser | null> {
+): Promise<AuthenticatedUser | null> {
+  // Read the X-User-Id header set by the middleware
   const userId = request.headers.get("X-User-Id");
   if (!userId) {
     return null;
   }
 
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-      },
-    });
+  // Fetch the user to check their role
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, role: true },
+  });
 
-    return user;
-  } catch (error) {
-    console.error("Error fetching user:", error);
+  if (!user) {
     return null;
   }
-}
 
-/**
- * Check if user has required role
- */
-export function hasRole(user: AuthUser | null, requiredRole: string): boolean {
-  if (!user) return false;
-
-  const roleHierarchy = {
-    SUPER_ADMIN: 3,
-    MANAGER: 2,
-    CASHIER: 1,
+  return {
+    id: user.id,
+    role: user.role,
   };
-
-  const userLevel = roleHierarchy[user.role as keyof typeof roleHierarchy] || 0;
-  const requiredLevel =
-    roleHierarchy[requiredRole as keyof typeof roleHierarchy] || 0;
-
-  return userLevel >= requiredLevel;
 }
 
 /**
- * Check if user is super admin
+ * Authenticates a user and checks if they have the required role(s)
+ * Returns the user if authorized, or a NextResponse with error if not
  */
-export function isSuperAdmin(user: AuthUser | null): boolean {
-  return hasRole(user, "SUPER_ADMIN");
+export async function requireAuth(
+  request: NextRequest,
+  allowedRoles?: Role[]
+): Promise<AuthenticatedUser | NextResponse> {
+  const user = await authenticateUser(request);
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  return user;
 }
 
 /**
- * Check if user is manager or higher
+ * Helper to check if a value is a NextResponse (error response)
  */
-export function isManager(user: AuthUser | null): boolean {
-  return hasRole(user, "MANAGER");
+export function isErrorResponse(value: any): value is NextResponse {
+  return value instanceof NextResponse;
 }
 
 /**
- * Check if user is cashier or higher
+ * Checks if a user has SUPER_ADMIN role
  */
-export function isCashier(user: AuthUser | null): boolean {
-  return hasRole(user, "CASHIER");
+export function isSuperAdmin(user: AuthenticatedUser | null): boolean {
+  return user?.role === Role.SUPER_ADMIN;
 }

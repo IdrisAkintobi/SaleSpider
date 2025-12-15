@@ -38,7 +38,17 @@ const createLogger = () => {
     return pino({
       ...baseConfig,
       redact: {
-        paths: ["password", "token", "authorization", "cookie", "email"],
+        paths: [
+          "password",
+          "token",
+          "authorization",
+          "cookie",
+          "email",
+          "userEmail",
+          "targetUserEmail",
+          "actorUserEmail",
+          "clearedEmail",
+        ],
         censor: "[REDACTED]",
       },
     });

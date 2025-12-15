@@ -77,9 +77,10 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - icons (static icon files)
      * - public folder
      */
-    "/((?!api/auth|api/health|api/settings|login|register|_next/static|_next/image|favicon.ico|public).*)",
+    "/((?!api/auth|api/health|api/settings|login|register|_next/static|_next/image|favicon.ico|icons|public).*)",
     "/dashboard/:path*",
   ],
 };
